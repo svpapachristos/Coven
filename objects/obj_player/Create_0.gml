@@ -9,3 +9,4 @@ can_walk = true;
 shoot_timer = 0;
 attack_speed = 0.5
 proj_speed = 2;
+

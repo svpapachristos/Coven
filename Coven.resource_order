@@ -1,8 +1,10 @@
 {
   "FolderOrderSettings":[
+    {"name":"Familiar Sprites","order":3,"path":"folders/Sprites/Familiar Sprites.yy",},
     {"name":"Levels","order":1,"path":"folders/Levels.yy",},
     {"name":"Objects","order":7,"path":"folders/Objects.yy",},
     {"name":"Enemies","order":1,"path":"folders/Objects/Enemies.yy",},
+    {"name":"Familiars","order":3,"path":"folders/Objects/Familiars.yy",},
     {"name":"UI","order":2,"path":"folders/Objects/UI.yy",},
     {"name":"Sprites","order":2,"path":"folders/Sprites.yy",},
     {"name":"Enemy Sprites","order":2,"path":"folders/Sprites/Enemy Sprites.yy",},
