@@ -9,7 +9,7 @@
     {"name":"Witch Sprites","order":1,"path":"folders/Sprites/Witch Sprites.yy",},
   ],
   "ResourceOrderSettings":[
-    {"name":"obj_enemy_spawner","order":2,"path":"objects/obj_enemy_spawner/obj_enemy_spawner.yy",},
+    {"name":"obj_enemy_spawner","order":1,"path":"objects/obj_enemy_spawner/obj_enemy_spawner.yy",},
     {"name":"obj_projectile","order":1,"path":"objects/obj_projectile/obj_projectile.yy",},
     {"name":"spr_battle_screen","order":3,"path":"sprites/spr_battle_screen/spr_battle_screen.yy",},
     {"name":"spr_box","order":4,"path":"sprites/spr_box/spr_box.yy",},
