@@ -1,15 +1,20 @@
 {
   "FolderOrderSettings":[
-    {"name":"Witch","order":3,"path":"folders/Rooms/Witch.yy",},
-    {"name":"Witch Sprites","order":4,"path":"folders/Sprites/Witch Sprites.yy",},
+    {"name":"Enemy Sprites","order":2,"path":"folders/Sprites/Enemy Sprites.yy",},
+    {"name":"Levels","order":1,"path":"folders/Levels.yy",},
+    {"name":"Objects","order":7,"path":"folders/Objects.yy",},
+    {"name":"Enemies","order":1,"path":"folders/Objects/Enemies.yy",},
+    {"name":"Sprites","order":2,"path":"folders/Sprites.yy",},
+    {"name":"Witch Sprites","order":1,"path":"folders/Sprites/Witch Sprites.yy",},
   ],
   "ResourceOrderSettings":[
+    {"name":"obj_enemy_spawner","order":1,"path":"objects/obj_enemy_spawner/obj_enemy_spawner.yy",},
     {"name":"obj_projectile","order":1,"path":"objects/obj_projectile/obj_projectile.yy",},
     {"name":"spr_battle_screen","order":3,"path":"sprites/spr_battle_screen/spr_battle_screen.yy",},
     {"name":"spr_box","order":4,"path":"sprites/spr_box/spr_box.yy",},
     {"name":"spr_button_heavy","order":2,"path":"sprites/spr_button_heavy/spr_button_heavy.yy",},
     {"name":"spr_button_run","order":1,"path":"sprites/spr_button_run/spr_button_run.yy",},
-    {"name":"spr_enemy1","order":5,"path":"sprites/spr_enemy1/spr_enemy1.yy",},
+    {"name":"spr_enemy_slime","order":1,"path":"sprites/spr_enemy_slime/spr_enemy_slime.yy",},
     {"name":"spr_enemy2","order":6,"path":"sprites/spr_enemy2/spr_enemy2.yy",},
     {"name":"spr_grasstile","order":7,"path":"sprites/spr_grasstile/spr_grasstile.yy",},
     {"name":"spr_lava","order":8,"path":"sprites/spr_lava/spr_lava.yy",},

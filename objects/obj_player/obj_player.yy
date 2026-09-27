@@ -11,7 +11,7 @@
   "overriddenProperties":[],
   "parent":{
     "name":"Witch",
-    "path":"folders/Rooms/Witch.yy",
+    "path":"folders/Objects/Players/Witch.yy",
   },
   "parentObjectId":null,
   "persistent":false,
