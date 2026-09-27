@@ -25,8 +25,8 @@
   "nineSlice":null,
   "origin":0,
   "parent":{
-    "name":"Turn Based Battle",
-    "path":"folders/Sprites/Turn Based Battle.yy",
+    "name":"Default Sprites",
+    "path":"folders/Sprites/Default Sprites.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

@@ -4,8 +4,8 @@
   "name":"ReadMe",
   "openedOnFirstLoad":true,
   "parent":{
-    "name":"wizardman",
-    "path":"wizardman.yyp",
+    "name":"witchygirl",
+    "path":"witchygirl.yyp",
   },
   "resourceType":"GMNotes",
   "resourceVersion":"2.0",
