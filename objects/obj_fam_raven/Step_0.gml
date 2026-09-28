@@ -38,7 +38,7 @@ function familiar_raven_idle(){
 }
 
 function familiar_raven_follow(){
-	image_xscale = obj_player.facing_dir;
+	
 	sprite_index = spr_fam_raven_walk;
 
 	var _behind_dist = 23; //distance behind the player to follow
@@ -51,9 +51,11 @@ function familiar_raven_follow(){
 	if (_dist > 3){
 		direction = point_direction(x, y, _target_x, _target_y);
 		speed = familiar_move_speed;
+			image_xscale = (lengthdir_x(1, direction) >= 0) ? 1 : -1;
 	} else {
 		speed = 0;
 		sprite_index = spr_fam_raven;
+			image_xscale = obj_player.facing_dir;
 	}
 	if (!can_follow){
 		state = "IDLE"
