@@ -1,13 +1,14 @@
 {
   "FolderOrderSettings":[
-    {"name":"Familiar Sprites","order":3,"path":"folders/Sprites/Familiar Sprites.yy",},
     {"name":"Levels","order":1,"path":"folders/Levels.yy",},
     {"name":"Objects","order":7,"path":"folders/Objects.yy",},
     {"name":"Enemies","order":1,"path":"folders/Objects/Enemies.yy",},
     {"name":"Familiars","order":3,"path":"folders/Objects/Familiars.yy",},
     {"name":"UI","order":2,"path":"folders/Objects/UI.yy",},
+    {"name":"Game Controllers","order":1,"path":"folders/Objects/UI/Game Controllers.yy",},
     {"name":"Sprites","order":2,"path":"folders/Sprites.yy",},
     {"name":"Enemy Sprites","order":2,"path":"folders/Sprites/Enemy Sprites.yy",},
+    {"name":"Familiar Sprites","order":3,"path":"folders/Sprites/Familiar Sprites.yy",},
     {"name":"Witch Sprites","order":1,"path":"folders/Sprites/Witch Sprites.yy",},
   ],
   "ResourceOrderSettings":[
@@ -19,6 +20,7 @@
     {"name":"spr_button_run","order":1,"path":"sprites/spr_button_run/spr_button_run.yy",},
     {"name":"spr_enemy_slime","order":1,"path":"sprites/spr_enemy_slime/spr_enemy_slime.yy",},
     {"name":"spr_enemy2","order":6,"path":"sprites/spr_enemy2/spr_enemy2.yy",},
+    {"name":"spr_fam_raven_walk","order":1,"path":"sprites/spr_fam_raven_walk/spr_fam_raven_walk.yy",},
     {"name":"spr_grasstile","order":7,"path":"sprites/spr_grasstile/spr_grasstile.yy",},
     {"name":"spr_lava","order":8,"path":"sprites/spr_lava/spr_lava.yy",},
     {"name":"spr_npc1","order":9,"path":"sprites/spr_npc1/spr_npc1.yy",},

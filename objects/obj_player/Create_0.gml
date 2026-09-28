@@ -3,6 +3,7 @@
 //image_index = 0;
 
 state = "IDLE";
+facing_dir = 1;
 move_speed = 2;
 can_shoot = true;
 can_walk = true;

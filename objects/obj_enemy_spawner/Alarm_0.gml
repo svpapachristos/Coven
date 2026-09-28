@@ -1,3 +1,7 @@
+if (global.game_state != "PLAYING") {
+	alarm[0] = 1;
+	exit;
+}
 var _x = irandom_range(0, room_width);
 var _y = irandom_range(0, room_height);
 

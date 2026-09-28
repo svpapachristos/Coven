@@ -1,0 +1,1 @@
+global.game_state = "PLAYING"; // we playin; switch to start when we make a menu

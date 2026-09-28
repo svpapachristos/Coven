@@ -1,10 +1,13 @@
-function familiar_movement(){
-	
-	
-	
+if (global.game_state != "PLAYING") {
+	if (speed != 0) {
+		saved_speed = speed;
+		speed = 0;
+	}
+	exit
+} else if (variable_instance_exists(id, "saved_speed") && saved_speed != 0) {
+	speed = saved_speed;
+	saved_speed = 0;
 }
-
-
 switch (state) 
 {
     case "IDLE":
@@ -25,7 +28,9 @@ switch (state)
 }
 
 function familiar_raven_idle(){
+	image_xscale = obj_player.facing_dir;
 	sprite_index = spr_fam_raven;
+	
 	if (can_follow){
 		state = "FOLLOW";
 	}
@@ -33,9 +38,13 @@ function familiar_raven_idle(){
 }
 
 function familiar_raven_follow(){
+	image_xscale = obj_player.facing_dir;
+	sprite_index = spr_fam_raven_walk;
+
+	var _behind_dist = 23; //distance behind the player to follow
 	
-	var _target_x = obj_player.x - 55; //an attempt to shift where the ravens target location is
-	var _target_y = obj_player.y - 20;
+	var _target_x = obj_player.x - (_behind_dist * obj_player.facing_dir);
+	var _target_y = obj_player.y;
 	
 	var _dist = point_distance(x, y, _target_x, _target_y);
 	
@@ -44,6 +53,7 @@ function familiar_raven_follow(){
 		speed = familiar_move_speed;
 	} else {
 		speed = 0;
+		sprite_index = spr_fam_raven;
 	}
 	if (!can_follow){
 		state = "IDLE"

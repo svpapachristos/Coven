@@ -1,4 +1,5 @@
 if (global.game_state != "PLAYING") {
+	alarm[0] = 1;
 	if (speed != 0) {
 		saved_speed = speed;
 		speed = 0;
@@ -7,7 +8,4 @@ if (global.game_state != "PLAYING") {
 } else if (variable_instance_exists(id, "saved_speed") && saved_speed != 0) {
 	speed = saved_speed;
 	saved_speed = 0;
-}
-if (x < 0 || x > room_width || y < 0 || y > room_height) {
-	instance_destroy();
 }
