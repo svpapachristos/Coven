@@ -3,6 +3,7 @@ switch (global.game_state) {
         if (keyboard_check_pressed(vk_enter)){
 			global.game_state = "PLAYING";
 			
+			
 		}
         break;
         
