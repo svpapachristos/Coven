@@ -1,3 +1,18 @@
+//Quit Confirmation will take priority
+if (quit_confirm) {
+	if (keyboard_check_pressed(ord("Q")) || keyboard_check_pressed(ord("Y"))) {
+		game_end();
+	} else if (keyboard_check_pressed(vk_anykey)) {
+		quit_confirm = false; // no other key will confirm quit
+	}
+	exit; //pauses the game while prompted to quit
+}
+//On first Q press while game state is not playing AKA while paused
+if (global.game_state != "PLAYING" && keyboard_check_pressed(ord("Q"))){
+	quit_confirm = true;
+	exit;
+}
+
 switch (global.game_state) {
     case "START":
         if (keyboard_check_pressed(vk_enter)){
