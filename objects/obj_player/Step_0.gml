@@ -1,13 +1,48 @@
 if (global.game_state != "PLAYING") exit;
 function movement() {
 	//walk functions are for losers
-	if (keyboard_check(ord("D"))) { x += move_speed; facing_dir = 1; image_xscale = 1; } 
-	if (keyboard_check(ord("A"))) { x -= move_speed; facing_dir = -1; image_xscale = -1; }  
+	if (keyboard_check(ord("D"))) { x += move_speed; } 
+	if (keyboard_check(ord("A"))) { x -= move_speed; }  
 	if (keyboard_check(ord("S"))) { y += move_speed; } 
 	if (keyboard_check(ord("W"))) { y -= move_speed; } 
 	x = clamp(x, 0, room_width - sprite_width);
 	y = clamp(y, 0, room_height - sprite_height);
 }
+
+facing_dir_4 = round(point_direction(x, y, mouse_x, mouse_y) / 90) mod 4; //gives us a clean 0 = East, 1 = North, 2 = West, 3 = South
+
+function update_facing_sprite() {
+	var _idle = [spr_player_witch1_idle_right, spr_player_witch1_idle_up, spr_player_witch1_idle_left, spr_player_witch1_idle_down];
+	var _walk = [spr_player_witch1_walk_right, spr_player_witch1_walk_up, spr_player_witch1_walk_left, spr_player_witch1_walk_down];
+	var _idle_fire = [spr_player_witch1_idle_right_fire, spr_player_witch1_idle_up_fire, spr_player_witch1_idle_left_fire, spr_player_witch1_idle_down_fire];
+	var _walk_fire = [spr_player_witch1_walk_right_fire, spr_player_witch1_walk_up_fire, spr_player_witch1_walk_left_fire, spr_player_witch1_walk_down_fire];
+	
+	var _firing = (state == "ATTACK");
+	
+	var _move_dir_4 = -1; // -1 means idle
+	
+	if (keyboard_check(ord("D"))) _move_dir_4 = 0; 	
+	else if (keyboard_check(ord("W"))) _move_dir_4 = 1;
+	else if (keyboard_check(ord("A"))) _move_dir_4 = 2;
+	else if (keyboard_check(ord("S"))) _move_dir_4 = 3;
+	
+	
+	var _moving = (_move_dir_4 != -1);
+	
+	// Pick which direction value actually determines the sprite this frame
+	var _display_dir = _firing ? facing_dir_4 : (_moving ? _move_dir_4 : facing_dir_4);
+
+	image_xscale = 1;
+	
+	
+	if (_firing) {
+		sprite_index = _moving ? _walk_fire[_display_dir] : _idle_fire[_display_dir];
+	} else {
+		sprite_index = _moving ? _walk[_display_dir] : _idle[_display_dir];
+	}
+}
+
+update_facing_sprite();
 
 //Determine the players current state
 switch (state) 
@@ -30,27 +65,28 @@ switch (state)
 }
 
 function player_idle(){
-	sprite_index = spr_player;
 	if (keyboard_check(ord("W"))) || (keyboard_check(ord("A"))) || (keyboard_check(ord("S"))) || (keyboard_check(ord("D"))) {
-		state = "WALK";	
+		state = "WALK";
 	}
-	if (mouse_check_button_pressed(mb_left) && can_shoot) {
+	if (mouse_check_button(mb_left) && can_shoot) {
 		state = "ATTACK";
-}
+	}
 }
 
 function player_walk() {
 	movement();
-	if (mouse_check_button_pressed(mb_left) && can_shoot) {
+	if (mouse_check_button(mb_left) && can_shoot) {
 		state = "ATTACK";
-}
-
+	}
+	if (!keyboard_check(ord("W")) && !keyboard_check(ord("A")) && !keyboard_check(ord("S")) && !keyboard_check(ord("D"))) {
+    state = "IDLE";
+	}
 }
 	
 function player_attack() {
 	movement();
 	if (can_shoot) {
-		sprite_index = spr_player_shoot;
+		//spawn our projectile
 		can_shoot = false;
 		shoot_timer = game_get_speed(gamespeed_fps) * attack_speed; //fire delay
 		
@@ -65,6 +101,8 @@ function player_attack() {
 		shoot_timer -= 1;
 	} else {
 		can_shoot = true;
+		if (!mouse_check_button(mb_left)) {
 		state = "IDLE";
+		}
 	}
 }

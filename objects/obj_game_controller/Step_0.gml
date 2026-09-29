@@ -23,8 +23,9 @@ switch (global.game_state) {
         break;
         
     case "PLAYING":
+	global.run_time += 1 / game_get_speed(gamespeed_fps); // run time in seconds
 		if (keyboard_check_pressed(vk_escape)){
-			global.game_state = "PAUSED";	
+			global.game_state = "PAUSED";
 			
 		}
         break;

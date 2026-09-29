@@ -2,13 +2,26 @@ if (global.game_state != "PLAYING") {
 	alarm[0] = 1;
 	exit;
 }
-var _x = irandom_range(0, room_width);
-var _y = irandom_range(0, room_height);
 
-alarm[0] = game_get_speed(gamespeed_fps) * 2; //this repeats the spawner, making it infinite
+alarm[0] = game_get_speed(gamespeed_fps) * 2; // Resets the spawner to a default, preventing some possible future bugs/crashes
 
-if (instance_number(obj_enemy_slime) < max_slime_count && max_enemy_count) {
-	instance_create_layer(_x, _y, "Instances", obj_enemy_slime);
-	global.enemy_count += 1;
-	
+//overall enemy cap
+if (instance_number(obj_enemy_parent) >= max_enemy_count) exit;
+
+//building a pool of enemies, unlocked based on length of the run, each with their own individual cap
+
+var _pool = [];
+for (var i = 0; i < array_length(spawn_table); i++) {
+	var _e = spawn_table[i];
+	var _time_ok = global.run_time >= _e.start_time && global.run_time < _e.end_time;
+	var _under_cap = instance_number(_e.obj) < _e.cap;
+	if (_time_ok && _under_cap) array_push(_pool, _e.obj);
 }
+
+//spawns random, eligible enemies from the pool,
+if (array_length(_pool) > 0) {
+	var _x = irandom_range(0, room_width);
+	var _y = irandom_range(0, room_height);
+	instance_create_layer(_x, _y, "Instances", _pool[irandom(array_length(_pool) -1)]);
+}
+
