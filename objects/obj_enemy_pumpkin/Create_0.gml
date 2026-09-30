@@ -1,4 +1,5 @@
 event_inherited();
+drop_chance = 0.5;
 max_hp = 200;
 hp = max_hp;
 move_speed = 2 * SPEED_SCALE;
