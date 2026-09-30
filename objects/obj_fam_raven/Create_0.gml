@@ -1,3 +1,3 @@
 state = "IDLE";
-familiar_move_speed = 1.85;
+familiar_move_speed = 10;
 can_follow = true;

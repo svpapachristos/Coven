@@ -1,1 +1,3 @@
-speed = 2.5;
+event_inherited();
+speed = 12 * SPEED_SCALE;
+contact_damage = 50;

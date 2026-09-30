@@ -40,7 +40,7 @@ function familiar_raven_idle(){
 function familiar_raven_follow(){
 	sprite_index = spr_fam_raven_walk;
 
-	var _behind_dist = 23; //distance behind the player to follow
+	var _behind_dist = 64; //distance behind the player to follow
 	var _facing_deg = obj_player.facing_dir_4 * 90; // gets us 0=E, 90=N, 180=W, 270=S
 	
 	var _target_x = obj_player.x - lengthdir_x(_behind_dist, _facing_deg);
@@ -48,9 +48,9 @@ function familiar_raven_follow(){
 	
 	var _dist = point_distance(x, y, _target_x, _target_y);
 	
-	if (_dist > 3){
+	if (_dist > 15){
 		direction = point_direction(x, y, _target_x, _target_y);
-		speed = familiar_move_speed;
+		speed = familiar_move_speed * SPEED_SCALE;
 		image_xscale = (lengthdir_x(1, direction) >= 0) ? 1 : -1;
 	} else {
 		speed = 0;

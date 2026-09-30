@@ -1,12 +1,14 @@
-//We now index all enemies under a "parent" enemy that can sort each kill into what enemy was hit
-if (other.object_index == obj_enemy_slime) {
-	global.slime_kill_count += 1;
+var _enemy = other;
+_enemy.hp -= damage;
+_enemy.hit_flash = 6;
+scr_spawn_damage_number(_enemy, damage, c_white);
+
+if (_enemy.hp <= 0) {
+	global.kill_count++;
+	if (_enemy.object_index == obj_enemy_slime) global.slime_kill_count++;
+	if (_enemy.object_index == obj_enemy_bat) global.bat_kill_count++;
+	if (_enemy.object_index == obj_enemy_pumpkin) global.pumpkin_kill_count++;
+	instance_destroy(_enemy);
 }
 
-
-//Stat Trak!
-global.kill_count += 1;
-
-//Everyone Likes a clean map
-instance_destroy(other);
-instance_destroy(self);
+instance_destroy();

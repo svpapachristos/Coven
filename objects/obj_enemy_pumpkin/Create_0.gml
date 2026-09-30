@@ -1,7 +1,10 @@
-move_speed = 0.3;
-preferred_distance = 85;
-distance_margin = 20;
-
-attack_cooldown_max = game_get_speed(gamespeed_fps) * 2.5;
+event_inherited();
+max_hp = 200;
+hp = max_hp;
+move_speed = 2 * SPEED_SCALE;
+preferred_distance = 85 * WORLD_SCALE;
+distance_margin = 20 * WORLD_SCALE;
+contact_damage = 75;
+attack_cooldown_max = game_get_speed(gamespeed_fps) * 2;
 attack_cooldown = attack_cooldown_max;
-fireball_speed = 2.5
+fireball_speed = 14 * SPEED_SCALE;

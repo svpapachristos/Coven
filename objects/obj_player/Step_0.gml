@@ -42,7 +42,14 @@ function update_facing_sprite() {
 	}
 }
 
+//Function that makes the player look in the caridnal direction closest to mouse position
 update_facing_sprite();
+
+//Our IFrames i think
+if (iframes > 0) iframes--;
+image_alpha = (iframes > 0 && (iframes div 4) mod 2 == 0) ? 0.4 : 1;
+
+
 
 //Determine the players current state
 switch (state) 

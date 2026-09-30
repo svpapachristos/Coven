@@ -19,6 +19,7 @@ switch (global.game_state) {
 			global.game_state = "PLAYING";
 			
 			
+			
 		}
         break;
         

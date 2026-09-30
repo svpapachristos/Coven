@@ -1,1 +1,1 @@
-global.game_state = "DEAD";
+event_inherited();
