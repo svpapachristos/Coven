@@ -8,4 +8,6 @@ if (!_blink) {
 	draw_set_color(c_white);
 	draw_circle(x - 1, y + _yoff - 1, 1, false);
 }
-//when we have a sprite, it will be assigned and this will be deleted i think
+//when we have a sprite, the draw line below can replace the 4 above to keep the bobbing
+
+	//draw_sprite(sprite_index, image_index, x, y + _yoff);
