@@ -8,7 +8,7 @@ function movement() {
 	x = clamp(x, 0, room_width - sprite_width);
 	y = clamp(y, 0, room_height - sprite_height);
 }
-
+//getting the player to lock in 4 directionals
 facing_dir_4 = round(point_direction(x, y, mouse_x, mouse_y) / 90) mod 4; //gives us a clean 0 = East, 1 = North, 2 = West, 3 = South
 
 function update_facing_sprite() {
@@ -49,6 +49,17 @@ update_facing_sprite();
 if (iframes > 0) iframes--;
 image_alpha = (iframes > 0 && (iframes div 4) mod 2 == 0) ? 0.4 : 1;
 
+//Our 'available' Mana pool
+mana = min(max_mana, mana + mana_regen / game_get_speed(gamespeed_fps));
+
+//Casting our Wand (Rudimentary Alternate Wand Fire Setup), will cost mana
+if (alt_fire_cd > 0) alt_fire_cd--;
+if (mouse_check_button_pressed(mb_right) && alt_fire_cd <= 0 && mana >= alt_fire_cost) {	
+	if (alt_fire()) {
+	mana -= alt_fire_cost;
+	alt_fire_cd = game_get_speed(gamespeed_fps * 0.4);
+	}
+}
 
 
 //Determine the players current state
@@ -113,3 +124,10 @@ function player_attack() {
 		}
 	}
 }
+
+function player_alt_fire() {
+	if (mouse_check_button_pressed(mb_right) && mana >= alt_fire_cost) { 
+		alt_fire(); 
+	}
+}
+	

@@ -34,8 +34,9 @@ switch (global.game_state) {
     case "PAUSED":
 		if (keyboard_check_pressed(vk_escape)){
 			global.game_state = "PLAYING";
-		break;
+		
 		}
+		break;
 	case "DEAD":
 		if (keyboard_check_pressed(vk_enter)){
 				room_restart();

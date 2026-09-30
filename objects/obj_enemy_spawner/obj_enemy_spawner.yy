@@ -10,7 +10,7 @@
   "overriddenProperties":[],
   "parent":{
     "name":"_Enemy Controllers",
-    "path":"folders/Objects/Enemies/_Enemy Controllers.yy",
+    "path":"folders/Controllers/_Enemy Controllers.yy",
   },
   "parentObjectId":null,
   "persistent":false,

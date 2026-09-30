@@ -1,17 +1,17 @@
 {
   "$GMObject":"",
-  "%Name":"obj_damage_number",
+  "%Name":"obj_lightning_bolt",
   "eventList":[
     {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":0,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
     {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":3,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
     {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":8,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
   ],
   "managed":true,
-  "name":"obj_damage_number",
+  "name":"obj_lightning_bolt",
   "overriddenProperties":[],
   "parent":{
-    "name":"Game Controllers",
-    "path":"folders/Controllers/Game Controllers.yy",
+    "name":"Witch",
+    "path":"folders/Objects/Players/Witch.yy",
   },
   "parentObjectId":null,
   "persistent":false,
