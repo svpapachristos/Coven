@@ -1,8 +1,5 @@
-if (global.game_state != "PLAYING") {
-	speed = 0;
-	exit;
-}
-
+if (scr_freeze_if_paused()) exit;
+event_inherited();
 var _distance = point_distance(x, y, obj_player.x, obj_player.y);
 
 //move closer if far, move away iff too close, stay still when in firing distance

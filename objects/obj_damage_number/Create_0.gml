@@ -3,3 +3,4 @@ dmg_amount = 0;
 number_color = c_white;
 rise_speed = 0.5 * WORLD_SCALE;
 alpha = 1;
+number_scale = 2;

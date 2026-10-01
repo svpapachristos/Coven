@@ -1,5 +1,5 @@
 //Create event of the projectile
-speed = 21 * SPEED_SCALE;
-damage = 50;
+speed = 28 * SPEED_SCALE;
+damage = scr_stat("wand_damage", 50);
 
 

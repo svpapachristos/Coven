@@ -1,15 +1,5 @@
-if (global.game_state != "PLAYING") {
-	if (speed != 0) {
-		saved_speed = speed;
-		speed = 0;
-	}
-	exit;
-}
-if (speed == 0 && saved_speed != 0) {
-	speed = saved_speed;
-	saved_speed = 0;
-}
-
+if (scr_freeze_if_paused()) exit;
+scr_stop_at_last_frame();
 life -= 1;
 if (life <= 0) {
 	instance_destroy();

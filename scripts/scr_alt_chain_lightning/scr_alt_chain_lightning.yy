@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_alt_chain_lightning",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Lightning Scripts",
+    "path":"folders/Scripts/Lightning Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

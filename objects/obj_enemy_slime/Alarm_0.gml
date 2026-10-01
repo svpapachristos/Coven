@@ -12,5 +12,5 @@ if (global.game_state != "PLAYING") {
 //A Dashy-ier movement
 var _dir = point_direction(x, y, obj_player.x, obj_player.y);
 direction = _dir;
-speed = 9 * SPEED_SCALE; //dash speed
-alarm[1] = game_get_speed(gamespeed_fps) * 0.5; //dash length
+speed = 10 * SPEED_SCALE; //dash speed
+alarm[1] = game_get_speed(gamespeed_fps) * 0.8; //dash length

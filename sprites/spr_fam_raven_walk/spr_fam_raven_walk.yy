@@ -26,8 +26,8 @@
   "nineSlice":null,
   "origin":4,
   "parent":{
-    "name":"Familiar Sprites",
-    "path":"folders/Sprites/Familiar Sprites.yy",
+    "name":"Raven",
+    "path":"folders/Sprites/Familiar Sprites/Raven.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

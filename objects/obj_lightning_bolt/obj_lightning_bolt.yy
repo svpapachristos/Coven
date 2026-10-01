@@ -10,8 +10,8 @@
   "name":"obj_lightning_bolt",
   "overriddenProperties":[],
   "parent":{
-    "name":"Witch",
-    "path":"folders/Objects/Players/Witch.yy",
+    "name":"Lightning Wand",
+    "path":"folders/Objects/Players/Lightning Wand.yy",
   },
   "parentObjectId":null,
   "persistent":false,

@@ -1,13 +1,4 @@
-if (global.game_state != "PLAYING") {
-	if (speed != 0) {
-		saved_speed = speed;
-		speed = 0;
-	}
-	exit
-} else if (variable_instance_exists(id, "saved_speed") && saved_speed != 0) {
-	speed = saved_speed;
-	saved_speed = 0;
-}
+if (scr_freeze_if_paused()) exit;
 if (x < 0 || x > room_width || y < 0 || y > room_height) {
 	instance_destroy();
 }

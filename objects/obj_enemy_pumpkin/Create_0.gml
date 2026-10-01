@@ -1,8 +1,8 @@
 event_inherited();
 drop_chance = 0.5;
-max_hp = 200;
+max_hp = 350;
 hp = max_hp;
-move_speed = 2 * SPEED_SCALE;
+move_speed = random_range(1.8, 2.2) * SPEED_SCALE;
 preferred_distance = 85 * WORLD_SCALE;
 distance_margin = 20 * WORLD_SCALE;
 contact_damage = 75;

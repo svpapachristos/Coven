@@ -1,3 +1,3 @@
 //Create
 points = [];
-life = 10;
+life = 6;

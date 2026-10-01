@@ -9,8 +9,8 @@
   "name":"obj_fam_raven",
   "overriddenProperties":[],
   "parent":{
-    "name":"Familiars",
-    "path":"folders/Objects/Familiars.yy",
+    "name":"Raven",
+    "path":"folders/Objects/Familiars/Raven.yy",
   },
   "parentObjectId":null,
   "persistent":false,

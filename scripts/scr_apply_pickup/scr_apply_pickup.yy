@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_apply_pickup",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Item Scripts",
+    "path":"folders/Scripts/Item Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

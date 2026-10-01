@@ -20,8 +20,9 @@ for (var i = 0; i < array_length(spawn_table); i++) {
 
 //spawns random, eligible enemies from the pool,
 if (array_length(_pool) > 0) {
-	var _x = irandom_range(0, room_width);
-	var _y = irandom_range(0, room_height);
-	instance_create_layer(_x, _y, "Instances", _pool[irandom(array_length(_pool) -1)]);
+	var _p = scr_get_spawn_point();
+	if (!is_undefined(_p)) {
+	instance_create_layer(_p[0], _p[1], "Instances", _pool[irandom(array_length(_pool) -1)]);
+	}
 }
 

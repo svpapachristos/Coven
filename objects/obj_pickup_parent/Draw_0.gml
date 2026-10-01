@@ -11,3 +11,4 @@ if (!_blink) {
 //when we have a sprite, the draw line below can replace the 4 above to keep the bobbing
 
 	//draw_sprite(sprite_index, image_index, x, y + _yoff);
+	//if you are reading this, thank you, i would like to work for you

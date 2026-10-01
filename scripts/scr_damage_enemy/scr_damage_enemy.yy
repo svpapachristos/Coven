@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_damage_enemy",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Damage Scripts",
+    "path":"folders/Scripts/Damage Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

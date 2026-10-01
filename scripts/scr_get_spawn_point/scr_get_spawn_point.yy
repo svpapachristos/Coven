@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_get_spawn_point",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_get_spawn_point",
+  "parent":{
+    "name":"Helpers",
+    "path":"folders/Scripts/Helpers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
