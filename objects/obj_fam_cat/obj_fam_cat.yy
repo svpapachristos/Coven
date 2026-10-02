@@ -1,16 +1,15 @@
 {
   "$GMObject":"",
-  "%Name":"obj_fam_raven",
+  "%Name":"obj_fam_cat",
   "eventList":[
     {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":0,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
-    {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":3,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
   ],
   "managed":true,
-  "name":"obj_fam_raven",
+  "name":"obj_fam_cat",
   "overriddenProperties":[],
   "parent":{
-    "name":"Raven",
-    "path":"folders/Objects/Familiars/Raven.yy",
+    "name":"Cat",
+    "path":"folders/Objects/Familiars/Cat.yy",
   },
   "parentObjectId":{
     "name":"obj_familiar_controller",
@@ -34,8 +33,8 @@
   "resourceVersion":"2.0",
   "solid":false,
   "spriteId":{
-    "name":"spr_fam_raven_idle",
-    "path":"sprites/spr_fam_raven_idle/spr_fam_raven_idle.yy",
+    "name":"spr_fam_cat_idle",
+    "path":"sprites/spr_fam_cat_idle/spr_fam_cat_idle.yy",
   },
   "spriteMaskId":null,
   "visible":true,

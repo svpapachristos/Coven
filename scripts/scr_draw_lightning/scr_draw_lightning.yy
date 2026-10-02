@@ -6,7 +6,7 @@
   "name":"scr_draw_lightning",
   "parent":{
     "name":"Lightning Scripts",
-    "path":"folders/Scripts/Lightning Scripts.yy",
+    "path":"folders/Scripts/Player Scripts/Spell Scripts/Lightning Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

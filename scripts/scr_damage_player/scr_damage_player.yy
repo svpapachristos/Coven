@@ -1,12 +1,12 @@
 {
   "$GMScript":"v1",
-  "%Name":"scr_menu",
+  "%Name":"scr_damage_player",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"scr_menu",
+  "name":"scr_damage_player",
   "parent":{
-    "name":"Menu Scripts",
-    "path":"folders/Scripts/Menu Scripts.yy",
+    "name":"Damage Scripts",
+    "path":"folders/Scripts/Damage Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

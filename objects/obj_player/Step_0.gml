@@ -1,5 +1,19 @@
-if (scr_freeze_if_paused()) exit;
+if (scr_freeze_if_paused()) exit; // freeze on game pause
 max_mana = scr_stat("max_mana", base_max_mana); //so that items can raise it
+
+if (!is_undefined(witch)) {
+	if (ability_cd > 0) ability_cd--;
+	if (keyboard_check_pressed(ord("E")) && ability_cd = 0) {
+		witch.ability.fn(id);
+		ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
+	}
+	if (keyboard_check_pressed(ord("Q")) && ultimate_charge >= ultimate_charge_max) {
+		witch.ultimate.fn(id);
+		ultimate_charge = 0;
+	}
+}
+	
+	
 //getting the player to lock in 4 directionals
 facing_dir_4 = round(point_direction(x, y, mouse_x, mouse_y) / 90) mod 4; //gives us a clean 0 = East, 1 = North, 2 = West, 3 = South
 

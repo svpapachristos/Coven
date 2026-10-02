@@ -1,6 +1,9 @@
-//walk_speed = 3;
-//shoot_timer = 0;
-//image_index = 0;
+//Our lil witchy
+witch = undefined;
+wand = undefined;
+ability_cd = 0;
+ultimate_charge = 0;
+ultimate_charge_max = 100;
 
 state = "IDLE";
 

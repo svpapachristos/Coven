@@ -2,11 +2,11 @@ if (scr_freeze_if_paused()) exit;
 switch (state) 
 {
     case "IDLE":
-        familiar_raven_idle();
+        familiar_idle();
         break;
         
     case "FOLLOW":
-		familiar_raven_follow();
+		familiar_follow();
         break;
         
     case "ATTACK":

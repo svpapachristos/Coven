@@ -1,7 +1,18 @@
-global.game_state = "MENU"; // we playin; switch to start when we make a menu
+var _start_run = variable_global_exists("start_run_after_restart")
+	&& global.start_run_after_restart;
+	
+global.start_run_after_restart = false;
+global.game_state = _start_run ? "PLAYING" : "MENU";
+
+pending_run_start = _start_run;
+scr_loadout_init();
+
 //debug
 global.debug_hud = false;
 
+//scr_loadout_init();
+select_step = 0;  // 0 = witch, 1 = wand, 2 = familiar
+select_index = 0;
 
 //Main Menu Options
 menu_options = ["Start Run", "Quit"];
@@ -11,13 +22,20 @@ menu_index = 0;
 pause_options = ["Resume", "Quit to Menu", "Quit to Desktop"];
 pause_index = 0;
 
+//End of Run Screen Options
+end_options = ["New Run", "Back to Menu", "Quit Game"];
+end_index = 0;
 
-
+//global stats
 global.run_time = 0;
 global.kill_count = 0;
 global.slime_kill_count = 0;
 global.bat_kill_count = 0;
 global.pumpkin_kill_count = 0;
+
+//Quit Confirmation
+quit_confirm_options = ["Yes, Quit", "Cancel"];
+quit_confirm_index = 1; // Default to cancel
 quit_confirm = false;
 
 // Sparky sparks

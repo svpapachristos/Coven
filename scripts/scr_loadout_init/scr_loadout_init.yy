@@ -1,12 +1,12 @@
 {
   "$GMScript":"v1",
-  "%Name":"scr_menu",
+  "%Name":"scr_loadout_init",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"scr_menu",
+  "name":"scr_loadout_init",
   "parent":{
-    "name":"Menu Scripts",
-    "path":"folders/Scripts/Menu Scripts.yy",
+    "name":"Loadout Scripts",
+    "path":"folders/Scripts/Loadout Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_items",
   "parent":{
-    "name":"Helpers",
-    "path":"folders/Scripts/Helpers.yy",
+    "name":"Item Scripts",
+    "path":"folders/Scripts/Item Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

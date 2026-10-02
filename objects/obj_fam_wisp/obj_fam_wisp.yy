@@ -1,7 +1,9 @@
 {
   "$GMObject":"",
   "%Name":"obj_fam_wisp",
-  "eventList":[],
+  "eventList":[
+    {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":0,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
+  ],
   "managed":true,
   "name":"obj_fam_wisp",
   "overriddenProperties":[],
@@ -9,7 +11,10 @@
     "name":"Wisp",
     "path":"folders/Objects/Familiars/Wisp.yy",
   },
-  "parentObjectId":null,
+  "parentObjectId":{
+    "name":"obj_familiar_controller",
+    "path":"objects/obj_familiar_controller/obj_familiar_controller.yy",
+  },
   "persistent":false,
   "physicsAngularDamping":0.1,
   "physicsDensity":0.5,
@@ -27,7 +32,10 @@
   "resourceType":"GMObject",
   "resourceVersion":"2.0",
   "solid":false,
-  "spriteId":null,
+  "spriteId":{
+    "name":"spr_fam_wisp_idle",
+    "path":"sprites/spr_fam_wisp_idle/spr_fam_wisp_idle.yy",
+  },
   "spriteMaskId":null,
   "visible":true,
 }
