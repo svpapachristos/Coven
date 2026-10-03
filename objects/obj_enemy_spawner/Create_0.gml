@@ -2,6 +2,7 @@ max_enemy_count = 1000;
 
 spawn_table = [
 	{ obj: obj_enemy_slime, cap: 600, start_time: 0, end_time: 60000 },
+	{ obj: obj_enemy_zombie, cap: 500, start_time: 15, end_time: 60000 },
 	{ obj: obj_enemy_bat, cap: 400, start_time: 35, end_time: 15000 },
 	{ obj: obj_enemy_pumpkin, cap: 8, start_time: 90, end_time: 30000 },
 ];
