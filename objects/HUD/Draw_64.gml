@@ -52,5 +52,7 @@ draw_set_color(c_white);
 //debug (f1)
 if (global.debug_hud) {
 	draw_text(16, 78, "Enemies Alive: " + string(instance_number(obj_enemy_parent)));
+	draw_text(16, 110, "FPS: " + string(fps));
+	draw_text(16, 126, "Target: " + string(floor(scr_director_target(global.run_time))) + " Alive: " + string(instance_number(obj_enemy_parent)));
 	if (instance_exists(obj_player)) draw_text(16, 94, "iframes: " + string(obj_player.iframes));
 }

@@ -87,6 +87,7 @@
     {"id":{"name":"scr_constants","path":"scripts/scr_constants/scr_constants.yy",},},
     {"id":{"name":"scr_damage_enemy","path":"scripts/scr_damage_enemy/scr_damage_enemy.yy",},},
     {"id":{"name":"scr_damage_player","path":"scripts/scr_damage_player/scr_damage_player.yy",},},
+    {"id":{"name":"scr_director","path":"scripts/scr_director/scr_director.yy",},},
     {"id":{"name":"scr_draw_lightning","path":"scripts/scr_draw_lightning/scr_draw_lightning.yy",},},
     {"id":{"name":"scr_freeze_if_paused","path":"scripts/scr_freeze_if_paused/scr_freeze_if_paused.yy",},},
     {"id":{"name":"scr_get_spawn_point","path":"scripts/scr_get_spawn_point/scr_get_spawn_point.yy",},},

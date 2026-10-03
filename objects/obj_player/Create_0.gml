@@ -19,9 +19,9 @@ mana_regen = 15; //per second
 //Wand Cast (Alt Fire / Right Click / Channel Chain Lightning )
 alt_pulse_max = 6; //frames between pulses (6 = 10/sec)
 alt_pulse = 0; //countdown to next pulse
-alt_drain = 8; //mana drain per second while bolt is connected
+alt_drain = 25; //mana drain per second while bolt is connected
 alt_pulse_cost = alt_drain * alt_pulse_max / game_get_speed(gamespeed_fps);
-alt_regen_delay = 0;  // frames before mana regens
+alt_regen_delay = game_get_speed(gamespeed_fps) / 2;  // frames before mana regens, so about a half second after casting
 alt_pulse_count = 0; 
 alt_fire = scr_alt_chain_lightning; // our lightning script
 

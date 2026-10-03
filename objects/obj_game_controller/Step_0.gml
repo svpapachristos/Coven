@@ -91,6 +91,14 @@ switch (global.game_state) {
 			pause_index = 0;
 			
 		}
+		
+	if (keyboard_check_pressed(vk_f4)) {
+		repeat (100) {
+			var _p = scr_get_spawn_point();
+			if (!is_undefined(_p)) instance_create_layer(_p[0], _p[1], "Instances", obj_enemy_slime);
+		}
+	}
+	if (keyboard_check_pressed(vk_f5)) global.run_time += 300; // jump 5 minutes
         break;
         
     case "PAUSED":
