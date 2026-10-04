@@ -1,17 +1,17 @@
 if (global.game_state == "MENU") {
 	scr_draw_menu("COVEN", menu_options, menu_index);
 }
-if (global.game_state == "SELECT") {
+if (global.game_state == "STATION") {
 	var _titles = ["Choose Your Witch", "Choose Your Wand", "Choose Your Familiar"];
-	var _opts = scr_select_options(select_step);
-	scr_draw_menu(_titles[select_step], _opts, select_index);
+	var _opts = scr_select_options(station_step);
+	scr_draw_menu(_titles[station_step], _opts, station_index);
 	
-	var _db = scr_select_db(select_step);
+	var _db = scr_select_db(station_step);
 	var _cx = display_get_gui_width() / 2;
 	var _y = display_get_gui_height() / 2 + array_length(_opts) * 28 + 24;
 	draw_set_halign(fa_center);
 	draw_set_color(c_ltgray);
-	draw_text(_cx, _y, _db[select_index].desc);
+	draw_text(_cx, _y, _db[station_index].desc);
 	draw_set_color(c_dkgray);
 	draw_text(_cx, _y + 28, "Esc / Right Click to go Back");
 	draw_set_color(c_white);

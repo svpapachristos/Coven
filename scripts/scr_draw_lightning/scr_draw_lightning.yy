@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_draw_lightning",
   "parent":{
-    "name":"Lightning Scripts",
-    "path":"folders/Scripts/Player Scripts/Spell Scripts/Lightning Scripts.yy",
+    "name":"Lightning Wand",
+    "path":"folders/Scripts/Witch Scripts/Wand Scripts/Lightning Wand.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

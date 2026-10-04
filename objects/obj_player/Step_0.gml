@@ -3,7 +3,7 @@ max_mana = scr_stat("max_mana", base_max_mana); //so that items can raise it
 
 if (!is_undefined(witch)) {
 	if (ability_cd > 0) ability_cd--;
-	if (keyboard_check_pressed(ord("E")) && ability_cd = 0) {
+	if (keyboard_check_pressed(ord("E")) && ability_cd <= 0) {
 		witch.ability.fn(id);
 		ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
 	}

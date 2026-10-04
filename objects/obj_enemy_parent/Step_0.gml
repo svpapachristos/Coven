@@ -17,3 +17,32 @@ for (var i = 0; i < _lim; i++) {
 	y += lengthdir_y(_amt, _push);
 }
 ds_list_destroy(_list);
+
+// statuses
+if (burn_timer > 0) {
+	burn_timer--;
+	burn_tick--;
+	if (burn_tick <= 0) {
+		burn_tick = game_get_speed(gamespeed_fps) / 2; // twice a second
+		scr_damage_enemy(id, burn_dps / 2, make_color_rgb(255, 140, 40), irandom(2) == 0);
+		if (hp <= 0) exit; //if the enemy gets a bit crispy (the burn killing the enemy)
+	}
+} else {
+	burn_dps = 0;
+}
+
+if (chill_timer > 0) {
+	chill_timer--;
+	speed_mult = 1 - chill_slow;
+} else {
+	speed_mult = 1;
+}
+
+if (stun_timer > 0) { stun_timer--; speed_mult = 0; }
+
+// knockback slides the enemy and fades out
+x += knock_x; y += knock_y;
+knock_x *= 0.8; knock_y *= 0.8;
+
+//tints the enemy ember orange or icy blue if burned or chilled
+image_blend = (burn_timer > 0) ? make_color_rgb(255, 170, 110) : ((chill_timer > 0) ? make_colour_rgb(150, 220, 255) : c_white);

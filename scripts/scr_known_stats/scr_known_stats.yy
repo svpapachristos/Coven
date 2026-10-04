@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_known_stats",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_known_stats",
+  "parent":{
+    "name":"Constants",
+    "path":"folders/Scripts/Constants.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

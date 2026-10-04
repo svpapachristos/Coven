@@ -5,10 +5,10 @@ var _distance = point_distance(x, y, obj_player.x, obj_player.y);
 //move closer if far, move away iff too close, stay still when in firing distance
 if (_distance > preferred_distance + distance_margin) {
 	direction = point_direction(x, y, obj_player.x, obj_player.y);
-	speed = move_speed;
+	speed = move_speed * speed_mult;
 } else if (_distance < preferred_distance - distance_margin) {
 	direction = point_direction(x, y, obj_player.x, obj_player.y) + 180;
-	speed = move_speed;
+	speed = move_speed * speed_mult;
 } else {
 	speed = 0;
 }

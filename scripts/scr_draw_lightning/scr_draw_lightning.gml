@@ -1,5 +1,5 @@
 //Makes the lightning lightning-ier
-function scr_draw_lightning(_x1, _y1, _x2, _y2, _seed){
+function scr_draw_lightning(_x1, _y1, _x2, _y2, _seed, _glow = make_color_rgb(60, 220, 255)){
 	var _dist = point_distance(_x1, _y1, _x2, _y2);
 	var _dir = point_direction(_x1, _y1, _x2, _y2);
 	var _segs = max(2, floor(_dist / 10));
@@ -23,7 +23,7 @@ function scr_draw_lightning(_x1, _y1, _x2, _y2, _seed){
 	// pass 1: thick cyan glow, pass 2: thin white core
 	for (var p = 0; p < 2; p++) {
 		var _w   = (p == 0) ? 3 : 1;
-		var _col = (p == 0) ? make_colour_rgb(60, 220, 255) : c_white;
+		var _col = (p == 0) ? _glow : c_white;
 		for (var i = 0; i < _segs; i++) {
 			draw_line_width_color(_px[i], _py[i], _px[i+1], _py[i+1], _w, _col, _col);
 		}

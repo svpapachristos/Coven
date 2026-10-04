@@ -51,6 +51,7 @@ function scr_alt_chain_lightning(_caster) {
 	//Records the Bolts path BEFORE damage, since killing an enemy destroys it as an instance
 	var _fx = instance_create_layer(_caster.x, _caster.y, "Instances", obj_lightning_bolt);
 	_fx.points = _points;
+	_fx.element_color = scr_element_color(_caster.wand.element);
 
 	//Sparks
 	for (var p = 0; p < array_length(_points); p++) {
@@ -70,6 +71,7 @@ function scr_alt_chain_lightning(_caster) {
 	var _show = (_caster.alt_pulse_count mod 3 == 0);
 	for (var k = 0; k < array_length(_targets); k++) {
 		scr_damage_enemy(_targets[k], _dmg, c_aqua, _show);
+		scr_apply_element(_targets[k], _caster.wand.element);
 	}
 	return true;
 }

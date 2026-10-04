@@ -6,7 +6,7 @@
   "name":"scr_witch_spells",
   "parent":{
     "name":"Spell Scripts",
-    "path":"folders/Scripts/Player Scripts/Spell Scripts.yy",
+    "path":"folders/Scripts/Witch Scripts/Spell Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

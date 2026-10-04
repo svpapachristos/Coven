@@ -1,3 +1,5 @@
+//Placeholder Witch with Placeholder Spells
+
 //Placeholder ability: do a burst of damage around the witch
 function scr_flame_nova(_caster) {
 	var _cx = _caster.x, _cy = _caster.y;

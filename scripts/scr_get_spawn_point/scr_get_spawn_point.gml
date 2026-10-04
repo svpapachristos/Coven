@@ -1,6 +1,7 @@
 //Returns a random [X, Y] that is just outside of the cameras view, or und if it cant find a spot
-if (instance_number(obj_enemy_parent) >= MAX_ENEMIES) return undefined;
+
 function scr_get_spawn_point(_extra_min = 32, _extra_max = 200){
+	if (instance_number(obj_enemy_parent) >= MAX_ENEMIES) return undefined;
 	if (!instance_exists(obj_player)) return undefined;
 	var _cam = view_camera[0];
 	var _vw = camera_get_view_width(_cam);

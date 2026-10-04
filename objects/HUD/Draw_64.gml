@@ -1,5 +1,14 @@
-//hide the hude while game is paused (can remove if thats how we feel)
-if (global.game_state == "MENU") exit;
+//hide the hude while game is paused (can remove if thats how we feel
+var _controller = instance_find(obj_game_controller, 0);
+
+if (global.game_state == "MENU" 
+	|| global.game_state == "HUB" 
+	|| global.game_state == "STATION"
+	|| (global.game_state == "PAUSED"
+		&& _controller != noone
+		&& _controller.pause_return == "HUB")) {
+	exit;
+}
 
 var _gw = display_get_gui_width();
 var _gh = display_get_gui_height();
@@ -39,7 +48,7 @@ draw_text(_gw - 16, 34, "Kills: " + string(global.kill_count));
 draw_set_halign(fa_left);
 
 //ITEMMSS, Bottom left for now
-var _counts = scr_item_counts();
+var _counts = global.item_counts;
 var _ids = variable_struct_get_names(_counts);
 for (var i = 0; i < array_length(_ids); i++) {
 	var _it = global.item_db[$ _ids[i]];

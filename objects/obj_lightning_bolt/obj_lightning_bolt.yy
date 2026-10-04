@@ -11,7 +11,7 @@
   "overriddenProperties":[],
   "parent":{
     "name":"Lightning Wand",
-    "path":"folders/Objects/Players/Lightning Wand.yy",
+    "path":"folders/Objects/Wands/Lightning Wand.yy",
   },
   "parentObjectId":null,
   "persistent":false,

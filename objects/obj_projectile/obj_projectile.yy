@@ -10,8 +10,8 @@
   "name":"obj_projectile",
   "overriddenProperties":[],
   "parent":{
-    "name":"Lightning Wand",
-    "path":"folders/Objects/Players/Lightning Wand.yy",
+    "name":"Wands",
+    "path":"folders/Objects/Wands.yy",
   },
   "parentObjectId":null,
   "persistent":false,

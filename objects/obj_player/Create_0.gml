@@ -111,13 +111,17 @@ function player_attack() {
 		_proj.direction = _dir;
 		_proj.speed = proj_speed;
 		_proj.image_angle = _dir;
+		if (!is_undefined(wand)) {
+			_proj.element = wand.element;
+			_proj.image_blend = scr_element_color(wand.element);
+		}	
 	}
 	if (shoot_timer > 0) {
 		shoot_timer -= 1;
 	} else {
 		can_shoot = true;
-		if (!mouse_check_button(mb_left)) {
-		state = "IDLE";
-		}
+			if (!mouse_check_button(mb_left)) {
+			state = "IDLE";
+			}
 	}
 }

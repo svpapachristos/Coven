@@ -10,8 +10,8 @@
   "name":"obj_game_controller",
   "overriddenProperties":[],
   "parent":{
-    "name":"Game Controllers",
-    "path":"folders/Objects/Controllers/Game Controllers.yy",
+    "name":"Controllers",
+    "path":"folders/Objects/Controllers.yy",
   },
   "parentObjectId":null,
   "persistent":false,

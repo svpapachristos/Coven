@@ -10,8 +10,8 @@
   "name":"obj_enemy_spawner",
   "overriddenProperties":[],
   "parent":{
-    "name":"_Enemy Controllers",
-    "path":"folders/Objects/Controllers/_Enemy Controllers.yy",
+    "name":"Controllers",
+    "path":"folders/Objects/Controllers.yy",
   },
   "parentObjectId":null,
   "persistent":false,

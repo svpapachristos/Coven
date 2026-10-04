@@ -10,8 +10,8 @@
   "name":"obj_damage_number",
   "overriddenProperties":[],
   "parent":{
-    "name":"Game Controllers",
-    "path":"folders/Objects/Controllers/Game Controllers.yy",
+    "name":"Controllers",
+    "path":"folders/Objects/Controllers.yy",
   },
   "parentObjectId":null,
   "persistent":false,

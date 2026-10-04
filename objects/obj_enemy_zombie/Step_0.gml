@@ -4,4 +4,4 @@ event_inherited();
 
 //Shamble at the player continously at a shmedium speed
 direction = point_direction(x, y, obj_player.x, obj_player.y);
-speed = zombie_move_speed;
+speed = zombie_move_speed * speed_mult;
