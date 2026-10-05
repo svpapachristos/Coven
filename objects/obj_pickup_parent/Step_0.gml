@@ -1,7 +1,14 @@
 if (global.game_state != "PLAYING") exit;
 
-life--;
-if (life<= 0) { instance_destroy(); exit; }
+age++;
+if (expires) {
+	life--;
+	if (life <= 0) { instance_destroy(); exit; }
+} else if (age > game_get_speed(gamespeed_fps) * 8) {
+	//items that dont expire will magnetize after ~8 seconds)
+	magnet_range = 99999;
+	magnet_speed = (2.5 * WORLD_SCALE) + (age - game_get_speed(gamespeed_fps) * 8) * 0.03;
+}
 bob_t += 4;
 
 if (instance_exists(obj_player)) {

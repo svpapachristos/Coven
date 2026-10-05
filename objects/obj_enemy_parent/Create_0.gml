@@ -22,3 +22,6 @@ stun_timer = 0;
 //air wand stats
 knock_x = 0;
 knock_y = 0;
+
+//essence
+essence_value = 1;

@@ -74,24 +74,34 @@ function scr_give_item(_id) {
 function scr_items_init() {
 	global.item_db = {
 		health_stone: {
-			name: "Philosophers Stone", rarity: "charm", tags: ["health"],
-			desc: "Grants the weilder a fraction of everlasting life",
-			add: { max_hp: 25 }, mult: {}
+			name: "Philosophers Pebble", rarity: "charm", tags: ["max health"],
+			desc: "Grants the wielder a tiny piece of everlasting life",
+			add: { max_health: 25 }, mult: {}
 		},
 		fae_dust: {
 			name: "Faerie Dust", rarity: "charm", tags: ["attack speed"],
-			desc: "Imbues your Wand with a sprinkle of Fae Dust, overcharging its casting rate",
+			desc: "Imbues your Wand with a sprinkle of Fae Dust, overcharging the magic inside (Increases Fire Rate)",
 			add: {}, mult: { attack_speed: 1.10 }
 		},
-		storm_scroll: {
-			name: "Corrupted Stormcaller's Scroll", rarity: "corrupted", tags: ["lightning", "mana"],
-			desc: "Corrupts the reader with eldritch energy, making their magic stronger but more costly",
+		mana_fruit: {
+			name: "Mana Fruit", rarity: "charm", tags: ["max mana"],
+			desc: "A product of alchemical cultivation to create an edible enhancement to one's magicka (Max Mana Up) ",
+			add: { max_mana: 25 }, mult: {}
+		},
+		mana_fruit: {
+			name: "Mana Crystal", rarity: "charm", tags: ["mana regen"],
+			desc: "A sapphire blue crystal with a faint blue light glowing inside this item hums with the arcane (Mana Regen Up)",
+			add: {}, mult: { mana_regen: 1.10 }
+		},
+		storm_crystal: {
+			name: "Corrupted Stormcaller's Crystal", rarity: "corrupted", tags: ["lightning", "mana"],
+			desc: "Corrupts the reader with eldritch energy, making their magic stronger, but more costly",
 			add: {}, mult: { chain_damage: 2, chain_drain: 4.5 } 
 		},
 		tarot_magician: {
 			name: "The Magician", rarity: "tarot", tags: ["tarot", "mana"],
-			desc: "Manifestation. Resourcefulness. The Power to Turn Your Ideas to Reality.",
-			add: { infinite_mana: 1 }, mult: {}
+			desc: "Manifestation. Resourcefulness. The Power to turn your Ideas to Reality.",
+			add: { infinite_mana: 1 }, mult: {}, weight: 3, min_time: 600, max_stacks: 1
 		}
 	};
 	global.item_ids = variable_struct_get_names(global.item_db);
@@ -122,4 +132,34 @@ function scr_rarity_color(_rarity) {
 		case "tarot": return c_red;
 	}
 	return c_white;
+}
+
+function scr_roll_item(_type = undefined, _exclude = [], _allowed = undefined) {
+	static _type_weight = { charm: 100, scroll: 40, corrupted: 15, tarot: 5 };
+	var _pool = [], _total = 0;
+	
+	for (var i = 0; i < array_length(global.item_ids); i++) {
+		var _id = global.item_ids[i];
+		var _it = global.item_db[$ _id];
+		if (!is_undefined(_type) && _it.rarity != _type) continue;
+		if (!is_undefined(_allowed) && !scr_array_has(_allowed, _it.rarity)) continue;
+		if (scr_array_has(_exclude, _id)) continue;
+		if (struct_exists(_it, "min_time") && global.run_time < _it.min_time ) continue;
+		
+		var _owned = struct_exists(global.item_counts, _id) ? global.item_counts[$ _id] : 0;
+		if (struct_exists(_it, "max_stacks") && _owned >= _it.max_stacks) continue;
+		
+		var _w = struct_exists(_it, "weight") ? _it._type_weight
+			: (struct_exists(_type_weight, _it.rarity) ? _type_weight[$ _it.rarity] : 50);
+		array_push(_pool, { id: _id, w: _w });
+		_total += _w;
+	}
+	if (array_length(_pool) == 0) return undefined;
+	
+	var _r = random(_total);
+	for (var i = 0; i < array_length(_pool); i++) {
+		_r -= _pool[i].w;
+		if (_r <= 0) return _pool[i].id;
+	}
+	return _pool[array_length(_pool) - 1].id;
 }

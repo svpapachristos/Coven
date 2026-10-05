@@ -99,8 +99,54 @@ switch (global.game_state) {
 			pause_index = 0;
 			io_clear();
 		}
+		if (!is_undefined(global.toast)) {
+			global.toast.timer--;
+			if (global.toast.timer <= 0) global.toast = undefined;
+		}
+		if (keyboard_check_pressed(vk_f6)) {
+			scr_item_reward(obj_player.x + 120, obj_player.y)
+			var _id = scr_roll_item();
+			if (!is_undefined(_id)) {
+				var _p = instance_create_layer(obj_player.x + 120, obj_player.y, "Instances", obj_pickup_item);
+			_p.item_id = _id;
+			_p.pickup_color = scr_rarity_color(global.item_db[$ _id].rarity);
+			}
+		}
+		if (global.levelups_pending > 0) scr_open_levelup();
+		if (keyboard_check_pressed(vk_f7)) scr_gain_essence(100); //test key
 		break;
-        
+	case "LEVELUP":
+		var _lvn = array_length(levelup_choices);
+		var _lvd = (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D")))
+				 - (keyboard_check_pressed(vk_left) || keyboard_check_pressed(ord("A")));
+		levelup_index = (levelup_index + _lvd + _lvn) mod _lvn;
+		
+		var _lmx = device_mouse_x_to_gui(0), _lmy = device_mouse_y_to_gui(0);
+		var _lvh = -1;
+		for (var i = 0; i < _lvn; i++) {
+			var _lr = scr_card_rect(i, _lvn);
+			if (point_in_rectangle(_lmx, _lmy, _lr.x1, _lr.y1, _lr.x2, _lr.y2)) _lvh = i;
+		}
+		if ((_lmx != levelup_mx || _lmy != levelup_my) && _lvh != -1) levelup_index = _lvh;
+		levelup_mx = _lmx;
+		levelup_my = _lmy;
+		
+		var _lvc = -1;
+		if (keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space)) _lvc = levelup_index;
+		for (var i = 0; i < _lvn; i++) if (keyboard_check_pressed(ord("1") + i)) _lvc = i;
+		if (mouse_check_button_pressed(mb_left) && _lvh != -1) _lvc = _lvh;
+		
+		if (_lvc != -1) {
+			var _lvid = levelup_choices[_lvc];
+			scr_give_item(_lvid);
+			var _lvit = global.item_db[$ _lvid];
+			global.toast = { text: _lvit.name, sub: _lvit.desc, color: scr_rarity_color(_lvit.rarity), timer: game_get_speed(gamespeed_fps) * 4 };
+			global.levelups_pending--;
+			global.game_state = "PLAYING";
+			io_clear();
+		}
+		break;
+		
     case "PAUSED":
 		if (keyboard_check_pressed(vk_escape)) { global.game_state = pause_return; io_clear(); break; }
 		pause_index = scr_menu_nav(pause_index, array_length(pause_options));

@@ -8,8 +8,9 @@ ultimate_charge_max = 100;
 state = "IDLE";
 
 //HP and Mana
-max_hp = 100;
-hp = max_hp;
+hp = 100;
+base_max_hp = 100;
+max_hp = base_max_hp;
 
 base_max_mana = 100
 max_mana = base_max_mana;
@@ -105,7 +106,7 @@ function player_attack() {
 	if (can_shoot) {
 		//spawn our projectile
 		can_shoot = false;
-		shoot_timer = game_get_speed(gamespeed_fps) * attack_speed; //fire delay
+		shoot_timer = game_get_speed(gamespeed_fps) * attack_speed / scr_stat("attack_speed", 1); //fire delay
 		var _dir = point_direction(x, y, mouse_x, mouse_y);
 		var _proj = instance_create_layer(x + 3, y + 2, "Instances", obj_projectile);
 		_proj.direction = _dir;

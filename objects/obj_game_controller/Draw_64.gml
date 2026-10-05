@@ -27,6 +27,44 @@ if (global.game_state == "PAUSED") {
 	scr_draw_menu("PAUSED", pause_options, pause_index);
 }
 
+if (global.game_state == "LEVELUP") {
+	var _gw = display_get_gui_width(), _gh = display_get_gui_height();
+	draw_set_alpha(0.65);
+	draw_set_color(c_black);
+	draw_rectangle(0, 0, _gw, _gh, false);
+	draw_set_alpha(1);
+	draw_set_halign(fa_center);
+	draw_set_color(c_white);
+	draw_text_transformed(_gw / 2, _gh * 0.12, "LEVEL " + string(global.level), 3, 2, 0);
+	
+	var _n = array_length(levelup_choices);
+	for (var i = 0; i < _n; i++) {
+		var _r = scr_card_rect(i, _n);
+		var _it = global.item_db[$ levelup_choices[i]];
+		var _col = scr_rarity_color(_it.rarity);
+		var _sel = (i == levelup_index);
+		var _cx = (_r.x1 + _r.x2) / 2;
+		
+		draw_set_color(c_black);
+		draw_set_alpha(0.85);
+		draw_rectangle(_r.x1, _r.y1, _r.x2, _r.y2, false);
+		draw_set_alpha(1);
+		draw_set_color(_sel ? c_white : _col);
+		draw_rectangle(_r.x1, _r.y1, _r.x2, _r.y2, true);
+		if (_sel) draw_rectangle(_r.x1 + 2, _r.y1 + 2, _r.x2 - 2, _r.y2 - 2, true);
+		
+		draw_set_color(_col);
+		draw_text_transformed(_cx, _r.y1 + 30, _it.name, 2, 2, 0);
+		draw_set_color(c_gray);
+		draw_text(_cx, _r.y1 + 70, string_upper(_it.rarity));
+		draw_set_color(c_white);
+		draw_text_ext(_cx, _r.y1 + 120, _it.desc, 22, _r.x2 - _r.x1 - 40);
+		draw_set_color(c_dkgray);
+		draw_text(_cx, _r.y2 - 30, "[" + string(i + 1) + "]");
+	}
+	draw_set_color(c_white);
+	draw_set_halign(fa_left);
+}
 if (global.game_state == "DEAD") {
 	var _gui_w = display_get_gui_width();
 	var _gui_h = display_get_gui_height();
@@ -95,4 +133,3 @@ if (quit_confirm) {
 		_cy + 5
 	);
 }
-

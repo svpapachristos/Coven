@@ -5,3 +5,6 @@ event_inherited();
 //Chase the player continously at a quick speed
 direction = point_direction(x, y, obj_player.x, obj_player.y);
 speed = bat_move_speed * speed_mult;
+
+//Bat Essence Value
+essence_value = 2;

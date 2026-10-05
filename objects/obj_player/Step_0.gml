@@ -1,5 +1,11 @@
 if (scr_freeze_if_paused()) exit; // freeze on game pause
-max_mana = scr_stat("max_mana", base_max_mana); //so that items can raise it
+
+//determine the live value of max mana and health so that items can affect them
+max_mana = scr_stat("max_mana", base_max_mana);
+
+var _old_max = max_hp;
+max_hp = scr_stat("max_health", base_max_hp);
+if (max_hp > _old_max) hp += max_hp - _old_max;
 
 if (!is_undefined(witch)) {
 	if (ability_cd > 0) ability_cd--;
@@ -32,7 +38,7 @@ if (alt_regen_delay > 0 ) {
 }
 
 //Channel alt fire while holding m2
-var _cost = scr_stat("chain_drain", alt_drain) * alt_pulse_max / game_get_speed(gamespeed_fps); 
+var _cost = scr_stat("alt_drain", alt_drain) * alt_pulse_max / game_get_speed(gamespeed_fps); 
 if (mouse_check_button(mb_right) && mana >= _cost) {
 	if (alt_pulse > 0) {
 		alt_pulse--;
@@ -45,7 +51,7 @@ if (mouse_check_button(mb_right) && mana >= _cost) {
 		}
 	}
 } else {
-	alt_pulse = 0; //so the pulse is instant when you press
+	alt_pulse = max(alt_pulse - 1, 0);	//cooldown runs regardless of keyhold to prevent tap firing to bypass the CD
 }
 if (scr_stat("infinite_mana", 0) > 0) mana = max_mana;
 

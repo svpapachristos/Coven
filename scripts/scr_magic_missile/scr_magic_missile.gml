@@ -1,7 +1,7 @@
 function scr_magic_missile(_caster) {
 	var _count = floor(scr_stat("missile_count", 3));
 	var _range = 500 * WORLD_SCALE;
-	var _dmg = scr_stat("missile_damage", 30);
+	var _dmg = scr_stat("missile_damage", 35);
 	var _n = instance_number(obj_enemy_parent);
 
 	// enemies in reach, closest to the cursor first

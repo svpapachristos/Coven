@@ -11,6 +11,10 @@ pending_hub_setup = _in_hub; //hideout: same, so your witch wand and familiar ar
 scr_loadout_init();
 scr_elements_init();
 
+//Item Banner for pickups
+global.toast = undefined;
+global.next_item_at = 25;
+
 //debug
 global.debug_hud = false;
 
@@ -29,6 +33,16 @@ pause_index = 0;
 //End of Run Screen Options
 end_options = ["New Run", "Return to Hideout", "Quit to Desktop"];
 end_index = 0;
+
+//Essence
+global.essence = 0;
+global.level = 1;
+global.essence_to_next = scr_essence_needed(1);
+global.levelups_pending = 0;
+levelup_choice = [];
+levelup_index = 0;
+levelup_mx = -1;
+levelup_my = -1;
 
 
 //global stats

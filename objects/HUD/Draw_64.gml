@@ -14,6 +14,14 @@ var _gw = display_get_gui_width();
 var _gh = display_get_gui_height();
 draw_set_font(-1);
 
+
+
+var _bw = _gw * 0.4;
+scr_draw_bar((_gw - _bw) / 2, 12, _bw, 10, global.essence / global.essence_to_next, make_color_rgb(150, 230, 255));
+draw_set_halign(fa_center);
+draw_text(_gw / 2, 26, "Lvl " + string(global.level));
+draw_set_halign(fa_left);
+
 //HP/Mana Bars, Top left for now
 
 if (instance_exists(obj_player)) {
@@ -47,7 +55,23 @@ draw_text(_gw - 16, 16, _time);
 draw_text(_gw - 16, 34, "Kills: " + string(global.kill_count));
 draw_set_halign(fa_left);
 
-//ITEMMSS, Bottom left for now
+// Item Pickup
+if (!is_undefined(global.toast)) {
+	var _i = global.toast;
+	draw_set_alpha(clamp(_i.timer / 30, 0, 1)); //fades in its last half second
+	draw_set_halign(fa_center);
+	draw_set_color(_i.color);
+	draw_text_transformed(_gw / 2, 60, _i.text, 2, 2, 0);
+	draw_set_color(c_ltgray);
+	draw_text(_gw / 2, 92, _i.sub);
+	draw_set_halign(fa_left);
+	draw_set_color(c_white);
+	draw_set_alpha(1);
+}
+
+
+
+//ITEMMSS, Bottom left for now, will eventually display as sprites instead of text
 var _counts = global.item_counts;
 var _ids = variable_struct_get_names(_counts);
 for (var i = 0; i < array_length(_ids); i++) {
@@ -57,6 +81,11 @@ for (var i = 0; i < array_length(_ids); i++) {
 		_it.name + ((_counts[$ _ids[i]] > 1) ? " x" + string(_counts[$ _ids[i]]) : ""));
 }
 draw_set_color(c_white);
+
+
+
+
+
 
 //debug (f1)
 if (global.debug_hud) {

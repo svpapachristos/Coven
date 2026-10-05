@@ -14,8 +14,8 @@ function scr_loadout_init() {
 		{ name: "Diviner", desc: "A Witch who sees the strands of time itself. Their knowledge of the arcane unbound.", ability: { name: "Placeholder Spell Oracle", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Diviner", charge_needed: 25, fn: scr_ultimate_place_holder } }
 	];
 	global.wand_db = [
-	{ name: "Witches Wand", element: "arcane", desc: "A witchwood wand of unaspected magicks. ", alt_fire: scr_magic_missile, alt_interval: 18 },
-	{ name: "Strun", lement: "storm", desc: "An elderwood wand containing a Storm crystal. High Voltage!", alt_fire: scr_alt_chain_lightning },
+	{ name: "Witches Wand", element: "arcane", desc: "A witchwood wand of unaspected magicks. ", alt_fire: scr_magic_missile, alt_interval: 24, alt_drain: 30 },
+	{ name: "Strun", element: "storm", desc: "An elderwood wand containing a Storm crystal. High Voltage!", alt_fire: scr_alt_chain_lightning },
 	{ name: "Kenaz", element: "fire",  desc: "A silverwood wand containing a Cinder crystal. Feel the Burn.", alt_fire: scr_alt_chain_lightning },
 	{ name: "Suvon", element: "ice",   desc: "An weirwood wand containing a Frost crystal. The blizzard is coming.", alt_fire: scr_alt_chain_lightning },
 	{ name: "Vern", element: "earth", desc: "A maplewood wand containing a Terra crystal. Shatter them all.", alt_fire: scr_alt_chain_lightning },
@@ -41,6 +41,9 @@ function scr_apply_loadout() {
 	var _wand = global.wand_db[global.loadout.wand];
 	with (obj_player) {
 		alt_fire = _wand.alt_fire;
+		alt_pulse_max = struct_exists(_wand, "alt_interval") ? _wand.alt_interval : 6;
+		alt_drain = struct_exists(_wand, "alt_drain") ? _wand.alt_drain : 25;
+		alt_pulse = 0;
 		wand = _wand;
 		witch = global.witch_db[global.loadout.witch];
 		ability_cd = 0;
