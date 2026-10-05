@@ -88,24 +88,50 @@ function scr_give_item(_id) {
 
 function scr_items_init() {
 	global.item_db = {
+		
+		// Basic Charms
 		health_stone: {
-			name: "Philosophers Pebble", rarity: "charm", tags: ["max health"],
-			desc: "Grants the wielder a tiny piece of everlasting life",
+			name: "Shattered Philosophers Stone", rarity: "charm", tags: ["max health"],
+			desc: "+25 max health",
 			add: { max_health: 25 }, mult: {}
 		},
-		fae_dust: {
-			name: "Faerie Dust", rarity: "charm", tags: ["attack speed"],
-			desc: "Imbues your Wand with a sprinkle of Fae Dust, overcharging the magic inside (Increases Fire Rate)",
-			add: {}, mult: { attack_speed: 1.10 }
+		black_candle:   { name: "Black Candle",   rarity: "charm",  tags: ["arcane"],
+			desc: "Your witch ability recharges 15% faster.", 
+			add: {}, mult: { ability_cooldown: 0.85 } 
+		},
+		soul_coin:  { name: "Soul Coin",  rarity: "charm",  tags: ["essence"],
+			desc: "Gain 15% more essence.", 
+			add: {}, mult: { essence_gain: 1.15 } 
+		},
+		ember_crystal:    { name: "Ember Crystal",    rarity: "charm",  tags: ["fire"],
+			desc: "Burning deals 30% more damage and lasts 1 second longer.", 
+			add: { burn_duration: 1 }, mult: { burn_damage: 1.3 } 
+		},
+		frost_charm:    { name: "Frostbitten Charm", rarity: "charm", tags: ["ice"],
+			desc: "Chill slows enemies more and lasts longer.", 
+			add: { chill_slow: 0.15, chill_duration: 1 }, mult: {} 
+		},
+		star_chart:     { name: "Star Chart",     rarity: "charm",  tags: ["arcane"],
+			desc: "Magic missile fires 1 extra dart.", 
+			add: { missile_count: 1 }, mult: {} 
+		},
+		raven_feather:  { name: "Raven Feather",  rarity: "charm",  tags: ["ultimate"],
+			desc: "Your ultimate charges 20% faster.", 
+			add: {}, mult: { ultimate_charge_rate: 1.2 } 
+		},
+		soul_lantern:   { name: "Soul Lantern",   rarity: "charm",  tags: ["mana"],
+			desc: "Level ups restore 25% of your mana.", 
+			add: {}, mult: {},
+			triggers: { levelup: scr_trig_soul_lantern } 
 		},
 		mana_fruit: {
 			name: "Mana Fruit", rarity: "charm", tags: ["max mana"],
-			desc: "A product of alchemical cultivation to create an edible enhancement to one's magicka (Max Mana Up) ",
+			desc: "+25 maximum mana. ",
 			add: { max_mana: 25 }, mult: {},
 		},
 		mana_fruit: {
 			name: "Mana Crystal", rarity: "charm", tags: ["mana regen"],
-			desc: "A sapphire blue crystal with a faint blue light glowing inside this item hums with the arcane (Mana Regen Up)",
+			desc: "Increases mana regen rate by 10%",
 			add: {}, mult: { mana_regen: 1.10 }
 		},
 		hags_tooth: {
@@ -114,26 +140,49 @@ function scr_items_init() {
 			add: {}, mult: {},
 			triggers: { kill: scr_trig_hags_tooth }
 		},
+		
+		//Scroll Tier
+		scroll_tempest:  { name: "Tempest Scroll", rarity: "scroll", tags: ["lightning"],
+			desc: "Chain lightning jumps to 2 more enemies.", 
+			add: { chain_targets: 2 }, mult: {} 
+		},
+		scroll_artificer:    { name: "Artificer Scroll", rarity: "scroll", tags: ["arcane"],
+			desc: "Magic missiles deal 40% more damage.", 
+			add: {}, mult: { missile_damage: 1.4 } 
+		},
+		scroll_haste:   { name: "Haste Scroll", rarity: "scroll", tags: ["wand"],
+			desc: "Your wand fires 15% faster.", 
+			add: {}, mult: { attack_speed: 1.15 } 
+		},
+		
+		//Corrupted Tier
 		storm_crystal: {
 			name: "Corrupted Stormcaller's Crystal", rarity: "corrupted", tags: ["lightning", "mana"],
 			desc: "Corrupts the reader with eldritch energy, making their magic stronger, but more costly",
 			add: {}, mult: { chain_damage: 2, chain_drain: 4.5 } 
 		},
+		
+		//Tarot Tier
 		tarot_magician: {
 			name: "The Magician", rarity: "tarot", tags: ["tarot", "mana"],
 			desc: "Manifestation. Resourcefulness. The Power to turn your Ideas to Reality.",
 			add: { infinite_mana: 1 }, mult: {}, weight: 3, min_time: 600, max_stacks: 1
-			
-			
-		}
-	};
+		},
+		tarot_tower: { name: "The Tower", rarity: "tarot", tags: ["tarot", "explosive"], 
+			desc: "Upheaval. Every enemy that dies detonates, and the blast can set off the next.", 
+			add: {}, mult: {}, weight: 3, max_stacks: 1,
+			triggers: { kill: scr_trig_tower } 
+			},
+		tarot_sun:   { name: "The Sun", rarity: "tarot", tags: ["tarot", "ability"], 
+			desc: "Radiance. Your witch ability barely has a cooldown.", weight: 3, max_stacks: 1,
+			add: {}, mult: { ability_cooldown: 0.05, ability_damage: 1.5 } 
+			},
+	};  //close the item db
 	global.item_ids = variable_struct_get_names(global.item_db);
 	global.run_items = [];
 	scr_rebuild_items();
 	scr_validate_items();
-}
-
-
+}// close the function
 function scr_give_random_item() {
 	scr_give_item(global.item_ids[irandom(array_length(global.item_ids) - 1)]);
 }

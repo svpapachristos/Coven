@@ -1,7 +1,7 @@
 // How many enemies the director wants alive at a given run time (seconds)
 // Keyframes: [time, target]. Early is tense, mid ramps, last stretch is the peak
 function scr_director_target(_t){
-	static _keys = [[0, 12], [180, 30], [600, 80], [1500, 350], [2100, 700], [2700, 1000]];
+	static _keys = [[0, 12], [120, 30], [360, 90], [600, 260], [780, 500], [900, 650]];
 	for (var i = 1; i < array_length(_keys); i++) {
 		if (_t <= _keys[i][0]) {
 			var _a = _keys[i - 1], _b = _keys[i];

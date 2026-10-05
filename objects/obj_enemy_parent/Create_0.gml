@@ -25,3 +25,8 @@ knock_y = 0;
 
 //essence
 essence_value = 1;
+
+//elites and bosses
+is_elite = false;
+is_boss = false;
+elite_drop = undefined;

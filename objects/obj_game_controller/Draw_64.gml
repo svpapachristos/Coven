@@ -107,6 +107,18 @@ if (global.game_state == "DEAD") {
 	scr_draw_menu("", end_options, end_index);
 }
 
+if (global.game_state == "VICTORY") {
+	scr_draw_menu("ACT COMPLETE", victory_options, victory_index);
+	var _cx = display_get_gui_width() / 2;
+	var _y = display_get_gui_height() / 2 + array_length(victory_options) * 28 + 30;
+	var _t = floor(global.run_time);
+	draw_set_halign(fa_center);
+	draw_text(_cx, _y, "Time  " + string(_t div 60) + ":" + ((_t mod 60 < 10) ? "0" : "") + string(_t mod 60));
+	draw_text(_cx, _y + 22, "Enemies felled  " + string(global.kill_count));
+	draw_text(_cx, _y + 44, "Level  " + string(global.level));
+	draw_set_halign(fa_left);
+}
+
 if (quit_confirm) {
 	var _gui_w = display_get_gui_width();
 	var _gui_h = display_get_gui_height();

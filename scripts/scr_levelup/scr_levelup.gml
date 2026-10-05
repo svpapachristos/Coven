@@ -40,3 +40,15 @@ function scr_open_levelup() {
 	global.game_state = "LEVELUP";
 	io_clear();
 }
+
+//Beat the first boss
+
+function scr_act_complete() {
+	global.game_state = "VICTORY";
+	with (obj_enemy_parent) {                 // everything left dies in one burst
+		part_particles_create(global.ps_sparks, x, y, global.pt_spark, 4);
+		instance_destroy();
+	}
+	obj_game_controller.victory_index = 0;
+	io_clear();
+}

@@ -1,17 +1,17 @@
 {
   "$GMObject":"",
-  "%Name":"obj_enemy_zombie",
+  "%Name":"obj_boss_act1",
   "eventList":[
     {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":0,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
     {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":3,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
-    {"$GMEvent":"v1","%Name":"","collisionObjectId":{"name":"obj_player","path":"objects/obj_player/obj_player.yy",},"eventNum":0,"eventType":4,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
+    {"$GMEvent":"v1","%Name":"","collisionObjectId":null,"eventNum":0,"eventType":8,"isDnD":false,"name":"","resourceType":"GMEvent","resourceVersion":"2.0",},
   ],
   "managed":true,
-  "name":"obj_enemy_zombie",
+  "name":"obj_boss_act1",
   "overriddenProperties":[],
   "parent":{
-    "name":"Zombie",
-    "path":"folders/Objects/Enemies/Normal Enemies/Zombie.yy",
+    "name":"Bosses",
+    "path":"folders/Objects/Enemies/Bosses.yy",
   },
   "parentObjectId":{
     "name":"obj_enemy_parent",
@@ -35,8 +35,8 @@
   "resourceVersion":"2.0",
   "solid":false,
   "spriteId":{
-    "name":"spr_enemy_zombie",
-    "path":"sprites/spr_enemy_zombie/spr_enemy_zombie.yy",
+    "name":"spr_enemy_pumpkin",
+    "path":"sprites/spr_enemy_pumpkin/spr_enemy_pumpkin.yy",
   },
   "spriteMaskId":null,
   "visible":true,

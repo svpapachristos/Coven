@@ -11,7 +11,7 @@
   "overriddenProperties":[],
   "parent":{
     "name":"Pumpkin",
-    "path":"folders/Objects/Enemies/Pumpkin.yy",
+    "path":"folders/Objects/Enemies/Normal Enemies/Pumpkin.yy",
   },
   "parentObjectId":{
     "name":"obj_enemy_parent",

@@ -14,7 +14,15 @@ var _gw = display_get_gui_width();
 var _gh = display_get_gui_height();
 draw_set_font(-1);
 
-
+//Act 1 Boss HP Bar
+if (instance_exists(obj_boss_act1)) {
+	var _b = instance_find(obj_boss_act1, 0);
+	var _bw = _gw * 0.5;
+	scr_draw_bar((_gw - _bw) / 2, _gh - 70, _bw, 16, _b.hp / _b.max_hp, c_red);
+	draw_set_halign(fa_center);
+	draw_text(_gw / 2, _gh - 94, _b.boss_name);
+	draw_set_halign(fa_left);
+}
 
 var _bw = _gw * 0.4;
 scr_draw_bar((_gw - _bw) / 2, 12, _bw, 10, global.essence / global.essence_to_next, make_color_rgb(150, 230, 255));

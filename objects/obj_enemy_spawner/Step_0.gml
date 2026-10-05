@@ -1,4 +1,7 @@
 if (global.game_state != "PLAYING") exit;
+if (event_index < array_length(run_events) && global.run_time >= run_events[event_index].t) {
+	if (scr_run_event(run_events[event_index])) event_index++;
+}
 
 director_timer--;
 if (director_timer > 0) exit;
@@ -7,6 +10,7 @@ director_timer = 15; // about 4 times a second
 var _goal = min(scr_director_target(global.run_time), max_enemy_count);
 var _deficit = _goal - instance_number(obj_enemy_parent);
 if (_deficit < 1) exit
+if (instance_exists(obj_boss_act1)) _goal *= 0.4;
 
 var _entry = scr_pick_enemy(spawn_table, global.run_time);
 if (is_undefined(_entry)) exit;

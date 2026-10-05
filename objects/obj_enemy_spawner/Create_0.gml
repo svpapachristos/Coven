@@ -18,5 +18,13 @@ pack_types = [
 	{ name: "ring", weight: 15, min_time: 90, max_time: 30000, min: 16, max: 60, fn: scr_pack_ring },
 ];
 
+run_events = [
+	{ t: 240, kind: "elite", obj: obj_enemy_zombie, hp_mult: 12, size: 2, drop: "scroll" },
+	{ t: 480, kind: "elite", obj: obj_enemy_zombie, hp_mult: 15, size: 2.2, drop: "scroll" },
+	{ t: 660, kind: "elite", obj: obj_enemy_zombie, hp_mult: 20, size: 2.5, drop: "tarot" },
+	{ t: 780, kind: "boss" }
+];
+event_index = 0;
+
 director_timer = 0;
 // 

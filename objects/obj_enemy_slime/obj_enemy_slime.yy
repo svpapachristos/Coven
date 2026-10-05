@@ -13,7 +13,7 @@
   "overriddenProperties":[],
   "parent":{
     "name":"Slime",
-    "path":"folders/Objects/Enemies/Slime.yy",
+    "path":"folders/Objects/Enemies/Normal Enemies/Slime.yy",
   },
   "parentObjectId":{
     "name":"obj_enemy_parent",

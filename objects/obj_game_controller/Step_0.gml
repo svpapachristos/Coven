@@ -84,6 +84,7 @@ switch (global.game_state) {
 		break;
 		
     case "PLAYING":
+		if (global.boss_down) { global.boss_down = false; scr_act_complete(); }
 		global.run_time += 1 / game_get_speed(gamespeed_fps); // run time in seconds
 		if (keyboard_check_pressed(vk_f3)) scr_give_random_item();
 		if (keyboard_check_pressed(vk_f4)) {
@@ -114,7 +115,19 @@ switch (global.game_state) {
 		}
 		if (global.levelups_pending > 0) scr_open_levelup();
 		if (keyboard_check_pressed(vk_f7)) scr_gain_essence(100); //test key
+		
+		
+		var _bn = min(array_length(global.blast_queue), 20);   // at most 20 blasts a frame
+		for (var i = 0; i < _bn; i++) {
+			var _b = global.blast_queue[i];
+			with (obj_enemy_parent) {
+			if (point_distance(_b.x, _b.y, x, y) < _b.r) scr_damage_enemy(id, _b.dmg, make_color_rgb(255, 170, 60), false);
+			}
+		part_particles_create(global.ps_sparks, _b.x, _b.y, global.pt_spark, 10);
+		}
+		array_delete(global.blast_queue, 0, _bn);
 		break;
+		
 	case "LEVELUP":
 		var _lvn = array_length(levelup_choices);
 		var _lvd = (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D")))
@@ -172,6 +185,15 @@ switch (global.game_state) {
 				case 1: room_goto(rm_hideout); break; // back to menu
 				case 2: quit_confirm = true; quit_confirm_index = 1; break;
 			}
+			io_clear();
+		}
+		break;
+	case "VICTORY":
+		victory_index = scr_menu_nav(victory_index, array_length(victory_options));
+		var _vpick = scr_menu_pick(victory_index, array_length(victory_options));
+		if (_vpick != -1) {
+			if (_vpick == 0) room_goto(rm_hideout);
+			else { quit_confirm = true; quit_confirm_index = 1; }
 			io_clear();
 		}
 		break;

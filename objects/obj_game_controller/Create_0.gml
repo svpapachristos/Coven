@@ -44,6 +44,11 @@ levelup_index = 0;
 levelup_mx = -1;
 levelup_my = -1;
 
+//"Final" Boss
+global.boss_down = false;
+global.blast_queue = [];
+victory_options = ["Return to Hideout", "Quit to Desktop"];
+victory_index = 0;
 
 //global stats
 global.run_time = 0;
