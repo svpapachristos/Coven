@@ -3,6 +3,19 @@ function scr_array_has(_arr, _v) {
 	return false;
 }
 
+
+//fire a game event, items that declare a trigger for it react
+function scr_fire_event(_name, _ctx = {}) {
+	if (!struct_exists(global.event_listeners, _name)) return;
+	var _list = global.event_listeners[$ _name];
+	for (var i = 0; i < array_length(_list); i++) _list[i].fn(_ctx, _list[i].stacks);
+}
+
+// event names the game actually fires. add one here when you add a new fire point.
+function scr_known_events(){
+	return["kill", "cast", "levelup"];
+}
+
 // Warns in the Output window regarding items with empty stats
 
 function scr_validate_items() {
@@ -12,10 +25,12 @@ function scr_validate_items() {
 	for (var i = 0; i < array_length(_ids); i++) {
 		var _it = global.item_db[$ _ids[i]];
 		for (var k = 0; k < 2; k++) {
-			var _names = variable_struct_get_names(_it[$ _kinds[k]]);
-			for (var j = 0; j < array_length(_names); j++) {
-				if (!scr_array_has(_known, _names[j]))
-					show_debug_message("ITEM WARNING: '" + _ids[i] + "' uses stat '" + _names[j] + "' but no code reads it");
+			if (struct_exists(_it, "triggers")) {
+				var _names = variable_struct_get_names(_it[$ _kinds[k]]);
+				for (var j = 0; j < array_length(_names); j++) {
+					if (!scr_array_has(_known, _names[j]))
+						show_debug_message("ITEM WARNING: '" + _ids[i] + "' uses stat '" + _names[j] + "' but no code reads it");
+				}
 			}
 		}
 	}
@@ -86,12 +101,18 @@ function scr_items_init() {
 		mana_fruit: {
 			name: "Mana Fruit", rarity: "charm", tags: ["max mana"],
 			desc: "A product of alchemical cultivation to create an edible enhancement to one's magicka (Max Mana Up) ",
-			add: { max_mana: 25 }, mult: {}
+			add: { max_mana: 25 }, mult: {},
 		},
 		mana_fruit: {
 			name: "Mana Crystal", rarity: "charm", tags: ["mana regen"],
 			desc: "A sapphire blue crystal with a faint blue light glowing inside this item hums with the arcane (Mana Regen Up)",
 			add: {}, mult: { mana_regen: 1.10 }
+		},
+		hags_tooth: {
+			name: "Hag's Tooth", rarity: "charm", tags: ["health"],
+			desc: "Kills havea 5% chance to restore health",
+			add: {}, mult: {},
+			triggers: { kill: scr_trig_hags_tooth }
 		},
 		storm_crystal: {
 			name: "Corrupted Stormcaller's Crystal", rarity: "corrupted", tags: ["lightning", "mana"],
@@ -102,6 +123,8 @@ function scr_items_init() {
 			name: "The Magician", rarity: "tarot", tags: ["tarot", "mana"],
 			desc: "Manifestation. Resourcefulness. The Power to turn your Ideas to Reality.",
 			add: { infinite_mana: 1 }, mult: {}, weight: 3, min_time: 600, max_stacks: 1
+			
+			
 		}
 	};
 	global.item_ids = variable_struct_get_names(global.item_db);

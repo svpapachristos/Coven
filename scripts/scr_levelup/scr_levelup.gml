@@ -8,6 +8,7 @@ function scr_gain_essence(_v) {
 		global.level++;
 		global.essence_to_next = scr_essence_needed(global.level);
 		global.levelups_pending++;
+		scr_fire_event("levelup", { level: global.level });
 	}
 
 }

@@ -12,10 +12,12 @@ if (!is_undefined(witch)) {
 	if (keyboard_check_pressed(ord("E")) && ability_cd <= 0) {
 		witch.ability.fn(id);
 		ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
+		scr_fire_event("cast", { kind: "ability" });
 	}
 	if (keyboard_check_pressed(ord("Q")) && ultimate_charge >= ultimate_charge_max) {
 		witch.ultimate.fn(id);
 		ultimate_charge = 0;
+		scr_fire_event("cast", { kind: "ultimate" });
 	}
 }
 	
@@ -48,6 +50,7 @@ if (mouse_check_button(mb_right) && mana >= _cost) {
 			mana -= _cost;
 			alt_regen_delay = game_get_speed(gamespeed_fps) * 0.75;
 			alt_pulse_count++;
+			scr_fire_event("cast", { kind: "alt" });
 		}
 	}
 } else {
