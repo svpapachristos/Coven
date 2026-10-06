@@ -114,7 +114,8 @@ switch (global.game_state) {
 			}
 		}
 		if (global.levelups_pending > 0) scr_open_levelup();
-		if (keyboard_check_pressed(vk_f7)) scr_gain_essence(100); //test key
+		if (keyboard_check_pressed(vk_f7)) scr_gain_essence(100); //test key to give essence
+		if (keyboard_check_pressed(vk_f8)) scr_add_corruption(15); //test key to corrupt the player
 		
 		
 		var _bn = min(array_length(global.blast_queue), 20);   // at most 20 blasts a frame
@@ -197,4 +198,26 @@ switch (global.game_state) {
 			io_clear();
 		}
 		break;
+		
+	case "SPREAD":
+		var _sn = array_length(global.spread);
+		var _smx = device_mouse_x_to_gui(0), _smy = device_mouse_y_to_gui(0);
+		spread_index = -1;
+		for (var i = 0; i < _sn; i++) {
+			var _sr = scr_card_rect(i, _sn);
+			if (point_in_rectangle(_smx, _smy, _sr.x1, _sr.y1, _sr.x2, _sr.y2)) spread_index = i;
+		}
+
+		if (keyboard_check_pressed(vk_escape) || mouse_check_button_pressed(mb_right)) {
+			global.game_state = "HUB";
+			io_clear();
+		} else if (spread_mode == "reading") {
+			if (keyboard_check_pressed(ord("R"))) scr_draw_spread();   // free redraws while testing
+			if (mouse_check_button_pressed(mb_left) && spread_index != -1) global.spread_rev[spread_index] = !global.spread_rev[spread_index];
+		} else if (mouse_check_button_pressed(mb_left) && spread_index != -1 && global.reagents > 0) {
+			if (scr_reroll_spread_card(spread_index)) global.reagents--;
+		}
+		break;
+		
+		
 }

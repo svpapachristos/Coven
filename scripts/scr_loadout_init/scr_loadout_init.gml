@@ -63,6 +63,10 @@ function scr_spawn_familiar() {
 function scr_start_run() {
 	scr_apply_loadout();
 	scr_spawn_familiar();
+	global.run_spread = [];
+	for (var i = 0; i < array_length(global.spread); i++) array_push(global.run_spread, scr_spread_card_id(i));
+	global.spread = [];       // the hideout draws a new reading next time
+	global.spread_rev = [];
 	global.game_state = "PLAYING";
 	io_clear();
 }

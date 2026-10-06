@@ -1,5 +1,5 @@
 function scr_alt_chain_lightning(_caster) {
-	var _dmg = scr_stat("chain_damage", 8);
+	var _dmg = scr_stat("alt_damage", scr_stat("chain_damage", 8));
 	var _cast_range = 400 * WORLD_SCALE; //How far from the witch the first target can be
 	var _jump_range = 140 * WORLD_SCALE; //Max gap between arcs
 	var _max_targets = floor(scr_stat("chain_targets", 6));

@@ -39,7 +39,7 @@ global.essence = 0;
 global.level = 1;
 global.essence_to_next = scr_essence_needed(1);
 global.levelups_pending = 0;
-levelup_choice = [];
+levelup_choices = [];
 levelup_index = 0;
 levelup_mx = -1;
 levelup_my = -1;
@@ -49,6 +49,9 @@ global.boss_down = false;
 global.blast_queue = [];
 victory_options = ["Return to Hideout", "Quit to Desktop"];
 victory_index = 0;
+
+//Tryin somethin new here..
+global.corruption = 0;
 
 //global stats
 global.run_time = 0;
@@ -61,6 +64,18 @@ global.pumpkin_kill_count = 0;
 quit_confirm_options = ["Yes, Quit", "Cancel"];
 quit_confirm_index = 1; // Default to cancel
 quit_confirm = false;
+
+
+//some TAROT STUFFFFFF
+if (!variable_global_exists("spread")) {
+	global.spread = [];
+	global.spread_rev = [];
+	global.run_spread = [];
+	global.reagents = 0;
+}
+global.spread_next = 0;
+spread_mode = "reading";
+spread_index = -1;
 
 // Sparky sparks
 if (!variable_global_exists("ps_sparks") || !part_system_exists(global.ps_sparks)) {

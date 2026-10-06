@@ -29,7 +29,7 @@
   "origin":4,
   "parent":{
     "name":"Slime",
-    "path":"folders/Sprites/Enemy Sprites/Slime.yy",
+    "path":"folders/Sprites/Enemy Sprites/Basic Enemy Sprites/Slime.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

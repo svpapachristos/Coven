@@ -27,7 +27,7 @@
   "origin":4,
   "parent":{
     "name":"Bat",
-    "path":"folders/Sprites/Enemy Sprites/Bat.yy",
+    "path":"folders/Sprites/Enemy Sprites/Basic Enemy Sprites/Bat.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

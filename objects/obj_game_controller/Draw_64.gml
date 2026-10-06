@@ -145,3 +145,31 @@ if (quit_confirm) {
 		_cy + 5
 	);
 }
+
+
+if (global.game_state == "HUB") {
+	draw_text(16, 16, "Reagents: " + string(global.reagents));
+}
+
+if (global.game_state == "SPREAD") {
+	var _gw = display_get_gui_width(), _gh = display_get_gui_height();
+	draw_set_alpha(0.7);
+	draw_set_color(c_black);
+	draw_rectangle(0, 0, _gw, _gh, false);
+	draw_set_alpha(1);
+	draw_set_halign(fa_center);
+	draw_set_color(c_white);
+	draw_text_transformed(_gw / 2, _gh * 0.1, (spread_mode == "reading") ? "THE READING" : "THE CAULDRON", 3, 3, 0);
+	draw_text(_gw / 2, _gh * 0.1 + 60, (spread_mode == "reading")
+		? "Click a card to turn it. Reversed: stronger, but it costs Corruption.  R to redraw, Esc to close."
+		: "Click a card to reroll it (1 reagent).  Reagents: " + string(global.reagents));
+
+	var _n = array_length(global.spread);
+	var _foot = ["Elite I - 4:00", "Elite II - 8:00", "Elite III - 11:00"];
+	if (_n == 0) draw_text(_gw / 2, _gh / 2, "Draw a reading first.");
+	for (var i = 0; i < _n; i++) {
+		scr_draw_card(scr_card_rect(i, _n), scr_spread_card_id(i), i == spread_index,
+			_foot[i] + (global.spread_rev[i] ? "  [REVERSED]" : ""));
+	}
+	draw_set_halign(fa_left);
+}

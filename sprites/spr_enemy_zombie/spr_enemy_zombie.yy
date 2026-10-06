@@ -36,7 +36,7 @@
   "origin":4,
   "parent":{
     "name":"Zombie",
-    "path":"folders/Sprites/Enemy Sprites/Zombie.yy",
+    "path":"folders/Sprites/Enemy Sprites/Basic Enemy Sprites/Zombie.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

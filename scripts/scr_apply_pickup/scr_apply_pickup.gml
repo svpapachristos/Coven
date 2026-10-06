@@ -6,7 +6,7 @@ function scr_apply_pickup(_pickup, _player){
 		break;
 		
 		case "ITEM":
-		scr_give_item(_pickup.item_db);
+		scr_give_item(_pickup.item_id);
 		var _it = global.item_db[$ _pickup.item_id];
 		global.toast = { text: _it.name, sub: _it.desc, color: scr_rarity_color(_it.rarity), timer: game_get_speed(gamespeed_fps) * 4 };
 		part_particles_create(global.ps_sparks, _player.x, _player.y, global.pt_spark, 30);

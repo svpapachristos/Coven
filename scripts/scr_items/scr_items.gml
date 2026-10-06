@@ -61,7 +61,7 @@ function scr_rebuild_items() {
 			var _evs =variable_struct_get_names(_it.triggers);
 			for (var j = 0; j < array_length(_evs); j++) {
 				if (!struct_exists(global.event_listeners, _evs[j])) global.event_listeners[$ _evs[j]] = [];
-				array_push(global.event_listeners[$ _evs[j]], { fn: _it.triggers[$ _evs[j]], stacks: _n });
+				array_push(global.event_listeners[$ _evs[j]], { fn: _it.triggers[$ _evs[j]], stacks: _n * (struct_exists(_it, "power") ? _it.power : 1) });
 			}
 		}
 	}
@@ -78,6 +78,9 @@ function scr_stat(_name, _base) {
 function scr_give_item(_id) {
 	array_push(global.run_items, _id);
 	scr_rebuild_items();
+	var _it = global.item_db[$ _id];
+	var _c = struct_exists(_it, "corruption") ? _it.corruption : ((_it.rarity == "corrupted") ? 10 : 0);
+	if (_c > 0) scr_add_corruption(_c);
 }
 
 
@@ -111,14 +114,6 @@ function scr_items_init() {
 			desc: "Chill slows enemies more and lasts longer.", 
 			add: { chill_slow: 0.15, chill_duration: 1 }, mult: {} 
 		},
-		star_chart:     { name: "Star Chart",     rarity: "charm",  tags: ["arcane"],
-			desc: "Magic missile fires 1 extra dart.", 
-			add: { missile_count: 1 }, mult: {} 
-		},
-		raven_feather:  { name: "Raven Feather",  rarity: "charm",  tags: ["ultimate"],
-			desc: "Your ultimate charges 20% faster.", 
-			add: {}, mult: { ultimate_charge_rate: 1.2 } 
-		},
 		soul_lantern:   { name: "Soul Lantern",   rarity: "charm",  tags: ["mana"],
 			desc: "Level ups restore 25% of your mana.", 
 			add: {}, mult: {},
@@ -129,7 +124,7 @@ function scr_items_init() {
 			desc: "+25 maximum mana. ",
 			add: { max_mana: 25 }, mult: {},
 		},
-		mana_fruit: {
+		mana_crystal: {
 			name: "Mana Crystal", rarity: "charm", tags: ["mana regen"],
 			desc: "Increases mana regen rate by 10%",
 			add: {}, mult: { mana_regen: 1.10 }
@@ -140,8 +135,17 @@ function scr_items_init() {
 			add: {}, mult: {},
 			triggers: { kill: scr_trig_hags_tooth }
 		},
+		raven_feather:  { name: "Raven Feather",  rarity: "charm",  tags: ["ultimate"],
+			desc: "Your ultimate charges 20% faster.", 
+			add: {}, mult: { ultimate_charge_rate: 1.2 } 
 		
 		//Scroll Tier
+
+		},
+		star_chart:     { name: "Star Chart",     rarity: "scroll",  tags: ["arcane"],
+			desc: "Magic missile fires 1 extra dart.", 
+			add: { missile_count: 1 }, mult: {} 
+		},
 		scroll_tempest:  { name: "Tempest Scroll", rarity: "scroll", tags: ["lightning"],
 			desc: "Chain lightning jumps to 2 more enemies.", 
 			add: { chain_targets: 2 }, mult: {} 
@@ -159,30 +163,183 @@ function scr_items_init() {
 		storm_crystal: {
 			name: "Corrupted Stormcaller's Crystal", rarity: "corrupted", tags: ["lightning", "mana"],
 			desc: "Corrupts the reader with eldritch energy, making their magic stronger, but more costly",
-			add: {}, mult: { chain_damage: 2, chain_drain: 4.5 } 
+			add: {}, mult: { alt_damage: 2, alt_drain: 4.5 } 
 		},
 		
 		//Tarot Tier
-		tarot_magician: {
+		tarot_fool: { // 0
+			name: "The Fool", rarity: "tarot", tags: ["tarot", "fool" ],
+			desc: "Beginnings. Spontaneity. Unlimited and untold potential",
+			add: {}, mult: {}
+		},
+		tarot_magician: { // I
 			name: "The Magician", rarity: "tarot", tags: ["tarot", "mana"],
 			desc: "Manifestation. Resourcefulness. The Power to turn your Ideas to Reality.",
 			add: { infinite_mana: 1 }, mult: {}, weight: 3, min_time: 600, max_stacks: 1
+		}, 
+		tarot_highpriestess: { // II
+			name: "The High Priestess", rarity: "tarot", tags: ["tarot"], 
+			desc: "Intuition. Sacred Knowledge. The ability to choose correctly when the time comes.",
+			add: {}, mult: {}
+			},
+		tarot_empress: { // III
+			name: "The Empress", rarity: "tarot", tags: ["tarot"],
+			desc: "Growth. Abundance. Nurturing energy and a deep connection to the natural world.",
+			add: {}, mult: {}
 		},
-		tarot_tower: { name: "The Tower", rarity: "tarot", tags: ["tarot", "explosive"], 
+		tarot_emperor: { // IV
+			name: "The Emperor", rarity: "tarot", tags: ["tarot"], 
+			desc: "Authority.", 
+			add: {}, mult: {}
+			},
+		tarot_heirophant: { // V
+			name: "The Heirophant", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_lovers: { // VI
+			name: "The Lovers", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_chariot: { // VII
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_strength: { //VIII
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_hermit: { //IX
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_wheel: { //X
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_justice: { //XI
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_hman: { //XII
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_death: { //XIII
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_temperance: { //XIV
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_devil: { //XV
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_tower: { //XVI 
+			name: "The Tower", rarity: "tarot", tags: ["tarot", "explosive"], 
 			desc: "Upheaval. Every enemy that dies detonates, and the blast can set off the next.", 
 			add: {}, mult: {}, weight: 3, max_stacks: 1,
 			triggers: { kill: scr_trig_tower } 
-			},
-		tarot_sun:   { name: "The Sun", rarity: "tarot", tags: ["tarot", "ability"], 
+		},
+		tarot_star: { //XVII
+			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_moon: { //XVIII
+			name: "The Moon", rarity: "tarot", tags: ["tarot", "placeholder"],
+			add: {}, mult: {}
+		},
+		tarot_sun: { //XIX
+			name: "The Sun", rarity: "tarot", tags: ["tarot", "ability"], 
 			desc: "Radiance. Your witch ability barely has a cooldown.", weight: 3, max_stacks: 1,
 			add: {}, mult: { ability_cooldown: 0.05, ability_damage: 1.5 } 
 			},
+		tarot_judgement: { //XX
+			name: "Judgement", rarity: "tarot", tags: ["tarot", "placeholder"],
+			desc: "Placeholder. the ability to place holders in places that need holding.",
+			add: {}, mult: {}
+		},
+		tarot_world: { //XXI
+			name: "The World", rarity: "tarot", tags: ["tarot", "time"],
+			desc: "Completion. Wholeness. Dance around your enemies as if Time itself answers to you.",
+			add: {}, mult: {}
+		},
+		//REALLY? ALL 22 MAJOR ARCANA? YES
+
 	};  //close the item db
 	global.item_ids = variable_struct_get_names(global.item_db);
+	scr_normalize_items();
+	for (var i = 0; i < array_length(global.item_ids); i++) {
+		if (global.item_db[$ global.item_ids[i]].rarity == "tarot") scr_make_reversed(global.item_ids[i]);
+	}
+	scr_tarot_placeholders();
 	global.run_items = [];
 	scr_rebuild_items();
 	scr_validate_items();
 }// close the function
+
+/// Registers any of the 22 Major Arcana that don't have a real entry yet, as inert placeholders.
+/// A real card's id must be exactly "tarot_<key>" (tarot_tower, tarot_sun, ...).
+function scr_tarot_placeholders() {
+	var _cards = [
+		["fool", "The Fool"], ["magician", "The Magician"], ["priestess", "The High Priestess"],
+		["empress", "The Empress"], ["emperor", "The Emperor"], ["hierophant", "The Hierophant"],
+		["lovers", "The Lovers"], ["chariot", "The Chariot"], ["strength", "Strength"],
+		["hermit", "The Hermit"], ["fortune", "Wheel of Fortune"], ["justice", "Justice"],
+		["hanged", "The Hanged Man"], ["death", "Death"], ["temperance", "Temperance"],
+		["devil", "The Devil"], ["tower", "The Tower"], ["star", "The Star"],
+		["moon", "The Moon"], ["sun", "The Sun"], ["judgement", "Judgement"], ["world", "The World"]
+	];
+	var _done = 0;
+	for (var i = 0; i < array_length(_cards); i++) {
+		var _id = "tarot_" + _cards[i][0];
+		if (struct_exists(global.item_db, _id)) { _done++; continue; }
+		global.item_db[$ _id] = {
+			name: _cards[i][1], rarity: "tarot", tags: ["tarot"],
+			desc: "(not designed yet)", add: {}, mult: {},
+			weight: 3, max_stacks: 1, placeholder: true
+		};
+	}
+	show_debug_message("TAROT: " + string(_done) + " of " + string(array_length(_cards)) + " designed");
+}
+
+// Builds <id>_rev - same card, stronger, corrupts the player
+function scr_make_reversed(_id) {
+	var _src = global.item_db[$ _id];
+	var _rev = {};
+	var _keys = variable_struct_get_names(_src);
+	for (var i = 0; i < array_length(_keys); i++) _rev[$ _keys[i]] = _src[$ _keys[i]];
+	
+	_rev.name = _src.name + " (Reversed)";
+	_rev.desc = _src.desc + " [Reversed: Stronger, but gives +50 Corruption]";
+	_rev.reversed = true;
+	_rev.corruption = 15;
+	_rev.power = 1.5; // how much it multiplies the triggers of an item, this basically increases the reveres tarots power by 50%
+	_rev.add = {};
+	_rev.mult = {};
+	var _n = variable_struct_get_names(_src.add);
+	for (var j = 0; j < array_length(_n); j++) _rev.add[$ _n[j]] = _src.add[$ _n[j]] * 1.5;
+	_n = variable_struct_get_names(_src.mult);
+	for (var j = 0; j < array_length(_n); j++) _rev.mult[$ _n[j]] = power(_src.mult[$ _n[j]], 1.5);
+	
+	global.item_db[$ _id + "_rev"] = _rev;
+}
+
+
+
 function scr_give_random_item() {
 	scr_give_item(global.item_ids[irandom(array_length(global.item_ids) - 1)]);
 }
@@ -221,7 +378,7 @@ function scr_roll_item(_type = undefined, _exclude = [], _allowed = undefined) {
 		var _owned = struct_exists(global.item_counts, _id) ? global.item_counts[$ _id] : 0;
 		if (struct_exists(_it, "max_stacks") && _owned >= _it.max_stacks) continue;
 		
-		var _w = struct_exists(_it, "weight") ? _it._type_weight
+		var _w = struct_exists(_it, "weight") ? _it.weight
 			: (struct_exists(_type_weight, _it.rarity) ? _type_weight[$ _it.rarity] : 50);
 		array_push(_pool, { id: _id, w: _w });
 		_total += _w;
@@ -234,4 +391,17 @@ function scr_roll_item(_type = undefined, _exclude = [], _allowed = undefined) {
 		if (_r <= 0) return _pool[i].id;
 	}
 	return _pool[array_length(_pool) - 1].id;
+}
+
+/// Gives every item the fields the rest of the code expects, and says which ones were missing
+function scr_normalize_items() {
+	var _ids = variable_struct_get_names(global.item_db);
+	for (var i = 0; i < array_length(_ids); i++) {
+		var _it = global.item_db[$ _ids[i]];
+		if (!struct_exists(_it, "add"))  { _it.add = {};  show_debug_message("ITEM FIX: '" + _ids[i] + "' had no add, using {}"); }
+		if (!struct_exists(_it, "mult")) { _it.mult = {}; show_debug_message("ITEM FIX: '" + _ids[i] + "' had no mult, using {}"); }
+		if (!struct_exists(_it, "tags")) _it.tags = [];
+		if (!struct_exists(_it, "desc")) _it.desc = "(no description)";
+		if (!struct_exists(_it, "name")) _it.name = _ids[i];
+	}
 }

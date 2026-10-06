@@ -8,9 +8,9 @@ if (director_timer > 0) exit;
 director_timer = 15; // about 4 times a second 
 
 var _goal = min(scr_director_target(global.run_time), max_enemy_count);
-var _deficit = _goal - instance_number(obj_enemy_parent);
-if (_deficit < 1) exit
 if (instance_exists(obj_boss_act1)) _goal *= 0.4;
+var _deficit = _goal - instance_number(obj_enemy_parent);
+if (_deficit < 1) exit;
 
 var _entry = scr_pick_enemy(spawn_table, global.run_time);
 if (is_undefined(_entry)) exit;

@@ -33,7 +33,7 @@
   "origin":4,
   "parent":{
     "name":"Pumpkin",
-    "path":"folders/Sprites/Enemy Sprites/Pumpkin.yy",
+    "path":"folders/Sprites/Enemy Sprites/Basic Enemy Sprites/Pumpkin.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

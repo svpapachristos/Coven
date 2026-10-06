@@ -19,9 +19,9 @@ pack_types = [
 ];
 
 run_events = [
-	{ t: 240, kind: "elite", obj: obj_enemy_zombie, hp_mult: 12, size: 2, drop: "scroll" },
-	{ t: 480, kind: "elite", obj: obj_enemy_zombie, hp_mult: 15, size: 2.2, drop: "scroll" },
-	{ t: 660, kind: "elite", obj: obj_enemy_zombie, hp_mult: 20, size: 2.5, drop: "tarot" },
+	{ t: 240, kind: "elite", obj: obj_enemy_zombie, hp_mult: 12, size: 2, drop: "spread" },
+	{ t: 480, kind: "elite", obj: obj_enemy_zombie, hp_mult: 15, size: 2.2, drop: "spread" },
+	{ t: 660, kind: "elite", obj: obj_enemy_zombie, hp_mult: 20, size: 2.5, drop: "spread" },
 	{ t: 780, kind: "boss" }
 ];
 event_index = 0;

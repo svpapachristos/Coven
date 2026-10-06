@@ -37,7 +37,7 @@ if (instance_exists(obj_player)) {
 	scr_draw_bar(16, 16, 200, 16, _p.hp / _p.max_hp, c_red,
 		string(ceil(_p.hp)) + " / " + string(_p.max_hp));
 	var _inf = (scr_stat("infinite_mana", 0) > 0);
-	var _mana_col = _inf ? merge_color(c_aqua, c_fuchsia, 0.5 + 0.5 * sin(current_time / 300)) : c_aqua;
+	var _mana_col = _inf ? merge_color(c_navy, c_fuchsia, 0.5 + 0.5 * sin(current_time / 300)) : c_aqua;
 	scr_draw_bar(16, 40, 200, 10, _inf ? 1 : _p.mana / _p.max_mana, _mana_col,
 		_inf ? "" : string(floor(_p.mana)) + " / " + string(_p.max_mana));
 if (_inf) scr_draw_infinity(236, 45, 10, _mana_col);
@@ -51,7 +51,13 @@ if (!is_undefined(_p.witch)) {
 	var _ult_col = _ready ? merge_color(c_fuchsia, c_white, 0.5 + 0.5 * sin(current_time / 120)) : c_purple;
 	scr_draw_bar(16, 80, 200, 8, _p.ultimate_charge / _p.ultimate_charge_max, _ult_col,
 		_p.witch.ultimate.name + (_ready ? " [Q]" : ""));
-}
+	}
+	
+	var _cs = scr_corruption_stage();
+	scr_draw_bar(16, 104, 200, 8, global.corruption / CORRUPTION_MAX,
+	merge_color(make_color_rgb(200, 180, 255), make_color_rgb(180, 30, 120), global.corruption / CORRUPTION_MAX),
+	scr_corruption_stage_name(_cs));
+	
 }
 
 
@@ -97,8 +103,8 @@ draw_set_color(c_white);
 
 //debug (f1)
 if (global.debug_hud) {
-	draw_text(16, 78, "Enemies Alive: " + string(instance_number(obj_enemy_parent)));
-	draw_text(16, 110, "FPS: " + string(fps));
-	draw_text(16, 126, "Target: " + string(floor(scr_director_target(global.run_time))) + " Alive: " + string(instance_number(obj_enemy_parent)));
-	if (instance_exists(obj_player)) draw_text(16, 94, "iframes: " + string(obj_player.iframes));
+	draw_text(16, 200, "Enemies Alive: " + string(instance_number(obj_enemy_parent)));
+	draw_text(16, 217, "FPS: " + string(fps));
+	draw_text(16, 234, "Target: " + string(floor(scr_director_target(global.run_time))) + " Alive: " + string(instance_number(obj_enemy_parent)));
+	if (instance_exists(obj_player)) draw_text(16, 183, "iframes: " + string(obj_player.iframes));
 }

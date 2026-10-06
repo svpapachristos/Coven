@@ -1,15 +1,18 @@
 if (scr_freeze_if_paused()) exit; // freeze on game pause
 
-//determine the live value of max mana and health so that items can affect them
-max_mana = scr_stat("max_mana", base_max_mana);
-
-var _old_max = max_hp;
+var _old_max_hp = max_hp;
 max_hp = scr_stat("max_health", base_max_hp);
-if (max_hp > _old_max) hp += max_hp - _old_max;
+if (max_hp > _old_max_hp) hp += max_hp - _old_max_hp;
+
+var _old_max_mana = max_mana;
+max_mana = scr_stat("max_mana", base_max_mana);
+if (max_mana > _old_max_mana) mana += max_mana - _old_max_mana;
+mana = min(mana, max_mana);
+
 
 if (!is_undefined(witch)) {
 	if (ability_cd > 0) ability_cd--;
-	if (keyboard_check_pressed(ord("E")) && ability_cd <= 0) {
+	if (keyboard_check(ord("E")) && ability_cd <= 0) {
 		witch.ability.fn(id);
 		ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
 		scr_fire_event("cast", { kind: "ability" });
@@ -36,7 +39,7 @@ image_alpha = (iframes > 0 && (iframes div 4) mod 2 == 0) ? 0.4 : 1;
 if (alt_regen_delay > 0 ) {
 	alt_regen_delay--;
 } else { 
-	mana = min(max_mana, mana + mana_regen / game_get_speed(gamespeed_fps));
+	mana = min(max_mana, mana + scr_stat("mana_regen", mana_regen) / game_get_speed(gamespeed_fps));
 }
 
 //Channel alt fire while holding m2

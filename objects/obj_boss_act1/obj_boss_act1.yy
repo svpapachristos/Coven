@@ -35,8 +35,8 @@
   "resourceVersion":"2.0",
   "solid":false,
   "spriteId":{
-    "name":"spr_enemy_pumpkin",
-    "path":"sprites/spr_enemy_pumpkin/spr_enemy_pumpkin.yy",
+    "name":"pixil_frame_22",
+    "path":"sprites/pixil_frame_22/pixil_frame_22.yy",
   },
   "spriteMaskId":null,
   "visible":true,
