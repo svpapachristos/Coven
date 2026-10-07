@@ -1,12 +1,12 @@
-function scr_essence_needed(_level){
+function scr_souls_needed(_level){
 	return floor(8 * power(1.12, _level - 1));
 }
-function scr_gain_essence(_v) {
-	global.essence += _v * scr_stat("essence_gain", 1);
-	while (global.essence >= global.essence_to_next) {
-		global.essence -= global.essence_to_next;
+function scr_gain_souls(_v) {
+	global.souls += _v * scr_stat("soul_gain", 1);
+	while (global.souls >= global.souls_to_next) {
+		global.souls -= global.souls_to_next;
 		global.level++;
-		global.essence_to_next = scr_essence_needed(global.level);
+		global.souls_to_next = scr_souls_needed(global.level);
 		global.levelups_pending++;
 		scr_fire_event("levelup", { level: global.level });
 	}
@@ -35,6 +35,17 @@ function scr_open_levelup() {
 		global.levelups_pending = max(0, global.levelups_pending - 1);
 		return;
 	}
+
+	// testing shortcut: grab one of the three at random and keep playing
+	if (global.auto_pick) {
+		var _pick = _picks[irandom(array_length(_picks) - 1)];
+		scr_give_item(_pick);
+		var _it = global.item_db[$ _pick];
+		global.toast = { text: _it.name, sub: _it.desc, color: scr_rarity_color(_it.rarity), timer: game_get_speed(gamespeed_fps) * 2 };
+		global.levelups_pending--;
+		return;
+	}
+
 	obj_game_controller.levelup_choices = _picks;
 	obj_game_controller.levelup_index = 0;
 	global.game_state = "LEVELUP";

@@ -11,12 +11,18 @@ pending_hub_setup = _in_hub; //hideout: same, so your witch wand and familiar ar
 scr_loadout_init();
 scr_elements_init();
 
+//darken and mute the ground so witch enemies and spells stand out
+var _layer = layer_get_id("Background");
+if (layer_exists(_layer)) layer_background_blend(layer_background_get_id(_layer), make_color_rgb(115, 110, 155));
+
+
 //Item Banner for pickups
 global.toast = undefined;
 global.next_item_at = 25;
 
 //debug
 global.debug_hud = false;
+global.auto_pick = false; // test toggle: level-ups pick a random item instead of opening the card screen
 
 station_step = 0;  // 0 = witch, 1 = wand, 2 = familiar
 station_index = 0;
@@ -34,10 +40,10 @@ pause_index = 0;
 end_options = ["New Run", "Return to Hideout", "Quit to Desktop"];
 end_index = 0;
 
-//Essence
-global.essence = 0;
+//Souls!
+global.souls = 0;
 global.level = 1;
-global.essence_to_next = scr_essence_needed(1);
+global.souls_to_next = scr_souls_needed(1);
 global.levelups_pending = 0;
 levelup_choices = [];
 levelup_index = 0;
@@ -77,11 +83,15 @@ global.spread_next = 0;
 spread_mode = "reading";
 spread_index = -1;
 
-// Sparky sparks
+// Our code based particle/FX system!
+global.shake = 0;
+
 if (!variable_global_exists("ps_sparks") || !part_system_exists(global.ps_sparks)) {
 	global.ps_sparks = part_system_create();
 	part_system_depth(global.ps_sparks, -100); // in front of enemies and the player 
 
+
+	// spark type
 	global.pt_spark = part_type_create();
 	part_type_shape(global.pt_spark, pt_shape_pixel);
 	part_type_size(global.pt_spark, 3, 6, -0.12, 0);		//may need adjusting
@@ -93,6 +103,28 @@ if (!variable_global_exists("ps_sparks") || !part_system_exists(global.ps_sparks
 	part_type_life(global.pt_spark, 12, 28);
 	part_type_blend(global.pt_spark, true);       // a bit of a glow
 
-}
+	//Feels the Aura
 
+	global.pt_aura = part_type_create();
+	part_type_shape(global.pt_aura, pt_shape_disk);
+	part_type_size(global.pt_aura, 0.12, 0.25, -0.003, 0);
+	part_type_color3(global.pt_aura, make_color_rgb(220, 160, 255), make_colour_rgb(150, 40, 200), c_black);
+	part_type_alpha3(global.pt_aura, 0.8, 0.5, 0);
+	part_type_speed(global.pt_aura, 0.3, 1, 0, 0);
+	part_type_direction(global.pt_aura, 80, 100, 0, 5);
+	part_type_life(global.pt_aura, 30, 60);
+	part_type_blend(global.pt_aura, true);
+	
+	//arcane type
+	global.pt_arcane = part_type_create();
+	part_type_shape(global.pt_arcane, pt_shape_pixel);
+	part_type_size(global.pt_arcane, 2, 4, -0.08, 0);
+	part_type_color3(global.pt_arcane, c_white, make_color_rgb(215, 150, 255), make_color_rgb(110, 40, 200));
+	part_type_alpha3(global.pt_arcane, 1, 0.8, 0);
+	part_type_speed(global.pt_arcane, 0.5, 2.5, -0.05, 0);
+	part_type_direction(global.pt_arcane, 0, 359, 0, 8);
+	part_type_life(global.pt_arcane, 14, 30);
+	part_type_blend(global.pt_arcane, true);
+
+}
 scr_items_init();

@@ -9,6 +9,8 @@ max_mana = scr_stat("max_mana", base_max_mana);
 if (max_mana > _old_max_mana) mana += max_mana - _old_max_mana;
 mana = min(mana, max_mana);
 
+beam_heat = max(0, beam_heat - 0.01);
+
 
 if (!is_undefined(witch)) {
 	if (ability_cd > 0) ability_cd--;
@@ -81,4 +83,10 @@ switch (state)
         state = "IDLE"; // Catch-all safety net
         break;
 }
+
+//Marks: corrupting our witch throughout a run
+var _stage = scr_corruption_stage();
+image_blend = merge_color(c_white, make_color_rgb(190, 130, 255), 0.18 * _stage);
+if (_stage >= 1 && irandom(max(2, 6 - _stage * 2)) == 0) 
+	part_particles_create(global.ps_sparks, x + random_range(-10, 10), y + random_range(-14, 10), global.pt_aura, 1);
 	

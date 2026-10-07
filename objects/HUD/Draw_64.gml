@@ -25,7 +25,7 @@ if (instance_exists(obj_boss_act1)) {
 }
 
 var _bw = _gw * 0.4;
-scr_draw_bar((_gw - _bw) / 2, 12, _bw, 10, global.essence / global.essence_to_next, make_color_rgb(150, 230, 255));
+scr_draw_bar((_gw - _bw) / 2, 12, _bw, 10, global.souls / global.souls_to_next, make_color_rgb(150, 230, 255));
 draw_set_halign(fa_center);
 draw_text(_gw / 2, 26, "Lvl " + string(global.level));
 draw_set_halign(fa_left);

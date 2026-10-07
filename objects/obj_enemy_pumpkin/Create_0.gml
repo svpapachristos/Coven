@@ -16,6 +16,6 @@ attack_cooldown_max = game_get_speed(gamespeed_fps) * 2;
 attack_cooldown = attack_cooldown_max;
 fireball_speed = 14 * SPEED_SCALE;
 
-//Pumpkin Essence + Drop Chance
-essence_value = 5;
+//Pumpkin Soul + Drop Chance
+soul_value = 5;
 drop_chance = 0.5;

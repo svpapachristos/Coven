@@ -116,6 +116,10 @@ if (global.game_state == "VICTORY") {
 	draw_text(_cx, _y, "Time  " + string(_t div 60) + ":" + ((_t mod 60 < 10) ? "0" : "") + string(_t mod 60));
 	draw_text(_cx, _y + 22, "Enemies felled  " + string(global.kill_count));
 	draw_text(_cx, _y + 44, "Level  " + string(global.level));
+	var _path = (global.corruption < 25) ? "RADIANT" : ((global.corruption < 75) ? "WAVERING" : "CONSUMED");
+	draw_set_color((global.corruption < 25) ? make_color_rgb(255, 235, 150) : ((global.corruption < 75) ? c_white : make_color_rgb(200, 70, 160)));
+	draw_text(_cx, _y + 66, "Path " + _path);
+	draw_set_color(c_white);
 	draw_set_halign(fa_left);
 }
 

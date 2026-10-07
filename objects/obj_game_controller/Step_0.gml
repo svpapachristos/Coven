@@ -35,7 +35,10 @@ if (quit_confirm) {
 
 //open up a debug hud
 if (keyboard_check_pressed(vk_f1)) global.debug_hud = !global.debug_hud;
-
+if (keyboard_check_pressed(vk_f2)) {
+	global.auto_pick = !global.auto_pick;
+	global.toast = { text: global.auto_pick ? "AUTO-PICK ON" : "AUTO-PICK OFF", sub: "Level-ups choose a random item", color: c_yellow, timer: game_get_speed(gamespeed_fps) * 2 };
+}
 
 
 
@@ -114,8 +117,12 @@ switch (global.game_state) {
 			}
 		}
 		if (global.levelups_pending > 0) scr_open_levelup();
-		if (keyboard_check_pressed(vk_f7)) scr_gain_essence(100); //test key to give essence
+		if (variable_global_exists("necro_frenzy") && global.necro_frenzy > 0) global.necro_frenzy--;
+		
+		if (keyboard_check_pressed(vk_f7)) scr_gain_souls(100); //test key to give souls
 		if (keyboard_check_pressed(vk_f8)) scr_add_corruption(15); //test key to corrupt the player
+		if (keyboard_check_pressed(vk_f9)) global.boss_down = true;
+		if (keyboard_check_pressed(vk_f10)) scr_give_item("tarot_magician"); //test key for infinite mana
 		
 		
 		var _bn = min(array_length(global.blast_queue), 20);   // at most 20 blasts a frame

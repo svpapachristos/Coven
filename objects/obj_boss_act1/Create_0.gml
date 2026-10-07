@@ -1,10 +1,10 @@
 event_inherited();
 is_boss = true;
 boss_name = "The Shroom-Mother";
-max_hp = 8000;
+max_hp = 8000 * (1 + global.corruption / 100); //more corrupted player = more hp
 hp = max_hp;
 contact_damage = 30;
-essence_value = 200;
+soul_value = 200;
 drop_chance = 0;
 sep_strength = 0;                 // the swarm can't shove her around
 image_xscale = 4;

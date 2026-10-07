@@ -18,6 +18,22 @@ for (var i = 0; i < _lim; i++) {
 }
 ds_list_destroy(_list);
 
+// the witch is solid: get pushed out to the edge of her instead of standing inside her
+body_radius = (bbox_right - bbox_left) * 0.45;
+if (instance_exists(obj_player)) {
+	var _p   = obj_player;
+	var _cx  = (bbox_left + bbox_right) / 2,       _cy  = (bbox_top + bbox_bottom) / 2;
+	var _pcx = (_p.bbox_left + _p.bbox_right) / 2, _pcy = (_p.bbox_top + _p.bbox_bottom) / 2;
+	var _pd  = point_distance(_cx, _cy, _pcx, _pcy);
+	var _min = _p.body_radius + body_radius;
+	if (_pd < _min) {
+		var _pa = (_pd < 0.01) ? irandom(359) : point_direction(_pcx, _pcy, _cx, _cy);
+		x += lengthdir_x(_min - _pd, _pa);
+		y += lengthdir_y(_min - _pd, _pa);
+	}
+}
+
+
 // statuses
 if (burn_timer > 0) {
 	burn_timer--;

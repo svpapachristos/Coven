@@ -35,8 +35,8 @@
   "resourceVersion":"2.0",
   "solid":false,
   "spriteId":{
-    "name":"pixil_frame_22",
-    "path":"sprites/pixil_frame_22/pixil_frame_22.yy",
+    "name":"scr_boss_act1_1",
+    "path":"sprites/scr_boss_act1_1/scr_boss_act1_1.yy",
   },
   "spriteMaskId":null,
   "visible":true,

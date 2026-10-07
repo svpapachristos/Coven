@@ -1,3 +1,27 @@
+// everything our loadout can currently use, the item db will check this to see if its tags can match the loadout requires
+function scr_loadout_tags() {
+	var _tags = ["any"];
+	if (!variable_global_exists("loadout") || !variable_global_exists("witch_db")) return _tags;
+	var _parts = [
+		global.witch_db[global.loadout.witch],
+		global.wand_db[global.loadout.wand],
+		global.familiar_db[global.loadout.familiar]
+	];
+	for (var i = 0; i < array_length(_parts); i++) {
+		if (!struct_exists(_parts[i], "tags")) continue;
+		var _t = _parts[i].tags;
+		for (var j = 0; j < array_length(_t); j++) if (!scr_array_has(_tags, _t[j])) array_push(_tags, _t[j]);
+	}
+	return _tags;
+}
+
+// items with no requirement work universally, otherwise you would need atleast one of the tags the item asks for
+function scr_item_fits_loadout(_it, _tags) {
+	if (!struct_exists(_it, "req")) return true;
+	for (var i = 0; i < array_length(_it.req); i++) if (scr_array_has(_tags, _it.req[i])) return true;
+	return false;
+}
+
 function scr_array_has(_arr, _v) {
 	for (var i = 0; i < array_length(_arr); i++) if (_arr[i] == _v) return true;
 	return false;
@@ -94,7 +118,7 @@ function scr_items_init() {
 		
 		// Basic Charms
 		health_stone: {
-			name: "Shattered Philosophers Stone", rarity: "charm", tags: ["max health"],
+			name: "Vidas Stone", rarity: "charm", tags: ["max health"],
 			desc: "+25 max health",
 			add: { max_health: 25 }, mult: {}
 		},
@@ -102,17 +126,17 @@ function scr_items_init() {
 			desc: "Your witch ability recharges 15% faster.", 
 			add: {}, mult: { ability_cooldown: 0.85 } 
 		},
-		soul_coin:  { name: "Soul Coin",  rarity: "charm",  tags: ["essence"],
-			desc: "Gain 15% more essence.", 
-			add: {}, mult: { essence_gain: 1.15 } 
+		soul_coin:  { name: "Soul Coin",  rarity: "charm",  tags: ["souls"],
+			desc: "Gain 15% more souls.", 
+			add: {}, mult: { soul_gain: 1.15 } 
 		},
 		ember_crystal:    { name: "Ember Crystal",    rarity: "charm",  tags: ["fire"],
 			desc: "Burning deals 30% more damage and lasts 1 second longer.", 
-			add: { burn_duration: 1 }, mult: { burn_damage: 1.3 } 
+			add: { burn_duration: 1 }, mult: { burn_damage: 1.3 }, req: ["fire"]
 		},
 		frost_charm:    { name: "Frostbitten Charm", rarity: "charm", tags: ["ice"],
 			desc: "Chill slows enemies more and lasts longer.", 
-			add: { chill_slow: 0.15, chill_duration: 1 }, mult: {} 
+			add: { chill_slow: 0.15, chill_duration: 1 }, mult: {},  req: ["ice"]
 		},
 		soul_lantern:   { name: "Soul Lantern",   rarity: "charm",  tags: ["mana"],
 			desc: "Level ups restore 25% of your mana.", 
@@ -138,21 +162,36 @@ function scr_items_init() {
 		raven_feather:  { name: "Raven Feather",  rarity: "charm",  tags: ["ultimate"],
 			desc: "Your ultimate charges 20% faster.", 
 			add: {}, mult: { ultimate_charge_rate: 1.2 } 
+		},
+		grave_bell: { name: "Grave Bell", rarity: "charm", tags: ["summons"], req: ["necromancer"],
+			desc: "Your army can hold 8 more thralls.",
+			add: { army_cap: 8 }, mult: {}
+		},
+		marrow_charm: { name: "Marrow Charm", rarity: "charm", tags: ["summons"], req: ["necromancer"],
+			desc: "Thralls deal 20% more damage.",
+			add: {}, mult: { thrall_damage: 1.2 }
+		},
+		ossuary_scroll: { name: "Ossuary Scroll", rarity: "scroll", tags: ["summons"], req: ["necromancer"],
+			desc: "Raise the Fallen pulls up 5 more of the dead.",
+			add: { raise_count: 5 }, mult: {}
+		},
+		focusing_lens: { name: "Focusing Lens", rarity: "scroll", tags: ["arcane"], req: ["beam"],
+			desc: "Your beam reaches 25% further.",
+			add: {}, mult: { beam_length: 1.25 }
+		},
 		
 		//Scroll Tier
-
-		},
 		star_chart:     { name: "Star Chart",     rarity: "scroll",  tags: ["arcane"],
 			desc: "Magic missile fires 1 extra dart.", 
-			add: { missile_count: 1 }, mult: {} 
+			add: { missile_count: 1 }, mult: {},  req: ["arcane"]
 		},
 		scroll_tempest:  { name: "Tempest Scroll", rarity: "scroll", tags: ["lightning"],
 			desc: "Chain lightning jumps to 2 more enemies.", 
-			add: { chain_targets: 2 }, mult: {} 
+			add: { chain_targets: 2 }, mult: {},  req: ["lightning"] 
 		},
 		scroll_artificer:    { name: "Artificer Scroll", rarity: "scroll", tags: ["arcane"],
 			desc: "Magic missiles deal 40% more damage.", 
-			add: {}, mult: { missile_damage: 1.4 } 
+			add: {}, mult: { missile_damage: 1.4 },  req: ["arcane"]
 		},
 		scroll_haste:   { name: "Haste Scroll", rarity: "scroll", tags: ["wand"],
 			desc: "Your wand fires 15% faster.", 
@@ -366,13 +405,14 @@ function scr_rarity_color(_rarity) {
 function scr_roll_item(_type = undefined, _exclude = [], _allowed = undefined) {
 	static _type_weight = { charm: 100, scroll: 40, corrupted: 15, tarot: 5 };
 	var _pool = [], _total = 0;
-	
+	var _loadout = scr_loadout_tags();
 	for (var i = 0; i < array_length(global.item_ids); i++) {
 		var _id = global.item_ids[i];
 		var _it = global.item_db[$ _id];
 		if (!is_undefined(_type) && _it.rarity != _type) continue;
 		if (!is_undefined(_allowed) && !scr_array_has(_allowed, _it.rarity)) continue;
 		if (scr_array_has(_exclude, _id)) continue;
+		if (!scr_item_fits_loadout(_it, _loadout)) continue;
 		if (struct_exists(_it, "min_time") && global.run_time < _it.min_time ) continue;
 		
 		var _owned = struct_exists(global.item_counts, _id) ? global.item_counts[$ _id] : 0;

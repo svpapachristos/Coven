@@ -13,6 +13,9 @@ function scr_flame_nova(_caster) {
 		var _a = random(360), _r = random(_radius);
 		part_particles_create(global.ps_sparks, _cx + lengthdir_x(_r, _a), _cy + lengthdir_y(_r, _a), global.pt_spark, 1);
 	}
+	
+	var _sun = struct_exists(global.item_counts, "tarot_sun") || struct_exists(global.item_counts, "tarot_sun_rev");
+	scr_burst_fx(_cx, _cy, _radius, _sun ? make_color_rgb(255, 200, 70) : make_color_rgb(255, 130, 60));
 }
 
 // Placeholder ultimate: hits every enemy on the screen

@@ -8,18 +8,20 @@ function scr_select_db(_step) {
 
 function scr_loadout_init() {
 	global.witch_db = [
-		{ name: "Hedgewitch", desc: "A Naturalist with a connection to the earth and the secrets it holds.", ability: { name: "Placeholder Spell Hedge", cooldown: 10, fn: scr_flame_nova  }, ultimate: { name: "Placeholder Ult Hedge", charge_needed: 25, fn: scr_ultimate_place_holder } },
-		{ name: "Elementalist", desc: "A Witch with a special connection to the wands she equips", ability: { name: "Placeholder Spell Element", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Element", charge_needed: 25, fn: scr_ultimate_place_holder } },
-		{ name: "Necromancer", desc: "A Necromancy Witch. Commander of the dead and dark forces that corrupt this world", ability: { name: "Placeholder Spell Necro", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Necro", charge_needed: 25, fn: scr_ultimate_place_holder } },
-		{ name: "Diviner", desc: "A Witch who sees the strands of time itself. Their knowledge of the arcane unbound.", ability: { name: "Placeholder Spell Oracle", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Diviner", charge_needed: 25, fn: scr_ultimate_place_holder } }
+		{ name: "Hedgewitch", tags: ["hedgewitch"], desc: "A Naturalist with a connection to the earth and the secrets it holds.", ability: { name: "Placeholder Spell Hedge", cooldown: 10, fn: scr_flame_nova  }, ultimate: { name: "Placeholder Ult Hedge", charge_needed: 25, fn: scr_ultimate_place_holder } },
+		{ name: "Elementalist", tags: ["elementalist", "fire", "ice", "storm", "lightning", "earth", "air"], desc: "A Sorceress with a special connection to the wands she equips", ability: { name: "Placeholder Spell Element", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Element", charge_needed: 25, fn: scr_ultimate_place_holder } },
+		{ name: "Necromancer", tags: ["necromancer", "summons",], desc: "A Necromancy Witch. Commander of the dead and dark forces that corrupt this world", ability: { name: "Raise the Fallen", cooldown: 6, fn: scr_necro_raise }, ultimate: { name: "Danse Macabre", charge_needed: 100, fn: scr_necro_danse } },
+		{ name: "Diviner", tags: ["diviner"], desc: "A Witch who sees the strands of time itself. Their knowledge of the arcane, unbound.", ability: { name: "Placeholder Spell Oracle", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Diviner", charge_needed: 25, fn: scr_ultimate_place_holder } }
 	];
 	global.wand_db = [
-	{ name: "Witches Wand", element: "arcane", desc: "A witchwood wand of unaspected magicks. ", alt_fire: scr_magic_missile, alt_interval: 24, alt_drain: 30 },
-	{ name: "Strun", element: "storm", desc: "An elderwood wand containing a Storm crystal. High Voltage!", alt_fire: scr_alt_chain_lightning },
-	{ name: "Kenaz", element: "fire",  desc: "A silverwood wand containing a Cinder crystal. Feel the Burn.", alt_fire: scr_alt_chain_lightning },
-	{ name: "Suvon", element: "ice",   desc: "An weirwood wand containing a Frost crystal. The blizzard is coming.", alt_fire: scr_alt_chain_lightning },
-	{ name: "Vern", element: "earth", desc: "A maplewood wand containing a Terra crystal. Shatter them all.", alt_fire: scr_alt_chain_lightning },
-	{ name: "Feng", element: "air",   desc: "A palmwood wand containing a Breeze crystal. Light as a feather,  ", alt_fire: scr_alt_chain_lightning }
+	{ name: "Witches Wand", element: "arcane", tags: ["arcane", "beam", "bolt"], desc: "A witchwood wand of unaspected magicks. ",
+		alt_fire: scr_arcane_beam, alt_interval: 3, alt_drain: 25,
+		primary: { count: 1, spread: 0, pierce: 0, delay: 1, dmg: 1, speed: 1, homing: 6, sprite: spr_wand_arcane_primary  } },
+	{ name: "Strun", element: "storm", tags: ["storm", "lightning", "chain"], desc: "An elderwood wand containing a Storm crystal. High Voltage!", alt_fire: scr_alt_chain_lightning },
+	{ name: "Kenaz", element: "fire",  tags: ["fire", "chain"],  desc: "A silverwood wand containing a Cinder crystal. Feel the Burn.", alt_fire: scr_alt_chain_lightning },
+	{ name: "Suvon", element: "ice",   tags: ["ice", "chain"],   desc: "An weirwood wand containing a Frost crystal. The Blizzard is coming.", alt_fire: scr_alt_chain_lightning },
+	{ name: "Vern", element: "earth",  tags: ["earth", "chain"], desc: "A maplewood wand containing a Terra crystal. Roots take them all.", alt_fire: scr_alt_chain_lightning },
+	{ name: "Feng", element: "air",    tags: ["air", "chain"],   desc: "A palmwood wand containing a Breeze crystal. Light as a feather.", alt_fire: scr_alt_chain_lightning }
 	];
 	global.familiar_db = [
 		{ name: "Munin", desc: "Your first companion. This small bird remembers what was lost, more than most.", obj: obj_fam_raven },
@@ -63,6 +65,7 @@ function scr_spawn_familiar() {
 function scr_start_run() {
 	scr_apply_loadout();
 	scr_spawn_familiar();
+	scr_necro_reset();
 	global.run_spread = [];
 	for (var i = 0; i < array_length(global.spread); i++) array_push(global.run_spread, scr_spread_card_id(i));
 	global.spread = [];       // the hideout draws a new reading next time

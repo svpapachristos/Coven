@@ -12,8 +12,8 @@ function scr_apply_pickup(_pickup, _player){
 		part_particles_create(global.ps_sparks, _player.x, _player.y, global.pt_spark, 30);
 		break;
 		
-		case "ESSENCE":
-		scr_gain_essence(_pickup.value);
+		case "SOUL":
+		scr_gain_souls(_pickup.value);
 		break;
 	}
 }
