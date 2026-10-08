@@ -14,7 +14,7 @@ function scr_is_necromancer() {
 
 // the army will scale off of level, so it can get stronger innately, and also be buffed by specific items
 function scr_army_cap() {
-	return floor(scr_stat("army_cap", 20 + 3 * global.level));
+	return floor(scr_stat("army_cap", 10 + 3 * global.level));
 }
 
 function scr_spawn_thrall(_x, _y) {
@@ -85,4 +85,52 @@ function scr_necro_danse(_caster) {
 	
 	scr_burst_fx(_caster.x, _caster.y, 400 * WORLD_SCALE, make_color_rgb(200, 60 , 255), 24);
 	global.shake = max(global.shake, 6);
+}
+
+// placeholder wisps sit where the fallen lie with a glow, that gets brighter when its inside proc range
+function scr_necro_draw_fallen() {
+	if (!scr_is_necromancer() || !variable_global_exists("necro_corpses")) return;
+	var _n = array_length(global.necro_corpses);
+	if (_n == 0) return;
+	
+	// only draw whats actually visible on screen
+	var _cam = view_camera[0];
+	var _x0 = camera_get_view_x(_cam) - 20, _y0 = camera_get_view_y(_cam) - 20;
+	var _x1 = _x0 + camera_get_view_width(_cam) + 40, _y1 = _y0 + camera_get_view_height(_cam) + 40;
+	
+	var _p = obj_player;
+	var _reach = scr_stat("raise_radius", 260) * WORLD_SCALE;
+	var _col = make_color_rgb(150, 90, 255);
+	var _core = merge_color(_col, c_white, 0.6);
+	
+	gpu_push_state();
+	gpu_set_blendmode(bm_add);
+	for (var i = 0; i < _n; i++) {
+		var _c = global.necro_corpses[i];
+		var _age = (current_time - _c.t) / CORPSE_LIFETIME;
+		if (_age >= 1) continue;
+		if (!point_in_rectangle(_c.x, _c.y, _x0, _y0, _x1, _y1)) continue;
+		
+		var _in		= point_distance(_p.x, _p.y, _c.x, _c.y) <= _reach;
+		var _fade	= min(1, (1 -_age) * 3) * min(1, _age * 20 + 0.2); //pops in quicl, holds, then fades over the last third
+		var _flick  = 0.8 + 0.2 * sin(current_time / 90 + _c.t);
+		var _bob	= sin(current_time / 300 + _c.t) * 2;
+		var _a		= (_in ? 1 : 0.45) * _fade * _flick;
+		
+		// a tinted haze with normal blending so it shows up against the darker background layer
+		
+		gpu_set_blendmode(bm_normal);
+		draw_set_color(_col);
+		draw_set_alpha(_a * 0.35);
+		draw_circle(_c.x, _c.y + _bob, 11, false);
+		
+		// an extra glowing heart on top
+		gpu_set_blendmode(bm_add);
+		draw_set_color(_core);
+		draw_set_alpha(_a);
+		draw_circle(_c.x, _c.y + _bob - 1, 4, false);
+	}
+	gpu_pop_state();
+	draw_set_alpha(1);
+	draw_set_color(c_white);
 }

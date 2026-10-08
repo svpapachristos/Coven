@@ -89,4 +89,4 @@ var _stage = scr_corruption_stage();
 image_blend = merge_color(c_white, make_color_rgb(190, 130, 255), 0.18 * _stage);
 if (_stage >= 1 && irandom(max(2, 6 - _stage * 2)) == 0) 
 	part_particles_create(global.ps_sparks, x + random_range(-10, 10), y + random_range(-14, 10), global.pt_aura, 1);
-	
+depth = -bbox_bottom; // no one will stand on each other anymoreas

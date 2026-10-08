@@ -14,6 +14,8 @@ if (global.game_state == "STATION") {
 	draw_text(_cx, _y, _db[station_index].desc);
 	draw_set_color(c_dkgray);
 	draw_text(_cx, _y + 28, "Esc / Right Click to go Back");
+	draw_set_color(make_color_rgb(200, 150, 255));
+	draw_text(_cx, _y + 56, "Essence: " + string(global.save.essence));
 	draw_set_color(c_white);
 	draw_set_halign(fa_left);
 }
@@ -102,6 +104,9 @@ if (global.game_state == "DEAD") {
 	draw_text(_cx, _cy - 85, "Time Survived: " + _time_text);
 	draw_text(_cx, _cy - 55,
 		"Enemies Defeated: " + string(global.kill_count));
+		draw_set_color(make_color_rgb(200, 150, 255));
+		draw_text(_cx, _cy - 25, "Essence Earned: " + string(global.run_total) + "	(Total: " + string(global.save.essence) + ")");
+		draw_set_color(c_white);
 		
 	draw_set_halign(fa_left);
 	scr_draw_menu("", end_options, end_index);
@@ -120,6 +125,8 @@ if (global.game_state == "VICTORY") {
 	draw_set_color((global.corruption < 25) ? make_color_rgb(255, 235, 150) : ((global.corruption < 75) ? c_white : make_color_rgb(200, 70, 160)));
 	draw_text(_cx, _y + 66, "Path " + _path);
 	draw_set_color(c_white);
+	draw_set_color(make_color_rgb(200, 150, 255));
+	draw_text(_cx, _y + 88, "Essence Earned: " + string(global.run_total) + "	(Total: " + string(global.save.essence) + ")");
 	draw_set_halign(fa_left);
 }
 

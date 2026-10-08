@@ -11,6 +11,7 @@ function scr_damage_player(_player, _amount) {
 
 	if (_player.hp <= 0) {
 		global.game_state = "DEAD";
+		scr_essence_bank_run();
 	}
 
 	return true;

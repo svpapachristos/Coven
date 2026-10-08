@@ -33,6 +33,28 @@ if (instance_exists(obj_player)) {
 	}
 }
 
+// thralls are solid too: the army forms a wall as the hord as to go around or through your forces
+if (instance_exists(obj_thrall)) {
+	var _ecx = (bbox_left + bbox_right) / 2, _ecy = (bbox_top + bbox_bottom) / 2;
+	var _tl = ds_list_create();
+	var _tn = collision_circle_list(_ecx, _ecy, body_radius * 2 + 4, obj_thrall, false, true, _tl, false);
+	var _tlim = min(_tn, 6);
+	for (var i = 0; i < _tlim; i++) {
+		var _t = _tl[| i];
+		if (_t.rise < 1) continue; //still climbing, not a solid object yet
+		var _tcx = (_t.bbox_left + _t.bbox_right) / 2, _tcy = (_t.bbox_top + _t.bbox_bottom) / 2;
+		var _td = point_distance(_ecx, _ecy, _tcx, _tcy);
+		var _tmin = body_radius + _t.body_radius;
+		if (_td >= _tmin) continue;
+		var _ta = (_td < 0.01) ? irandom(359) : point_direction(_tcx, _tcy, _ecx, _ecy);
+		var _amt = (_tmin - _td) * 0.8; // enemies give more than thralls do, so your wall will push through an enemy block
+		x += lengthdir_x(_amt, _ta);
+		y += lengthdir_y(_amt, _ta);
+	}
+	ds_list_destroy(_tl);
+}
+
+
 
 // statuses
 if (burn_timer > 0) {

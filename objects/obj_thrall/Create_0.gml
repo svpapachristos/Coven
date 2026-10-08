@@ -1,5 +1,6 @@
 // a risen thrall, fights for the necromancer until it falls again
 sprite_index = spr_enemy_zombie;
+body_radius = 10; // get sized from the sprite every step
 max_hp = scr_stat("thrall_health", 40 + 5 * global.level);
 hp = max_hp;
 target = noone;

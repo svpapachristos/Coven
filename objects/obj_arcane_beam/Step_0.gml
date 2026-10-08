@@ -20,4 +20,4 @@ repeat (2 + floor(heat * 5)) {
 }
 // beam dissipates at its far end
 if (irandom(1) == 0) part_particles_create(global.ps_sparks, beam_line.x2, beam_line.y2, global.pt_arcane , 2);
-global.shake = max(global.shake, 0.5 + 2.5 * heat); // makes the screen rumble as you hold your wands beam
+global.shake = max(global.shake, 0.5 + 1 * heat); // makes the screen rumble as you hold your wands beam

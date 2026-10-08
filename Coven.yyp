@@ -144,6 +144,7 @@
     {"id":{"name":"scr_menu","path":"scripts/scr_menu/scr_menu.yy",},},
     {"id":{"name":"scr_necromancer","path":"scripts/scr_necromancer/scr_necromancer.yy",},},
     {"id":{"name":"scr_run_events","path":"scripts/scr_run_events/scr_run_events.yy",},},
+    {"id":{"name":"scr_save","path":"scripts/scr_save/scr_save.yy",},},
     {"id":{"name":"scr_spawn_damage_number","path":"scripts/scr_spawn_damage_number/scr_spawn_damage_number.yy",},},
     {"id":{"name":"scr_spread","path":"scripts/scr_spread/scr_spread.yy",},},
     {"id":{"name":"scr_stop_at_last_frame","path":"scripts/scr_stop_at_last_frame/scr_stop_at_last_frame.yy",},},

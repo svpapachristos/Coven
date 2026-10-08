@@ -1,8 +1,10 @@
+#macro BEAM_MAX_HEAT 0.01 // how hot the beam can get on a percent scale between 0 and 1
+
 function scr_arcane_beam(_caster){
 	var _step = _caster.alt_pulse_max; //frames between ticks
 	var _tick = _step / game_get_speed(gamespeed_fps); //seconds per tick
 	
-	_caster.beam_heat = min(1, _caster.beam_heat + 0.1 *  (_step / 6)); // heats up at the same speed regardless of tick rate
+	_caster.beam_heat = min(min(1, scr_stat("beam_max_heat", BEAM_MAX_HEAT)), _caster.beam_heat + 0.1 * (_step / 6)); // heats up at the same speed regardless of tick rate
 	var _heat = _caster.beam_heat;
 	var _beam = scr_beam_line(_caster, _heat);
 	var _half = scr_beam_half(_heat);

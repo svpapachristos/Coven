@@ -138,11 +138,6 @@ function scr_items_init() {
 			desc: "Chill slows enemies more and lasts longer.", 
 			add: { chill_slow: 0.15, chill_duration: 1 }, mult: {},  req: ["ice"]
 		},
-		soul_lantern:   { name: "Soul Lantern",   rarity: "charm",  tags: ["mana"],
-			desc: "Level ups restore 25% of your mana.", 
-			add: {}, mult: {},
-			triggers: { levelup: scr_trig_soul_lantern } 
-		},
 		mana_fruit: {
 			name: "Mana Fruit", rarity: "charm", tags: ["max mana"],
 			desc: "+25 maximum mana. ",
@@ -181,9 +176,9 @@ function scr_items_init() {
 		},
 		
 		//Scroll Tier
-		star_chart:     { name: "Star Chart",     rarity: "scroll",  tags: ["arcane"],
-			desc: "Magic missile fires 1 extra dart.", 
-			add: { missile_count: 1 }, mult: {},  req: ["arcane"]
+		fractal_lens:   { name: "Fractal Lens",   rarity: "scroll",  tags: ["arcane", "wand"],
+			desc: "Your Arcane Wand fires an additional bolt", 
+			add: { primary_count: 1 }, mult: {}, req: ["bolt"]
 		},
 		scroll_tempest:  { name: "Tempest Scroll", rarity: "scroll", tags: ["lightning"],
 			desc: "Chain lightning jumps to 2 more enemies.", 
@@ -191,7 +186,7 @@ function scr_items_init() {
 		},
 		scroll_artificer:    { name: "Artificer Scroll", rarity: "scroll", tags: ["arcane"],
 			desc: "Magic missiles deal 40% more damage.", 
-			add: {}, mult: { missile_damage: 1.4 },  req: ["arcane"]
+			add: {}, mult: { primary_damage: 1.4 },  req: ["arcane"]
 		},
 		scroll_haste:   { name: "Haste Scroll", rarity: "scroll", tags: ["wand"],
 			desc: "Your wand fires 15% faster.", 

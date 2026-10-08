@@ -5,11 +5,15 @@ if (x < 0 || x > room_width || y < 0 || y > room_height) {
 }
 
 if (homing > 0) {
-	if (!instance_exists(target)) target = scr_homing_target(x, y, direction); // searches only when it has no target
-	if (instance_exists(target)) {
-		var _want = point_direction(x, y, target.x, target.y);
-		direction -= clamp(angle_difference(direction, _want), -homing, homing);
-		image_angle = direction;
+	if (homing_delay > 0) {
+		homing_delay--; // still flying straight
+	} else {
+		if (!instance_exists(target)) target = pick_target();
+		if (instance_exists(target)) {
+			var _want = point_direction(x, y, target.x, target.y);
+			direction -= clamp(angle_difference(direction, _want), -homing, homing);
+			image_angle = direction;
+		}
 	}
 }
 

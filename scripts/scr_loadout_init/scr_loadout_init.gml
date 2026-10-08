@@ -10,7 +10,7 @@ function scr_loadout_init() {
 	global.witch_db = [
 		{ name: "Hedgewitch", tags: ["hedgewitch"], desc: "A Naturalist with a connection to the earth and the secrets it holds.", ability: { name: "Placeholder Spell Hedge", cooldown: 10, fn: scr_flame_nova  }, ultimate: { name: "Placeholder Ult Hedge", charge_needed: 25, fn: scr_ultimate_place_holder } },
 		{ name: "Elementalist", tags: ["elementalist", "fire", "ice", "storm", "lightning", "earth", "air"], desc: "A Sorceress with a special connection to the wands she equips", ability: { name: "Placeholder Spell Element", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Element", charge_needed: 25, fn: scr_ultimate_place_holder } },
-		{ name: "Necromancer", tags: ["necromancer", "summons",], desc: "A Necromancy Witch. Commander of the dead and dark forces that corrupt this world", ability: { name: "Raise the Fallen", cooldown: 6, fn: scr_necro_raise }, ultimate: { name: "Danse Macabre", charge_needed: 100, fn: scr_necro_danse } },
+		{ name: "Necromancer", tags: ["necromancer", "summons",], desc: "A Necromancy Witch. Commander of the dead and dark forces that corrupt this world", ability: { name: "Raise the Fallen", cooldown: 30, fn: scr_necro_raise }, ultimate: { name: "Danse Macabre", charge_needed: 100, fn: scr_necro_danse } },
 		{ name: "Diviner", tags: ["diviner"], desc: "A Witch who sees the strands of time itself. Their knowledge of the arcane, unbound.", ability: { name: "Placeholder Spell Oracle", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Diviner", charge_needed: 25, fn: scr_ultimate_place_holder } }
 	];
 	global.wand_db = [
@@ -28,13 +28,17 @@ function scr_loadout_init() {
 		{ name: "Salem", desc: "A Witches best friend.", obj: obj_fam_cat},
 		{ name: "Cenx", desc: "A friendly Wisp, wandering through wicked woods", obj: obj_fam_wisp }
 	];
-	if (!variable_global_exists("loadout")) global.loadout = { witch: 0, wand: 0, familiar: 0 };
+	if (!variable_global_exists("loadout")) global.loadout = scr_loadout_from_save();
 } //if the loadout doesnt reset after a run, delete the if before global.loadout
 
 function scr_select_options(_step) {
 	var _db = scr_select_db(_step);
 	var _names = [];
-	for (var i = 0; i < array_length(_db); i++) array_push(_names, _db[i].name);
+	for (var i = 0; i < array_length(_db); i++) {
+		var _n = _db[i].name;
+		if (!scr_is_unlocked(_step, i)) _n += " [" + string(scr_unlock_cost(_step, i)) + " essence]";
+		array_push(_names, _n);	
+	}
 	return _names;
 }
 

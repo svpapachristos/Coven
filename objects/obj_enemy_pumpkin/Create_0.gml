@@ -19,3 +19,4 @@ fireball_speed = 14 * SPEED_SCALE;
 //Pumpkin Soul + Drop Chance
 soul_value = 5;
 drop_chance = 0.5;
+

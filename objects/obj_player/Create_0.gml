@@ -1,3 +1,5 @@
+
+
 //Our lil witchy
 witch = undefined;
 wand = undefined;
@@ -69,11 +71,27 @@ function movement() {
 		// collide from the middle of the hitbox, sized to the sprite, not from the sprite's origin
 		body_radius = (bbox_right - bbox_left) * 0.45;
 		var _cx = (bbox_left + bbox_right) / 2, _cy = (bbox_top + bbox_bottom) / 2;
-
+		
+		// your own thralls as necro, able to shoulder through them but still them make way for you
+		var _tl = ds_list_create();
+		var _tn = collision_circle_list(_cx, _cy, body_radius + 48, obj_thrall, false, true, _tl, true);
+		var _tlim = min(_tn, 8);
+		for (var i = 0; i < _tlim; i++) {
+			var _t = _tl[| i];
+			if (_t.rise < 1) continue; // cant bump if its still digging out of the ground
+			var _tx = (_t.bbox_left + _t.bbox_right) / 2, _ty = (_t.bbox_top + _t.bbox_bottom) / 2;
+			var _d = point_distance(_cx, _cy, _tx, _ty);
+			if (_d < 0.01 || _d >= body_radius + _t.body_radius + 2) continue;
+			var _nx = (_tx - _cx) / _d, _ny = (_ty - _cy) / _d;
+			var _dot = _mx * _nx + _my * _ny;
+			if (_dot > 0) { _mx -= _nx * _dot * 0.5; _my -= _ny * _dot * 0.5; } // half speed into them instead of a wall
+		}
+		ds_list_destroy(_tl);
+		
+		//enemy collision: solid, slide right off a horde of enemies
 		var _list = ds_list_create();
 		var _n = collision_circle_list(_cx, _cy, body_radius + 64, obj_enemy_parent, false, true, _list, true);
 		var _lim = min(_n, 12);
-
 		// two passes so pushing off one enemy can't shove you into the one next to it
 		repeat (2) {
 			for (var i = 0; i < _lim; i++) {
@@ -81,7 +99,6 @@ function movement() {
 				var _ex = (_e.bbox_left + _e.bbox_right) / 2, _ey = (_e.bbox_top + _e.bbox_bottom) / 2;
 				var _d  = point_distance(_cx, _cy, _ex, _ey);
 				if (_d < 0.01 || _d >= body_radius + _e.body_radius + 2) continue;
-
 				// direction toward the enemy; strip out only the part of our move that pushes into it, keep the slide
 				var _nx = (_ex - _cx) / _d, _ny = (_ey - _cy) / _d;
 				var _dot = _mx * _nx + _my * _ny;
@@ -163,8 +180,10 @@ function player_attack() {
 		
 		var _dir = point_direction(x, y, mouse_x, mouse_y);
 		var _count = _p.count + floor(scr_stat("primary_count", 0));
+		var _volley = []; // shared by every bolt in this shot so they spread across targets
 		for (var i = 0; i < _count; i++) {
-			var _off = (_count == 1) ? 0 : lerp(-_p.spread, _p.spread, i / (_count - 1));
+			var _spread = max(_p.spread, 6 * (_count - 1)); // extra bolts always fan out a little, even from a no-spread wand
+			var _off = (_count == 1) ? 0 : lerp(-_spread, _spread, i / (_count - 1));
 			var _proj = instance_create_layer(x + 3, y + 2, "Instances", obj_projectile);
 			_proj.direction = _dir + _off;
 			_proj.image_angle = _dir + _off;
@@ -173,6 +192,9 @@ function player_attack() {
 			_proj.damage *= _p.dmg;
 			_proj.pierce = _p.pierce + floor(scr_stat("pierce", 0));
 			_proj.homing = _p.homing + scr_stat("homing", 0);
+			_proj.volley = _volley;
+			_proj.homing_delay = (_count > 1) ? 5 : 0; //multi bolt volleys shoot in a fan pattern in a straight line for a brief moment before targeting
+			_proj.homing *= random_range(0.7, 1.4); // each bolt has a slightly different curve
 			if (!is_undefined(wand)) {
 				_proj.element = wand.element;
 				_proj.image_blend = scr_element_color(wand.element);

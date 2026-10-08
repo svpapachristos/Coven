@@ -95,6 +95,7 @@
     {"name":"scr_known_stats","order":1,"path":"scripts/scr_known_stats/scr_known_stats.yy",},
     {"name":"scr_levelup","order":4,"path":"scripts/scr_levelup/scr_levelup.yy",},
     {"name":"scr_run_events","order":4,"path":"scripts/scr_run_events/scr_run_events.yy",},
+    {"name":"scr_save","order":2,"path":"scripts/scr_save/scr_save.yy",},
     {"name":"scr_spread","order":1,"path":"scripts/scr_spread/scr_spread.yy",},
     {"name":"scr_stop_at_last_frame","order":2,"path":"scripts/scr_stop_at_last_frame/scr_stop_at_last_frame.yy",},
     {"name":"scr_trig_soul_lantern","order":2,"path":"scripts/scr_trig_soul_lantern/scr_trig_soul_lantern.yy",},

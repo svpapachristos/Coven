@@ -39,7 +39,14 @@ if (keyboard_check_pressed(vk_f2)) {
 	global.auto_pick = !global.auto_pick;
 	global.toast = { text: global.auto_pick ? "AUTO-PICK ON" : "AUTO-PICK OFF", sub: "Level-ups choose a random item", color: c_yellow, timer: game_get_speed(gamespeed_fps) * 2 };
 }
-
+if (keyboard_check_pressed(vk_f11)) { global.save.essence += 500; scr_save_write(); } // test for free essence
+if (keyboard_check(vk_shift) && keyboard_check_pressed(vk_f12)) { //test: wipe the save and start fresh
+	global.save = scr_save_defaults();
+	scr_save_write();
+	global.loadout = scr_loadout_from_save();
+	scr_apply_loadout();
+	scr_spawn_familiar();
+}
 
 
 switch (global.game_state) {
@@ -75,13 +82,15 @@ switch (global.game_state) {
 		
 		var _spick = scr_menu_pick(station_index, array_length(_opts));
 		if (_spick != -1) {
+			if (scr_try_unlock(station_step, _spick)) {
 			global.loadout[$ _keys[station_step]] = _spick;
+			scr_save_loadout();
 			scr_apply_loadout();
 			if (station_step == 2) scr_spawn_familiar();
 			global.game_state = "HUB";
-			io_clear();
-		} else if (keyboard_check_pressed(vk_escape) || mouse_check_button_pressed(mb_right)) {
-			global.game_state = "HUB";
+		} else {
+			global.toast = { text: "NOT ENOUGH ESSENCE", sub: "Need " + string(scr_unlock_cost(station_step, _spick)) + ", you have " + string(global.save.essence), color: c_red, time: game_get_speed(gamespeed_fps) * 2 }; 
+		}
 			io_clear();
 		}
 		break;

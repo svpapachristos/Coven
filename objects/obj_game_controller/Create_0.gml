@@ -8,6 +8,7 @@ else global.game_state = "PLAYING";
 pending_run_start = !_in_hub; // run room; applies loadout once player exists in the room
 pending_hub_setup = _in_hub; //hideout: same, so your witch wand and familiar are ready
 
+if (!variable_global_exists("save")) scr_save_load();
 scr_loadout_init();
 scr_elements_init();
 
@@ -65,6 +66,11 @@ global.kill_count = 0;
 global.slime_kill_count = 0;
 global.bat_kill_count = 0;
 global.pumpkin_kill_count = 0;
+//essence
+global.run_essence = 0;
+global.run_banked = false;
+global.run_payout = 0;
+global.run_total = 0;
 
 //Quit Confirmation
 quit_confirm_options = ["Yes, Quit", "Cancel"];

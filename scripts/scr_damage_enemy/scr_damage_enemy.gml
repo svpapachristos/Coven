@@ -18,6 +18,7 @@ if (_enemy.is_boss) { global.boss_down = true; global.reagents += 3; };
 		scr_try_drop(_enemy);
 		if (struct_exists(global.event_listeners, "kill")) scr_fire_event("kill", { enemy: _enemy, x: _enemy.x, y: _enemy.y });
 		scr_necro_on_kill(_enemy);
+		scr_essence_on_kill(_enemy);
 		instance_destroy(_enemy);
 		return true;
 	}	

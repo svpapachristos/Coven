@@ -1,3 +1,4 @@
+scr_necro_draw_fallen();
 var _stage = scr_corruption_stage();
 if (_stage > 0) {
 	var _pulse = 0.85 + 0.15 * sin(current_time / 180);

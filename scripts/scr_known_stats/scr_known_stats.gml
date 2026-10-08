@@ -6,5 +6,5 @@ function scr_known_stats() {
 			"chill_freeze_duration", "alt_drain", "missile_count", "missile_damage", "soul_gain",
 			"tower_damage", "homing", "pierce", "primary_count", "beam_damage", "beam_length", 
 			"army_cap", "raise_count", "raise_radius", "thrall_damage", "thrall_health", "thrall_speed",
-			"frenzy_duration"];
+			"frenzy_duration", "beam_max_heat" ];
 }
