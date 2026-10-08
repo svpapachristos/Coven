@@ -56,7 +56,7 @@ function scr_open_levelup() {
 
 function scr_act_complete() {
 	global.game_state = "VICTORY";
-	sr_essence_bank_run();
+	scr_essence_bank_run();
 	with (obj_enemy_parent) {                 // everything left dies in one burst
 		part_particles_create(global.ps_sparks, x, y, global.pt_spark, 4);
 		instance_destroy();

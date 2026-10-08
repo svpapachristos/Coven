@@ -54,13 +54,82 @@ switch (global.game_state) {
 		menu_index = scr_menu_nav(menu_index, array_length(menu_options));
 		var _pick = scr_menu_pick(menu_index, array_length(menu_options));
 		if(_pick != -1) {
-			menu_index = _pick;
-			if (menu_options[menu_index] == "Play") { 
-				global.game_state = "HUB";
+						menu_index = _pick;
+			switch (menu_options[menu_index]) {
+				case "Play":
+					slot_labels = scr_slot_labels();
+					slot_index = 0;
+					slot_delete_armed = -1;
+					global.game_state = "SLOTS";
+					break;
+				case "Options":
+					options_return = "MENU";
+					options_index = 0;
+					global.game_state = "OPTIONS";
+					break;
+				case "Quit":
+					quit_confirm = true;
+					quit_confirm_index = 1;
+					break;
+			}
+			io_clear();
+		}
+		break;
+		case "SLOTS":
+		var _scount = array_length(slot_labels);
+		slot_index = scr_menu_nav(slot_index, _scount);
+		if (keyboard_check_pressed(vk_escape) || mouse_check_button_pressed(mb_right)) { global.game_state = "MENU"; io_clear(); break; }
+
+		// moving off a slot cancels a pending erase
+		if (slot_delete_armed != -1 && slot_delete_armed != slot_index) slot_delete_armed = -1;
+
+		// press Delete twice on a slot to erase it
+		if (keyboard_check_pressed(vk_delete) && slot_index < SAVE_SLOTS) {
+			if (slot_delete_armed == slot_index) {
+				scr_slot_delete(slot_index + 1);
+				slot_labels = scr_slot_labels();
+				slot_delete_armed = -1;
+				global.toast = { text: "SLOT " + string(slot_index + 1) + " ERASED", sub: "", color: c_red, timer: game_get_speed(gamespeed_fps) * 2 };
+			} else {
+				slot_delete_armed = slot_index;
+				global.toast = { text: "ERASE SLOT " + string(slot_index + 1) + "?", sub: "Press Delete again to confirm", color: c_red, timer: game_get_speed(gamespeed_fps) * 3 };
+			}
+		}
+
+		var _slot_pick = scr_menu_pick(slot_index, _scount);
+		if (_slot_pick != -1) {
+			if (_slot_pick == SAVE_SLOTS) {
+				global.game_state = "MENU"; // Back
+			} else {
+				scr_save_load(_slot_pick + 1);
 				global.boot_done = true;
-			} else if (menu_options[menu_index] == "Quit") { 
-				quit_confirm = true; 
-				quit_confirm_index = 1; 
+				global.game_state = "HUB";
+			}
+			io_clear();
+		}
+		break;
+
+	case "OPTIONS":
+		var _rows = scr_options_rows();
+		var _ocount = array_length(_rows) + 1; // the settings plus Back
+		options_index = scr_menu_nav(options_index, _ocount);
+		if (keyboard_check_pressed(vk_escape) || mouse_check_button_pressed(mb_right)) { global.game_state = options_return; io_clear(); break; }
+
+		// left / right nudges the highlighted setting by 10%
+		if (options_index < array_length(_rows)) {
+			var _row = _rows[options_index];
+			var _adj = (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D")))
+			         - (keyboard_check_pressed(vk_left)  || keyboard_check_pressed(ord("A")));
+			if (_adj != 0) scr_setting_step(_row.key, _adj * 0.1, false);
+		}
+
+		var _opt_pick = scr_menu_pick(options_index, _ocount);
+		if (_opt_pick != -1) {
+			if (_opt_pick == array_length(_rows)) {
+				global.game_state = options_return; // Back
+			} else {
+				var _picked = _rows[_opt_pick];
+				scr_setting_step(_picked.key, 0.1, true); // clicking steps it up, wrapping to 0 after 100%
 			}
 			io_clear();
 		}
@@ -187,6 +256,8 @@ switch (global.game_state) {
 				case "Resume":		 global.game_state = pause_return; break;
 				case "Abandon Run": room_goto(rm_hideout); break; 
 				case "Quit to Desktop": quit_confirm = true; quit_confirm_index = 1; break;
+				case "Options":     options_return = "PAUSED"; options_index = 0; global.game_state = "OPTIONS"; break;
+				case "Main Menu":   menu_index = 0; global.game_state = "MENU"; break;
 				}
 				io_clear();
 			}

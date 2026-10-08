@@ -184,3 +184,30 @@ if (global.game_state == "SPREAD") {
 	}
 	draw_set_halign(fa_left);
 }
+
+if (global.game_state == "SLOTS") {
+	scr_draw_menu("Choose a Save", slot_labels, slot_index);
+	var _cx = display_get_gui_width() / 2;
+	var _y = display_get_gui_height() / 2 + array_length(slot_labels) * 28 + 24;
+	draw_set_halign(fa_center);
+	draw_set_color(c_dkgray);
+	draw_text(_cx, _y, "Enter to play   -   Delete twice to erase   -   Esc to go back");
+	draw_set_color(c_white);
+	draw_set_halign(fa_left);
+}
+
+if (global.game_state == "OPTIONS") {
+	draw_set_alpha(0.55);
+	draw_set_color(c_black);
+	draw_rectangle(0, 0, display_get_gui_width(), display_get_gui_height(), false);
+	draw_set_alpha(1);
+	var _olabels = scr_options_labels();
+	scr_draw_menu("Options", _olabels, options_index);
+	var _cx = display_get_gui_width() / 2;
+	var _y = display_get_gui_height() / 2 + array_length(_olabels) * 28 + 24;
+	draw_set_halign(fa_center);
+	draw_set_color(c_dkgray);
+	draw_text(_cx, _y, "Left / Right to adjust   -   Esc to go back");
+	draw_set_color(c_white);
+	draw_set_halign(fa_left);
+}

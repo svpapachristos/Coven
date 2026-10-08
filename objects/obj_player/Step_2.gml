@@ -17,7 +17,7 @@ if (global.game_state == "PLAYING") {
 var target_x = x - cam_w / 2 + cam_offset_x;
 var target_y = y - cam_h / 2 + cam_offset_y;
 
-var _sh = global.shake;
+var _sh = global.shake * global.settings.screen_shake;
 camera_set_view_pos(cam,
 	clamp(target_x, 0, room_width - cam_w) + random_range(-_sh, _sh),
 	clamp(target_y, 0, room_height - cam_h) + random_range(-_sh, _sh));

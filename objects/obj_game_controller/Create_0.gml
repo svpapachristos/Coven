@@ -8,7 +8,11 @@ else global.game_state = "PLAYING";
 pending_run_start = !_in_hub; // run room; applies loadout once player exists in the room
 pending_hub_setup = _in_hub; //hideout: same, so your witch wand and familiar are ready
 
-if (!variable_global_exists("save")) scr_save_load();
+if (!variable_global_exists("save")) {
+	global.save = scr_save_defaults(); // placeholder until a slot is picked on the title screen
+	global.save_slot = 0;
+	scr_settings_load();
+}
 scr_loadout_init();
 scr_elements_init();
 
@@ -30,12 +34,19 @@ station_index = 0;
 pause_return = "PLAYING";
 
 //Main Menu Options
-menu_options = ["Play", "Quit"];
+menu_options = ["Play", "Options", "Quit"];
 menu_index = 0;
 
 //Pause Menu Options
-pause_options = _in_hub ? ["Resume", "Quit to Desktop"] : ["Resume", "Abandon Run", "Quit to Desktop"];
+pause_options = _in_hub ? ["Resume", "Options", "Main Menu", "Quit to Desktop"] : ["Resume", "Options", "Abandon Run", "Quit to Desktop"];
 pause_index = 0;
+
+//Save slots and options
+slot_index = 0;
+slot_labels = [];
+slot_delete_armed = -1;  // which slot is waiting for a second Delete press
+options_index = 0;
+options_return = "MENU"; // where Back takes you: the title screen or the pause menu
 
 //End of Run Screen Options
 end_options = ["New Run", "Return to Hideout", "Quit to Desktop"];
