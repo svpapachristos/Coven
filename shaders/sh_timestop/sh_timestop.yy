@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"sh_timestop",
+  "name":"sh_timestop",
+  "parent":{
+    "name":"hexweaver",
+    "path":"folders/Shaders/hexweaver.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

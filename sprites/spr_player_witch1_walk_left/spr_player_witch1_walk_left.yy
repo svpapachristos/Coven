@@ -26,8 +26,8 @@
   "nineSlice":null,
   "origin":4,
   "parent":{
-    "name":"Witch1",
-    "path":"folders/Sprites/Witch Sprites/Witch1.yy",
+    "name":"Hexweaver",
+    "path":"folders/Sprites/Witch Sprites/Hexweaver.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

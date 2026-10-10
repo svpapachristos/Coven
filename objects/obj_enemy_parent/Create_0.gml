@@ -8,6 +8,12 @@ body_radius = 12;
 sep_radius = 44;
 sep_strength = 0.45;
 
+//hexweaver stats
+hex = 0;			//0 to 1, based on how ripe the curse is, a -1 will mean they are toaded
+last_hex_wave = 0; //so only one wave can affect an enemy at a given time
+unmaking = 0; // 0 to 1 while dissolving into starlight during the hexweavers ultimate
+unmake_at = 0; // the frame of the Unmaking when this enemy ignites into a star
+
 //necromancer stats
 thrall_claims = 0; //how many thralls are currently targeting this enemy
 

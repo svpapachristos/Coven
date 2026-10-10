@@ -8,6 +8,7 @@ function scr_magic_missile(_caster) {
 	var _cands = [];
 	for (var i = 0; i < _n; i++) {
 		var _e = instance_find(obj_enemy_parent, i);
+		if (_e.object_index == obj_toad) continue;   // frogs are already beaten: don't waste darts on them
 		if (point_distance(_caster.x, _caster.y, _e.x, _e.y) <= _range)
 			array_push(_cands, { e: _e, d: point_distance(mouse_x, mouse_y, _e.x, _e.y) });
 	}

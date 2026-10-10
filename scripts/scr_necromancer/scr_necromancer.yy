@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_necromancer",
   "parent":{
-    "name":"Class Scripts",
-    "path":"folders/Scripts/Witch Scripts/Class Scripts.yy",
+    "name":"Necromancer",
+    "path":"folders/Scripts/Witch Scripts/Class Scripts/Necromancer.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

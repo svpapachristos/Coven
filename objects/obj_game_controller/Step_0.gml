@@ -115,12 +115,15 @@ switch (global.game_state) {
 		options_index = scr_menu_nav(options_index, _ocount);
 		if (keyboard_check_pressed(vk_escape) || mouse_check_button_pressed(mb_right)) { global.game_state = options_return; io_clear(); break; }
 
-		// left / right nudges the highlighted setting by 10%
+		// left / right nudges the highlighted setting: percent settings by 10%, choice settings to the next choice
 		if (options_index < array_length(_rows)) {
 			var _row = _rows[options_index];
 			var _adj = (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D")))
 			         - (keyboard_check_pressed(vk_left)  || keyboard_check_pressed(ord("A")));
-			if (_adj != 0) scr_setting_step(_row.key, _adj * 0.1, false);
+			if (_adj != 0) {
+				if (variable_struct_exists(_row, "choices")) scr_setting_cycle(_row.key, _adj, array_length(_row.choices));
+				else scr_setting_step(_row.key, _adj * 0.1, false);
+			}
 		}
 
 		var _opt_pick = scr_menu_pick(options_index, _ocount);
@@ -129,7 +132,8 @@ switch (global.game_state) {
 				global.game_state = options_return; // Back
 			} else {
 				var _picked = _rows[_opt_pick];
-				scr_setting_step(_picked.key, 0.1, true); // clicking steps it up, wrapping to 0 after 100%
+				if (variable_struct_exists(_picked, "choices")) scr_setting_cycle(_picked.key, 1, array_length(_picked.choices));
+				else scr_setting_step(_picked.key, 0.1, true);
 			}
 			io_clear();
 		}
@@ -167,7 +171,17 @@ switch (global.game_state) {
     case "PLAYING":
 		if (global.boss_down) { global.boss_down = false; scr_act_complete(); }
 		global.run_time += 1 / game_get_speed(gamespeed_fps); // run time in seconds
-		if (keyboard_check_pressed(vk_f3)) scr_give_random_item();
+		
+		
+		//debugging keys
+		if (keyboard_check_pressed(vk_f3)) { //debug: open the item picker
+			io_clear();
+			keyboard_string = "";
+			debug_filter = "";
+			debug_items = scr_debug_item_list("");
+			debug_index = 0;
+			global.game_state = "DEBUG_ITEMS";
+		}
 		if (keyboard_check_pressed(vk_f4)) {
 			repeat(100) {
 				var _p = scr_get_spawn_point();
@@ -185,24 +199,18 @@ switch (global.game_state) {
 			global.toast.timer--;
 			if (global.toast.timer <= 0) global.toast = undefined;
 		}
-		if (keyboard_check_pressed(vk_f6)) {
-			scr_item_reward(obj_player.x + 120, obj_player.y)
-			var _id = scr_roll_item();
-			if (!is_undefined(_id)) {
-				var _p = instance_create_layer(obj_player.x + 120, obj_player.y, "Instances", obj_pickup_item);
-			_p.item_id = _id;
-			_p.pickup_color = scr_rarity_color(global.item_db[$ _id].rarity);
-			}
-		}
-		if (global.levelups_pending > 0) scr_open_levelup();
-		if (variable_global_exists("necro_frenzy") && global.necro_frenzy > 0) global.necro_frenzy--;
-		
+
+		if (keyboard_check_pressed(vk_insert) && instance_exists(obj_player)) obj_player.ultimate_charge = obj_player.ultimate_charge_max; //test key: full ult charge
+		if (keyboard_check_pressed(vk_f6)) global.hex_unmade += 50; //test key to push the hexweaver up a tier in her ascension
 		if (keyboard_check_pressed(vk_f7)) scr_gain_souls(100); //test key to give souls
 		if (keyboard_check_pressed(vk_f8)) scr_add_corruption(15); //test key to corrupt the player
 		if (keyboard_check_pressed(vk_f9)) global.boss_down = true;
-		if (keyboard_check_pressed(vk_f10)) scr_give_item("tarot_magician"); //test key for infinite mana
+		if (keyboard_check_pressed(vk_f10)) global.hex_debug_holes = !global.hex_debug_holes; //test key: black holes form easily
 		
 		
+		
+		if (global.levelups_pending > 0) scr_open_levelup();
+		if (variable_global_exists("necro_frenzy") && global.necro_frenzy > 0) global.necro_frenzy--;
 		var _bn = min(array_length(global.blast_queue), 20);   // at most 20 blasts a frame
 		for (var i = 0; i < _bn; i++) {
 			var _b = global.blast_queue[i];
@@ -211,7 +219,7 @@ switch (global.game_state) {
 			}
 		part_particles_create(global.ps_sparks, _b.x, _b.y, global.pt_spark, 10);
 		}
-		array_delete(global.blast_queue, 0, _bn);
+		if (_bn > 0) array_delete(global.blast_queue, 0, _bn);
 		break;
 		
 	case "LEVELUP":
@@ -306,5 +314,29 @@ switch (global.game_state) {
 		}
 		break;
 		
+	case "DEBUG_ITEMS":
+		if (keyboard_check_pressed(vk_escape)) { global.game_state = "PLAYING"; io_clear(); break; }
+		
+		// typing will filter the list, refreshing when text changes
+		if (keyboard_string != debug_filter) {
+			debug_filter = keyboard_string;
+			debug_items = scr_debug_item_list(debug_filter);
+			debug_index = 0;
+		}
+		
+		var _dcount = array_length(debug_items);
+		if (_dcount > 0) {
+			// arrows only since letters are for typing
+			var _move = keyboard_check_pressed(vk_down) - keyboard_check_pressed(vk_up);
+			debug_index = (debug_index + _move + _dcount) mod _dcount;
+			
+			if (keyboard_check_pressed(vk_enter)) {
+				var _gid = debug_items[debug_index];
+				scr_give_item(_gid);
+				var _git = global.item_db[$ _gid];
+				global.toast = { text: _git.name, sub: "Debug: added", color: scr_rarity_color(_git.rarity), timer: game_get_speed(gamespeed_fps) * 2 };
+			}
+		}
+		break;
 		
 }

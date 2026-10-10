@@ -174,6 +174,10 @@ function scr_items_init() {
 			desc: "Your beam reaches 25% further.",
 			add: {}, mult: { beam_length: 1.25 }
 		},
+		toadstone: { name: "Toadstone", rarity: "charm", tags: ["hex"], req: ["hexweaver"],
+			desc: "A jewel grown in a toad's skull, said to have magical properties. Causes your toads to spread their hex.",
+			add: { hex_spread: 1 }, mult: {}
+		},
 		
 		//Scroll Tier
 		fractal_lens:   { name: "Fractal Lens",   rarity: "scroll",  tags: ["arcane", "wand"],
@@ -184,10 +188,10 @@ function scr_items_init() {
 			desc: "Chain lightning jumps to 2 more enemies.", 
 			add: { chain_targets: 2 }, mult: {},  req: ["lightning"] 
 		},
-		scroll_artificer:    { name: "Artificer Scroll", rarity: "scroll", tags: ["arcane"],
-			desc: "Magic missiles deal 40% more damage.", 
-			add: {}, mult: { primary_damage: 1.4 },  req: ["arcane"]
-		},
+//		scroll_artificer:    { name: "Artificer Scroll", rarity: "scroll", tags: ["arcane"],
+//			desc: "Magic missiles deal more damage.", 
+	//		add: { primary_damage: 25 }, mult: {},  req: ["arcane"]
+//		},
 		scroll_haste:   { name: "Haste Scroll", rarity: "scroll", tags: ["wand"],
 			desc: "Your wand fires 15% faster.", 
 			add: {}, mult: { attack_speed: 1.15 } 
@@ -201,111 +205,111 @@ function scr_items_init() {
 		},
 		
 		//Tarot Tier
-		tarot_fool: { // 0
-			name: "The Fool", rarity: "tarot", tags: ["tarot", "fool" ],
-			desc: "Beginnings. Spontaneity. Unlimited and untold potential",
-			add: {}, mult: {}
-		},
+		//tarot_fool: { // 0
+		//	name: "The Fool", rarity: "tarot", tags: ["tarot", "fool" ],
+		//	desc: "Beginnings. Spontaneity. Unlimited and untold potential",
+		//	add: {}, mult: {}
+		//},
 		tarot_magician: { // I
 			name: "The Magician", rarity: "tarot", tags: ["tarot", "mana"],
 			desc: "Manifestation. Resourcefulness. The Power to turn your Ideas to Reality.",
 			add: { infinite_mana: 1 }, mult: {}, weight: 3, min_time: 600, max_stacks: 1
 		}, 
-		tarot_highpriestess: { // II
-			name: "The High Priestess", rarity: "tarot", tags: ["tarot"], 
-			desc: "Intuition. Sacred Knowledge. The ability to choose correctly when the time comes.",
-			add: {}, mult: {}
-			},
-		tarot_empress: { // III
-			name: "The Empress", rarity: "tarot", tags: ["tarot"],
-			desc: "Growth. Abundance. Nurturing energy and a deep connection to the natural world.",
-			add: {}, mult: {}
-		},
-		tarot_emperor: { // IV
-			name: "The Emperor", rarity: "tarot", tags: ["tarot"], 
-			desc: "Authority.", 
-			add: {}, mult: {}
-			},
-		tarot_heirophant: { // V
-			name: "The Heirophant", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
+		//tarot_highpriestess: { // II
+		//	name: "The High Priestess", rarity: "tarot", tags: ["tarot"], 
+		//	desc: "Intuition. Sacred Knowledge. The ability to choose correctly when the time comes.",
+		//	add: {}, mult: {}
+		//	},
+		//tarot_empress: { // III
+		//	name: "The Empress", rarity: "tarot", tags: ["tarot"],
+		//	desc: "Growth. Abundance. Nurturing energy and a deep connection to the natural world.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_emperor: { // IV
+		//	name: "The Emperor", rarity: "tarot", tags: ["tarot"], 
+		//	desc: "Authority.", 
+		//	add: {}, mult: {}
+		//	},
+		//tarot_heirophant: { // V
+		//	name: "The Heirophant", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
 		tarot_lovers: { // VI
-			name: "The Lovers", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
+			name: "The Lovers", rarity: "tarot", tags: ["tarot", "bolt"],
+			desc: "Adds your primary's total fire count an extra time",
+			add: {}, mult: { primary_count: 2 }
 		},
-		tarot_chariot: { // VII
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_strength: { //VIII
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_hermit: { //IX
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_wheel: { //X
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_justice: { //XI
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_hman: { //XII
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_death: { //XIII
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_temperance: { //XIV
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_devil: { //XV
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_tower: { //XVI 
-			name: "The Tower", rarity: "tarot", tags: ["tarot", "explosive"], 
-			desc: "Upheaval. Every enemy that dies detonates, and the blast can set off the next.", 
-			add: {}, mult: {}, weight: 3, max_stacks: 1,
-			triggers: { kill: scr_trig_tower } 
-		},
-		tarot_star: { //XVII
-			name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
-		tarot_moon: { //XVIII
-			name: "The Moon", rarity: "tarot", tags: ["tarot", "placeholder"],
-			add: {}, mult: {}
-		},
-		tarot_sun: { //XIX
-			name: "The Sun", rarity: "tarot", tags: ["tarot", "ability"], 
-			desc: "Radiance. Your witch ability barely has a cooldown.", weight: 3, max_stacks: 1,
-			add: {}, mult: { ability_cooldown: 0.05, ability_damage: 1.5 } 
-			},
-		tarot_judgement: { //XX
-			name: "Judgement", rarity: "tarot", tags: ["tarot", "placeholder"],
-			desc: "Placeholder. the ability to place holders in places that need holding.",
-			add: {}, mult: {}
-		},
+		//tarot_chariot: { // VII
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_strength: { //VIII
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_hermit: { //IX
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_wheel: { //X
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_justice: { //XI
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_hman: { //XII
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_death: { //XIII
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_temperance: { //XIV
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_devil: { //XV
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_tower: { //XVI 
+		//	name: "The Tower", rarity: "tarot", tags: ["tarot", "explosive"], 
+		//	desc: "Upheaval. Every enemy that dies detonates, and the blast can set off the next.", 
+		//	add: {}, mult: {}, weight: 3, max_stacks: 1,
+		//	triggers: { kill: scr_trig_tower } 
+		//},
+		//tarot_star: { //XVII
+		//	name: "The Placeholder", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
+		//tarot_moon: { //XVIII
+		//	name: "The Moon", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	add: {}, mult: {}
+		//},
+		//tarot_sun: { //XIX
+		//	name: "The Sun", rarity: "tarot", tags: ["tarot", "ability"], 
+		//	desc: "Radiance. Your witch ability barely has a cooldown.", weight: 3, max_stacks: 1,
+		//	add: {}, mult: { ability_cooldown: 0.05, ability_damage: 1.5 } 
+		//	},
+		//tarot_judgement: { //XX
+		//	name: "Judgement", rarity: "tarot", tags: ["tarot", "placeholder"],
+		//	desc: "Placeholder. the ability to place holders in places that need holding.",
+		//	add: {}, mult: {}
+		//},
 		tarot_world: { //XXI
 			name: "The World", rarity: "tarot", tags: ["tarot", "time"],
 			desc: "Completion. Wholeness. Dance around your enemies as if Time itself answers to you.",
@@ -439,4 +443,24 @@ function scr_normalize_items() {
 		if (!struct_exists(_it, "desc")) _it.desc = "(no description)";
 		if (!struct_exists(_it, "name")) _it.name = _ids[i];
 	}
+}
+
+// debug: every item in the game, filtered by what's typed, sorted by name
+function scr_debug_item_list(_filter) {
+	var _all = variable_struct_get_names(global.item_db);
+	var _out = [];
+	var _f = string_lower(_filter);
+	for (var i = 0; i < array_length(_all); i++) {
+		var _id = _all[i];
+		var _it = global.item_db[$ _id];
+		if (_f == "" || string_pos(_f, string_lower(_it.name)) > 0 || string_pos(_f, _id) > 0) array_push(_out, _id);
+	}
+	array_sort(_out, function(_a, _b) {
+		var _ia = global.item_db[$ _a];
+		var _ib = global.item_db[$ _b];
+		if (_ia.name < _ib.name) return -1;
+		if (_ia.name > _ib.name) return 1;
+		return 0;
+	});
+	return _out;
 }

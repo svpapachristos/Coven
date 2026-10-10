@@ -10,8 +10,8 @@ function scr_save_defaults() {
 		version: 1,
 		essence: 0,
 		// saved by name, not list position, so reordering a db never scrambles a save
-		unlocked: { witch: ["Necromancer"], wand: ["Witches Wand"], familiar: ["Munin", "Salem"] },
-		loadout:  { witch: "Necromancer", wand: "Witches Wand", familiar: "Munin" },
+		unlocked: { witch: [], wand: ["Witches Wand"], familiar: ["Munin"] },
+		loadout:  { witch: "Hexweaver", wand: "Witches Wand", familiar: "Munin" },
 		stats:    { runs: 0, best_time: 0, total_kills: 0 }
 	};
 }
@@ -104,7 +104,7 @@ function scr_slot_delete(_slot) {
 
 // ---- settings, shared by every slot ----
 function scr_settings_defaults() {
-	return { screen_shake: 1, damage_numbers: 1, master_volume: 1 };
+	return { screen_shake: 1, damage_numbers: 1, master_volume: 1, window_mode: 1 };
 }
 
 function scr_settings_load() {
@@ -121,11 +121,13 @@ function scr_settings_write() {
 
 function scr_settings_apply() {
 	audio_master_gain(global.settings.master_volume);
+	scr_window_apply(global.settings.window_mode);
 }
 
 // the options menu: each row is a label and the setting it changes. add a row here to add an option
 function scr_options_rows() {
 	return [
+		{ label: "Window",		   key: "window_mode", choices: scr_window_mode_names() },
 		{ label: "Screen Shake",   key: "screen_shake" },
 		{ label: "Damage Numbers", key: "damage_numbers" },
 		{ label: "Master Volume",  key: "master_volume" }
@@ -138,12 +140,12 @@ function scr_options_labels() {
 	for (var i = 0; i < array_length(_rows); i++) {
 		var _row = _rows[i];
 		var _key = _row.key;
-		array_push(_out, _row.label + ":   " + string(round(global.settings[$ _key] * 100)) + "%");
+		if (variable_struct_exists(_row, "choices")) array_push(_out, _row.label + ":   " + _row.choices[global.settings[$ _key]]);
+		else array_push(_out, _row.label + ":   " + string(round(global.settings[$ _key] * 100)) + "%");
 	}
 	array_push(_out, "Back");
 	return _out;
 }
-
 // nudge a setting by a step, keeping it between 0 and 100%
 function scr_setting_step(_key, _step, _wrap) {
 	var _v = round((global.settings[$ _key] + _step) * 10) / 10;
@@ -152,6 +154,38 @@ function scr_setting_step(_key, _step, _wrap) {
 	scr_settings_write();
 }
 
+// steps a choice setting forward or back through its list, wrapping around at either end
+function scr_setting_cycle(_key, _dir, _count) {
+	global.settings[$ _key] = (global.settings[$ _key] + _dir + _count) mod _count; // + _count keeps -1 from going negative
+	scr_settings_write();
+}
+
+function scr_window_mode_names() { return ["Windowed", "Maximized", "Borderless", "Fullscreen"]; }
+
+// puts the game window into one of the four modes
+function scr_window_apply(_mode) {
+	// settings get re-applied every time ANY option changes (even volume), so remember which mode
+	// is already on and do nothing if it hasn't changed. otherwise the window would flicker
+	static _applied = -1;
+	if (_mode == _applied) return;
+	_applied = _mode;
+
+	window_set_fullscreen(_mode == 3);
+	window_set_showborder(_mode < 2); // title bar only for Windowed and Maximized
+	if (_mode == 3) return;
+
+	// leaving fullscreen takes the window a frame or two to settle, and a resize sent too early gets
+	// overwritten, so the sizing waits 2 frames. (the function can't see this one's local variables,
+	// so it reads the mode from the settings again)
+	call_later(2, time_source_units_frames, function() {
+		var _dw = display_get_width(), _dh = display_get_height();
+		switch (global.settings.window_mode) {
+			case 0: window_set_size(1280, 720); window_center(); break;
+			case 1: window_set_rectangle(0, 31, _dw, _dh - 31 - 48); break; // 31 = title bar, 48 = taskbar
+			case 2: window_set_rectangle(0, 0, _dw, _dh); break;
+		}
+	});
+}
 
 // ---- unlocks ----
 function scr_station_key(_step) {
@@ -162,8 +196,10 @@ function scr_station_key(_step) {
 function scr_is_unlocked(_step, _index) {
 	var _db = scr_select_db(_step);
 	var _name = _db[_index].name;
+	if (struct_exists(_db[_index], "starter")) return true; //starters are unlocked by default
 	var _list = global.save.unlocked[$ scr_station_key(_step)];
 	return scr_array_has(_list, _name);
+	
 }
 
 // an entry can set its own cost: field, otherwise it uses the default for its station

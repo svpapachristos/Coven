@@ -8,6 +8,7 @@ function scr_select_db(_step) {
 
 function scr_loadout_init() {
 	global.witch_db = [
+		{ name: "Hexweaver", tags: ["hexweaver"], starter: true, desc: "Our central witch. She is capable of channeling the raw, chaotic hex energy that acts as the ingredient for all magicks in this world.", ability: { name: "Hex", cooldown: 10, fn: scr_hex }, ultimate: { name: "Unmaking", charge_needed: 80, fn: scr_unmaking } },
 		{ name: "Hedgewitch", tags: ["hedgewitch"], desc: "A Naturalist with a connection to the earth and the secrets it holds.", ability: { name: "Placeholder Spell Hedge", cooldown: 10, fn: scr_flame_nova  }, ultimate: { name: "Placeholder Ult Hedge", charge_needed: 25, fn: scr_ultimate_place_holder } },
 		{ name: "Elementalist", tags: ["elementalist", "fire", "ice", "storm", "lightning", "earth", "air"], desc: "A Sorceress with a special connection to the wands she equips", ability: { name: "Placeholder Spell Element", cooldown: 10, fn: scr_flame_nova }, ultimate: { name: "Placeholder Ult Element", charge_needed: 25, fn: scr_ultimate_place_holder } },
 		{ name: "Necromancer", tags: ["necromancer", "summons",], desc: "A Necromancy Witch. Commander of the dead and dark forces that corrupt this world", ability: { name: "Raise the Fallen", cooldown: 30, fn: scr_necro_raise }, ultimate: { name: "Danse Macabre", charge_needed: 100, fn: scr_necro_danse } },
@@ -74,6 +75,9 @@ function scr_start_run() {
 	for (var i = 0; i < array_length(global.spread); i++) array_push(global.run_spread, scr_spread_card_id(i));
 	global.spread = [];       // the hideout draws a new reading next time
 	global.spread_rev = [];
+	var _w = global.witch_db[global.loadout.witch];
+	scr_hex_sky_art_free();
+	if (_w.name == "Hexweaver") global.hex_neb = scr_hex_nebula_fields(global.hex_seed);
 	global.game_state = "PLAYING";
 	io_clear();
 }

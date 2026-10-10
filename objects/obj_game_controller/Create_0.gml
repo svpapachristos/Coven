@@ -21,11 +21,25 @@ var _layer = layer_get_id("Background");
 if (layer_exists(_layer)) layer_background_blend(layer_background_get_id(_layer), make_color_rgb(115, 110, 155));
 
 
+// The Hexweaver
+global.hex_seed = irandom(9999999); // this runs nebula, same sky every cast, but the nebula should look completely new/random to every player every time
+global.hex_neb = undefined;
+global.hex_unmade = 0; // Enemies our lil Hexweaver has unmade this run, which will drive her ascension
+global.hex_stars = []; // one star for every enemy the Hexweaver unmakes this run
+global.hex_holes = [];          // black holes in her sky: { ox, oy, m, s, age, ph, tilt }
+global.hex_haze   = [];   // wisps of gas left by the dust of everyone the Hexweaver unmakes: her nebula, growing all run
+global.hex_haze_i = 0;    // once the haze is full, the oldest wisp to make way next
+global.hex_debug_holes = false; // F9: collapse at a tiny mass and any tier, for testing
+
+
 //Item Banner for pickups
 global.toast = undefined;
 global.next_item_at = 25;
 
 //debug
+debug_items = [];
+debug_index = 0;
+debug_filter = "";
 global.debug_hud = false;
 global.auto_pick = false; // test toggle: level-ups pick a random item instead of opening the card screen
 

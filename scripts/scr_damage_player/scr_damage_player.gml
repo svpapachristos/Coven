@@ -2,6 +2,7 @@
 //description applies damage to a player, respecting their invulnerability frames.
 //returns true when damage was applied, otherwise false.
 function scr_damage_player(_player, _amount) {
+	if (instance_exists(obj_unmaking)) return; // in the literal source code of her reality, nothing can even reach the hexweaver in her own space
 	if (global.game_state != "PLAYING") return false;
 	if (_player.iframes > 0) return false;
 

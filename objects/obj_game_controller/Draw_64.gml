@@ -211,3 +211,59 @@ if (global.game_state == "OPTIONS") {
 	draw_set_color(c_white);
 	draw_set_halign(fa_left);
 }
+
+if (global.game_state == "DEBUG_ITEMS") {
+	var _gw = display_get_gui_width(), _gh = display_get_gui_height();
+	draw_set_alpha(0.75);
+	draw_set_color(c_black);
+	draw_rectangle(0, 0, _gw, _gh, false);
+	draw_set_alpha(1);
+
+	var _cx = _gw / 2, _top = 60;
+	draw_set_halign(fa_center);
+	draw_set_color(c_yellow);
+	draw_text(_cx, _top, "DEBUG: ADD ITEM");
+	draw_set_color(c_white);
+	draw_text(_cx, _top + 28, "Search: " + debug_filter + "_");
+
+	var _dcount = array_length(debug_items);
+	if (_dcount == 0) {
+		draw_set_color(c_gray);
+		draw_text(_cx, _top + 70, "No items match");
+	} else {
+		// show a window of rows that scrolls to keep the highlight in view
+		var _rows = 14;
+		var _start = clamp(debug_index - _rows div 2, 0, max(0, _dcount - _rows));
+		var _tags = scr_loadout_tags();
+		for (var i = _start; i < min(_dcount, _start + _rows); i++) {
+			var _id = debug_items[i];
+			var _it = global.item_db[$ _id];
+			var _ry = _top + 64 + (i - _start) * 24;
+			var _fits = scr_item_fits_loadout(_it, _tags);
+			var _owned = struct_exists(global.item_counts, _id) ? global.item_counts[$ _id] : 0;
+			var _label = _it.name + "   (" + _it.rarity + ")";
+			if (_owned > 0) _label += "   x" + string(_owned);
+			if (!_fits) _label += "   [not your loadout]";
+
+			if (i == debug_index) {
+				draw_set_alpha(0.25);
+				draw_set_color(c_aqua);
+				draw_rectangle(_cx - 260, _ry - 3, _cx + 260, _ry + 21, false);
+			}
+			draw_set_alpha(_fits ? 1 : 0.45);
+			draw_set_color(scr_rarity_color(_it.rarity));
+			draw_text(_cx, _ry, ((i == debug_index) ? "> " : "") + _label);
+		}
+		draw_set_alpha(1);
+
+		// the highlighted item's description
+		var _sel = global.item_db[$ debug_items[debug_index]];
+		draw_set_color(c_ltgray);
+		draw_text(_cx, _top + 64 + _rows * 24 + 12, _sel.desc);
+	}
+
+	draw_set_color(c_dkgray);
+	draw_text(_cx, _gh - 40, "Type to search   -   Up / Down to choose   -   Enter to add   -   Esc to close");
+	draw_set_color(c_white);
+	draw_set_halign(fa_left);
+}

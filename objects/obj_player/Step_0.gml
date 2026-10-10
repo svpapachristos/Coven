@@ -1,5 +1,12 @@
 if (scr_freeze_if_paused()) exit; // freeze on game pause
-
+// inside her own space she is the still centre: no walking, no casting, the world waits for her
+if (instance_exists(obj_unmaking)) {
+	state = "IDLE";
+	can_shoot = true;
+	shoot_timer = 0;
+	image_alpha = 1; // her i-frames stop ticking in here, so a see-through flicker frame would otherwise last the whole ult
+	exit;
+}
 var _old_max_hp = max_hp;
 max_hp = scr_stat("max_health", base_max_hp);
 if (max_hp > _old_max_hp) hp += max_hp - _old_max_hp;

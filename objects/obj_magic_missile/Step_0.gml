@@ -3,7 +3,15 @@ if (scr_freeze_if_paused()) exit;
 life--;
 if (life <= 0) { instance_destroy(); exit; }
 
-if (!instance_exists(target)) target = instance_nearest(x, y, obj_enemy_parent);   // retarget if it died
+if (!instance_exists(target)) {                     // its target died: find the nearest enemy that isn't a frog
+	target = noone;
+	var _best = infinity;
+	with (obj_enemy_parent) {
+		if (object_index == obj_toad) continue;
+		var _d = point_distance(x, y, other.x, other.y);
+		if (_d < _best) { _best = _d; other.target = id; }
+	}
+}
 if (instance_exists(target)) {
 	var _want = point_direction(x, y, target.x, target.y);
 	direction -= clamp(angle_difference(direction, _want), -turn_rate, turn_rate);

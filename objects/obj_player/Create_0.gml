@@ -1,4 +1,5 @@
-
+//camera specific variable for Hexweaver ult
+cam_free = 0; // 0 = camera kept inside the room, 1 = feel free to follow her past the edge
 
 //Our lil witchy
 witch = undefined;
@@ -54,8 +55,8 @@ proj_speed = 2.5 * WORLD_SCALE;
 move_speed = 2.5 * WORLD_SCALE;
 
 //Camera look-ahead
-cam_look_strength = 0.3; //How much of the cursor's distance from screen center to move
-cam_look_max = 300; // Max push in pixels
+cam_look_strength = 0.15; //How much of the cursor's distance from screen center to move
+cam_look_max = 175; // Max push in pixels
 cam_look_smooth = 0.3; // 0.05 will be more floaty, 0.2 will be more snappy, so adjust accordingly
 cam_offset_x = 0;
 cam_offset_y = 0;
@@ -96,6 +97,7 @@ function movement() {
 		repeat (2) {
 			for (var i = 0; i < _lim; i++) {
 				var _e  = _list[| i];
+				if (_e.hex < 0) continue; // toads are not solid so you can go right through them
 				var _ex = (_e.bbox_left + _e.bbox_right) / 2, _ey = (_e.bbox_top + _e.bbox_bottom) / 2;
 				var _d  = point_distance(_cx, _cy, _ex, _ey);
 				if (_d < 0.01 || _d >= body_radius + _e.body_radius + 2) continue;

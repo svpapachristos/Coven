@@ -19,6 +19,7 @@ function scr_arcane_beam(_caster){
 	var _hit_count = 0;
 	
 	with (obj_enemy_parent) {
+		if (hex < 0) continue;   // frogs are already beaten: the beam passes over them
 		var _reach = _half + max(sprite_width, sprite_height) * 0.35; // bigger enemies are easier to hit
 		if (scr_dist_to_segment(x, y, _beam.x1, _beam.y1, _beam.x2, _beam.y2) < _reach) {
 			_hit_count++;

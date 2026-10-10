@@ -1,8 +1,17 @@
 if (scr_freeze_if_paused()) exit;
 
+// being unmade: frozen, rising toward its place in her sky, then igniting on its cue
+if (unmaking > 0) {
+	speed_mult = 0;
+	speed = 0;
+	if (!instance_exists(obj_unmaking)) { scr_unmake(id); exit; } // the realm closed early: finish at once
+	unmaking = clamp(obj_unmaking.t / unmake_at, 0.001, 1);      // 0 at the cast, 1 at its ignition
+	if (obj_unmaking.t >= unmake_at) scr_unmake(id);
+	exit;
+}
 
 var _list = ds_list_create();
-var _n = collision_circle_list(x, y, sep_radius, obj_enemy_parent, false, true, _list, false);
+var _n = collision_circle_list(x, y, sep_radius, obj_enemy_parent, false, true, _list, object_index == obj_toad);
 
 var _lim = min(_n, 8)
 for (var i = 0; i < _lim; i++) {
@@ -78,9 +87,16 @@ if (chill_timer > 0) {
 
 if (stun_timer > 0) { stun_timer--; speed_mult = 0; }
 
+//hexweavers hex: the curse ripens on its own until the enemy is fully hexed
+if (hex > 0 && hex < 1) hex = min(1, hex + 1 / (game_get_speed(gamespeed_fps) * scr_hex_ripen_time()));
+if (hex >= 1 && scr_hex_can_toad(id)) { scr_hex_toadify(id); exit; }
+
 // knockback slides the enemy and fades out
 x += knock_x; y += knock_y;
 knock_x *= 0.8; knock_y *= 0.8;
 
 //tints the enemy ember orange or icy blue if burned or chilled
 image_blend = (burn_timer > 0) ? make_color_rgb(255, 170, 110) : ((chill_timer > 0) ? make_colour_rgb(150, 220, 255) : c_white);
+
+//tints the enemy hex violet when hexed
+if (hex > 0) image_blend = merge_color(image_blend, HEX_VIOLET, 0.35 + 0.5 * hex);
