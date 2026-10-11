@@ -1,7 +1,7 @@
 // sh_dissolve: a piece of the frozen world being unmade. it crumbles away from the rip outward,
 // its edges burning violet as they go
 varying vec2 v_vTexcoord;
-varying vec4 v_vColour;
+varying vec4 v_vColor;
 
 uniform float u_cut;    // 0 = whole, 1 = gone
 uniform float u_ripv;   // where the rip runs, in texture coordinates (up/down), so it eats outward from there
@@ -28,8 +28,8 @@ void main()
 	if (k < cut) discard;                                                         // this bit has been unmade
 	float on   = step(0.001, u_cut);
 	float edge = (1.0 - smoothstep(0.0, 0.06, k - cut)) * on;                    // the band about to go next
-	vec3  col  = c.rgb * v_vColour.rgb;
+	vec3  col  = c.rgb * v_vColor.rgb;
 	col  = mix(col, vec3(0.75, 0.45, 1.0), edge);                                 // burning violet
 	col += vec3(1.0, 0.85, 1.0) * pow(edge, 4.0) * 0.8;                           // white-hot right at the edge
-	gl_FragColor = vec4(col, v_vColour.a);
+	gl_FragColor = vec4(col, v_vColor.a);
 }

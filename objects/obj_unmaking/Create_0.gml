@@ -1,4 +1,10 @@
+var _prof0 = get_timer();   // PERF PROBE: how long this Create takes (printed at the bottom)
 var _fps = game_get_speed(gamespeed_fps);
+gaze = variable_global_exists("hex_gaze") && global.hex_gaze;   // sitting in her universe (G): no cast, no horde, just her sky, living
+global.hex_gaze = false;
+gaze_paused = false;   // Esc or P while sitting in her universe: everything holds still
+sky_a = -1; sky_b = -1; hdr_fmt = -1;
+tde_tick = irandom_range(game_get_speed(gamespeed_fps) * 6, game_get_speed(gamespeed_fps) * 12);   // until the supermassive next tears a star apart   // the off-screen surfaces her sky's light gathers in (see Draw)
 
 t = 0;
 // the entrance's rhythm comes first, because everything after it waits for the world to break
@@ -16,12 +22,12 @@ still_at   = glitch_at + glitch_len;
 tear_at    = still_at + still_len;
 shatter_at = tear_at + tear_len + gape_len;      // the ground breaks into chunks and starts to drift
 birth_at   = shatter_at + floor(slab_len * 0.8); // the stardust begins once the chunks have mostly gone: just her and them
-duration   = birth_at + _fps * 5.5;
+duration   = birth_at + _fps * 7;
 
 // her nebula and sky for this cast, fuller the further she has ascended
 if (!variable_global_exists("hex_neb") || is_undefined(global.hex_neb)) global.hex_neb = scr_hex_nebula_fields(global.hex_seed);
 var _tier = scr_hex_tier();
-var _covers  = [0.62, 0.53, 0.45, 0.37];
+var _covers  = [0.99, 0.99, 0.99, 0.99];
 var _brights = [0.90, 1.00, 1.10, 1.20];
 var _spins   = [0.25, 0.55, 0.8, 1.1];
 nebula_cover = _covers[_tier - 1];
@@ -39,7 +45,7 @@ impact_kind = 0;  // which impact frame to draw: 0 = a black hole collapsing, 1 
 // the star birth's timing
 rise_end    = birth_at + _fps * 1.4;  // silhouettes rise and fly out to their places, counted from the break
 cascade_len = _fps * 1.6;  // then ignite one after another, nearest her first
-finale_at   = rise_end + cascade_len + _fps * 0.15;
+finale_at   = infinity;  
 ignitions   = [];          // flashes of stars being born
 pulsed      = false;
 pulse_t     = -1;
@@ -57,6 +63,10 @@ u_sl_rim   = shader_get_uniform(sh_starlit, "u_rim");
 
 // a soft glow and a solid dot, each drawn ONCE in code and turned into a sprite.
 // stamping a sprite is far cheaper than drawing a circle, and every star stamping the same one gets batched together
+show_debug_message("[UNMAKING]   setup: start (timeline, nebula fields) " + string((get_timer() - _prof0) / 1000) + " ms");   // PERF PROBE
+var _prof1 = get_timer();   // PERF PROBE
+// built once per game and kept: every sprite_create_from_surface makes the CPU wait for the graphics card, which added up on every cast
+if (!variable_global_exists("hex_fx") || !sprite_exists(global.hex_fx.soft)) {
 var _gs = surface_create(32, 32);
 surface_set_target(_gs);
 draw_clear_alpha(c_black, 1);                              // black adds nothing in additive mode, so black is "empty"
@@ -70,6 +80,37 @@ draw_circle(16, 16, 15, false);
 surface_reset_target();
 spr_dot = sprite_create_from_surface(_gs, 0, 0, 32, 32, false, false, 16, 16);
 surface_free(_gs);
+// a tiny solid square: the pixel chunks a body breaks into, before they ignite into glowing dust
+var _pxs = surface_create(4, 4);
+surface_set_target(_pxs);
+draw_clear_alpha(c_white, 1);
+surface_reset_target();
+spr_px = sprite_create_from_surface(_pxs, 0, 0, 4, 4, false, false, 2, 2);
+surface_free(_pxs);
+
+// a soft blob for gas: bright in the middle, fading out on a bell curve to nothing at the edge.
+// built from rings stacked additively, each adding just enough that the total follows the curve. no hard edge, so overlapping gas
+// melts together into a cloud instead of showing a disc for every puff
+var _sfs = surface_create(64, 64);
+surface_set_target(_sfs);
+draw_clear_alpha(c_black, 1);
+gpu_set_blendmode(bm_add);
+draw_set_color(c_white);
+for (var _k = 0; _k < 24; _k++) {
+	var _r0 = 31 * (1 - _k / 24), _r1 = 31 * (1 - (_k + 1) / 24);            // this ring's outer edge, and the next ring's
+	var _w  = exp(-3 * sqr(_r1 / 31)) - exp(-3 * sqr(_r0 / 31));              // how much brighter the curve gets between them
+	draw_set_alpha(_w);
+	draw_circle(32, 32, _r0, false);
+}
+draw_set_alpha(1);
+gpu_set_blendmode(bm_normal);
+surface_reset_target();
+spr_soft = sprite_create_from_surface(_sfs, 0, 0, 64, 64, false, false, 32, 32);
+surface_free(_sfs);
+global.hex_fx = { glow: spr_glow, dot: spr_dot, px: spr_px, soft: spr_soft };
+}
+spr_glow = global.hex_fx.glow; spr_dot = global.hex_fx.dot; spr_px = global.hex_fx.px; spr_soft = global.hex_fx.soft;
+show_debug_message("[UNMAKING]   setup: fx sprites " + string((get_timer() - _prof1) / 1000) + " ms"); _prof1 = get_timer();   // PERF PROBE
 
 
 // gather the doomed: everything on screen she's strong enough to erase
@@ -78,9 +119,9 @@ var _x0 = camera_get_view_x(_cam), _y0 = camera_get_view_y(_cam);
 var _x1 = _x0 + camera_get_view_width(_cam), _y1 = _y0 + camera_get_view_height(_cam);
 var _doomed = [];
 with (obj_enemy_parent) {
+	if (other.gaze) break;                   // just watching: nobody is unmade
 	if (!point_in_rectangle(x, y, _x0, _y0, _x1, _y1)) continue;
 	if (scr_hex_can_toad(id)) {
-		scr_hex_plan_star(id, other.sky_angle);
 		array_push(_doomed, { inst: id, d: point_distance(x, y, obj_player.x, obj_player.y) });
 	} else {
 		// elites and bosses she can't erase yet are fully cursed and torn at instead
@@ -89,20 +130,60 @@ with (obj_enemy_parent) {
 	}
 }
 
-// nearest her ignite first, so the wave of new stars ripples outward from her
+show_debug_message("[UNMAKING]   setup: gather doomed " + string((get_timer() - _prof1) / 1000) + " ms"); _prof1 = get_timer();   // PERF PROBE
+// ---- stardust: the doomed crumble into dust that swirls into her sky and gathers into stars ----
+crumble_delay = _fps * 0.58;          // a held breath once the world is gone: just her and them, nothing moving
+crumble_wave  = _fps * 1.2;          // the crumbling ripples out from her over this long, nearest first
+crumble_len   = _fps * 0.7;          // how long one body takes to crumble away
+dust_total    = 3200;                // motes for the whole horde, shared between them (the main cost knob)
+dust_fall     = _fps * 0.35;         // motes drift down like ash this long before her sky takes hold
+dust_swirl    = 0.6;                 // the galaxy swirl around her: 0 = straight to their stars, 1 = big sweeping orbits
+dust_life     = _fps * 3;            // a mote that still hasn't landed by now lands anyway
+gas_time      = _fps * 0.9;          // how long a mote takes to go from its creature's color to the glow of its gas
+chunk_time    = _fps * 0.45;         // how long a mote stays a solid pixel chunk before it burns down into glowing dust
+settle_frac   = 0.7;                 // how much of the dust drifts and settles into cloud instead of streaming into stars (real nebulae: most of it)
+settle_life   = _fps * 3.5;          // cloud dust that still hasn't settled by now just thins away
+wisp_keep     = 0.3;                // the share of settled dust that stays as lasting haze: how fast her nebula thickens each cast
+crumble_end   = birth_at + crumble_delay + crumble_wave + crumble_len; // the last body is all dust by now
+motes     = [];                      // every mote in flight
+protos    = [];                      // star plans that dust has started landing on
+streams_live = 0;                    // star dust still in flight: the finale waits for this to reach 0
+pix_cache = {};                      // each sprite frame's pixels, read once this cast ("sprite:frame" -> pixels)
+if (!variable_global_exists("hex_haze")) { global.hex_haze = []; global.hex_haze_i = 0; } // safety: normally set at run start
+
+// handles for sh_crumble's settings, looked up once
+u_cr_uvs   = shader_get_uniform(sh_crumble, "u_uvs");
+u_cr_texel = shader_get_uniform(sh_crumble, "u_texel");
+u_cr_cut   = shader_get_uniform(sh_crumble, "u_cut");
+u_cr_edge  = shader_get_uniform(sh_crumble, "u_edge");
+
+// nearest her crumble first, so the wave ripples outward from her
 array_sort(_doomed, function(_a, _b) { return _a.d - _b.d; });
-var _n = array_length(_doomed);
+var _n   = array_length(_doomed);
+var _per = clamp(floor(dust_total / max(1, _n)), 2, 24);   // motes per body: a small horde gets plenty each
 for (var i = 0; i < _n; i++) {
 	var _entry = _doomed[i];
 	var _e = _entry.inst;
-	_e.unmake_at = rise_end + ((_n > 1) ? i / (_n - 1) : 0) * cascade_len + 1;
-	_e.unmaking = 0.001;
+	_e.unmaking   = 0.001;
+	_e.unmake_at  = infinity;    // no fixed cue: it ignites the moment its last mote lands (Step)
+	_e.crumble_at = birth_at + crumble_delay + ((_n > 1) ? i / (_n - 1) : 0) * crumble_wave;
+	_e.dust_n     = _per;        // motes this body becomes
+	_e.dust_out   = 0;           // shed so far
+	_e.dust_stream = max(1, round(_per * (1 - settle_frac)));   // how many of its motes stream into its star (the rest settle into cloud)
+	_e.dust_left   = _e.dust_stream;                             // stream motes still to land: its star catches when this hits 0
+	_e.dust_pix   = undefined;   // its pixels, so each mote is born the color of the pixel it came off (read in Step, see plan_queue)
 }
-
+// the heavy part of the setup (planning each body's star, reading each sprite's pixels) used to all happen right here,
+// and froze the game for a fifth of a second on a big horde. now Step does a slice of it every frame during the entrance,
+// which has seconds to spare before anything crumbles
+plan_queue = [];
+for (var i = 0; i < _n; i++) array_push(plan_queue, _doomed[i].inst);
+plan_qi = 0;
 var _art = scr_hex_sky_art(_tier, nebula_cover, _brights[_tier - 1],
 	ceil(point_distance(0, 0, camera_get_view_width(_cam), camera_get_view_height(_cam)) * 1.1));
 nebula = _art.neb;
 dust   = _art.dust;
+show_debug_message("[UNMAKING]   setup: dust plans + sky art " + string((get_timer() - _prof1) / 1000) + " ms"); _prof1 = get_timer();   // PERF PROBE
 
 // ---- the entrance: the world frozen in the instant she cast, about to crack and shatter ----
 // the screen as it was last frame, copied into a sprite we can break into pieces
@@ -228,3 +309,72 @@ repeat (40) {
 		vx: random_range(-220, 220), vy: random_range(-380, 380),                        // how far it's flung, up or down
 		rot: random(360), spin: random_range(-120, 120), seed: random(100) });
 }
+
+show_debug_message("[UNMAKING]   setup: entrance (tear, chunks, rocks) " + string((get_timer() - _prof1) / 1000) + " ms"); _prof1 = get_timer();   // PERF PROBE
+// ---- the peek: while she was away fighting, her old haze kept collapsing. a few knots finish now, while she watches ----
+nurse_len = _fps * 4.5;      // one birth: the gas gathering, the jets, the star catching and lighting its pocket
+nurseries = [];
+infall    = [];              // matter spiralling down onto the young stars
+jbeads    = [];
+if (!variable_global_exists("hex_wisp_spr") || !sprite_exists(global.hex_wisp_spr)) global.hex_wisp_spr = scr_hex_wisp_sprite(); // built once, kept all game              // knots of gas fired out along the young stars' jets
+var _away   = (global.hex_last_peek < 0) ? 0 : (current_time - global.hex_last_peek) / 1000;  // seconds since she last looked
+var _pstart = shatter_at + floor(_fps * 0.9);                                                   // as the ground breaks and her sky shows through
+var _visr   = min(camera_get_view_width(view_camera[0]), camera_get_view_height(view_camera[0])) * 0.45; // on screen
+scr_hex_haze_merge();                                          // her gas spread and settled while she was away: smooth clouds, not froth
+var _cells = scr_hex_haze_expose(1);                           // how dense her gas is everywhere (and its exposure, set at once)
+array_sort(_cells, function(_p, _q) { return _q.L - _p.L; });  // densest first: dense gas collapses first, like real clouds
+var _gasL = 0;
+for (var i = 0; i < array_length(_cells); i++) _gasL += _cells[i].L;
+var _due = min(HEX_PEEK_BIRTHS, floor(_away / HEX_BIRTH_EVERY * clamp(_gasL / HEX_GAS_REF, 0.5, 2.5))); // more gas, more births: dense skies drain themselves
+for (var i = 0; i < array_length(_cells) && array_length(nurseries) < _due; i++) {
+	var _ce = _cells[i];
+	if (_ce.L < HEX_COLLAPSE_L) break;                         // nothing left dense enough to collapse
+	var _cd = point_distance(0, 0, _ce.x, _ce.y);
+	if (_cd < 90 || _cd > _visr) continue;                     // on screen, and not right on top of her
+	var _crowd = false;
+	for (var j = 0; j < array_length(nurseries); j++) if (point_distance(_ce.x, _ce.y, nurseries[j].ox, nurseries[j].oy) < 140) _crowd = true;
+	if (_crowd) continue;
+	var _nu = scr_hex_nursery_at(_ce.x, _ce.y, _pstart + array_length(nurseries) * floor(_fps * 1.3), false); // one after another
+	if (!is_undefined(_nu)) array_push(nurseries, _nu);
+}
+if (array_length(nurseries) > 0) duration = max(duration, nurseries[array_length(nurseries) - 1].t0 + nurse_len + _fps);
+
+// ---- the peek, part 2: her stars aged while she was away. sun-like stars swell into red giants, and one whose time is up
+// dies while she watches: it puffs its outer layers off into a glowing ring and leaves a white dwarf ----
+death_len = _fps * 1.2;      // the dying star throbs this long before it lets go
+shell_len = _fps * 3;        // the ring takes this long to puff out and settle
+deaths = [];                 // stars dying while she watches: { st, t0 }
+shells = [];                 // planetary nebulae puffing out: { ox, oy, t0, ang, ell }
+novae  = [];                 // supernovae blasting out: { ox, oy, t0, ph }
+nova_len = _fps * 4;         // the shell takes this long to blast out and settle into her nebula
+for (var i = 0; i < array_length(global.hex_stars); i++) {
+	var _ast = global.hex_stars[i];
+	_ast.age = scr_hex_age(_ast) + _away;                    // cosmic time passed while she fought
+}
+scr_hex_holes_migrate(0.2 * _fps * _away);                   // her black holes kept sinking toward each other
+scr_hex_galaxy_turn(min(_away * _fps, 4000));                // and if a supermassive anchors her sky, the galaxy kept turning
+var _dth = scr_hex_find_death();
+if (!is_undefined(_dth)) {
+	_dth.dying = true;
+	array_push(deaths, { st: _dth, t0: _pstart + floor(_fps * 0.4) });
+	duration = max(duration, _pstart + floor(_fps * 0.4) + death_len + max(shell_len, nova_len) + _fps);
+}
+// sitting in her universe: skip the entrance, nothing hidden, no photo, and it stays open until G is pressed again.
+// births and deaths already planned are shifted to start just after the sky opens
+if (gaze) {
+	for (var i = 0; i < array_length(hidden); i++) { var _hi = hidden[i]; if (instance_exists(_hi)) _hi.visible = true; }
+	hidden = [];
+	clean_pending = false;
+	var _gsh = birth_at + floor(_fps * 0.5) - _pstart;
+	for (var i = 0; i < array_length(nurseries); i++) nurseries[i].t0 += _gsh;
+	for (var i = 0; i < array_length(deaths); i++) deaths[i].t0 += _gsh;
+	t = birth_at;
+	duration = infinity;
+	gaze_tick = 0;
+	gaze_state_was = global.game_state;
+	global.game_state = "GAZE";              // the world (her, enemies, timers) freezes while she watches
+}
+// PERF PROBE: print how long the cast's setup took, and how many enemies and wisps it handled
+show_debug_message("[UNMAKING]   setup: peek (merge, births, aging) " + string((get_timer() - _prof1) / 1000) + " ms");   // PERF PROBE
+show_debug_message("[UNMAKING] create " + string((get_timer() - _prof0) / 1000) + " ms | doomed " + string(_n) + " | haze " + string(array_length(global.hex_haze)));
+prof_frames = 0;   // PERF PROBE: the first frames get timed too (Step and Draw)

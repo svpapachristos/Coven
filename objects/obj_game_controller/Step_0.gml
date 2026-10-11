@@ -206,6 +206,12 @@ switch (global.game_state) {
 		if (keyboard_check_pressed(vk_f8)) scr_add_corruption(15); //test key to corrupt the player
 		if (keyboard_check_pressed(vk_f9)) global.boss_down = true;
 		if (keyboard_check_pressed(vk_f10)) global.hex_debug_holes = !global.hex_debug_holes; //test key: black holes form easily
+		// G: sit in her universe. the world freezes and her sky opens with no cast and no horde, and it keeps living while you watch
+		// (births from dense gas, stars aging a second per second, deaths). G again to leave. B and N work in here too
+		if (keyboard_check_pressed(ord("G")) && !instance_exists(obj_unmaking) && instance_exists(obj_player)) {
+			global.hex_gaze = true;
+			instance_create_depth(0, 0, -100000, obj_unmaking);
+		}
 		
 		
 		

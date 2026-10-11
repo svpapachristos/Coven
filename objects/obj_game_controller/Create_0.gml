@@ -28,7 +28,9 @@ global.hex_unmade = 0; // Enemies our lil Hexweaver has unmade this run, which w
 global.hex_stars = []; // one star for every enemy the Hexweaver unmakes this run
 global.hex_holes = [];          // black holes in her sky: { ox, oy, m, s, age, ph, tilt }
 global.hex_haze   = [];   // wisps of gas left by the dust of everyone the Hexweaver unmakes: her nebula, growing all run
-global.hex_haze_i = 0;    // once the haze is full, the oldest wisp to make way next
+global.hex_haze_i = 0;
+if (!variable_global_exists("hex_wisp_spr") || !sprite_exists(global.hex_wisp_spr)) global.hex_wisp_spr = scr_hex_wisp_sprite(); // her textured gas, built at game start so the first cast doesn't hitch    // once the haze is full, the oldest wisp to make way next
+global.hex_last_peek = -1; // when she last looked into her sky (current_time, in ms). -1: she never has this run
 global.hex_debug_holes = false; // F9: collapse at a tiny mass and any tier, for testing
 
 
@@ -139,7 +141,7 @@ if (!variable_global_exists("ps_sparks") || !part_system_exists(global.ps_sparks
 	global.pt_aura = part_type_create();
 	part_type_shape(global.pt_aura, pt_shape_disk);
 	part_type_size(global.pt_aura, 0.12, 0.25, -0.003, 0);
-	part_type_color3(global.pt_aura, make_color_rgb(220, 160, 255), make_colour_rgb(150, 40, 200), c_black);
+	part_type_color3(global.pt_aura, make_color_rgb(220, 160, 255), make_color_rgb(150, 40, 200), c_black);
 	part_type_alpha3(global.pt_aura, 0.8, 0.5, 0);
 	part_type_speed(global.pt_aura, 0.3, 1, 0, 0);
 	part_type_direction(global.pt_aura, 80, 100, 0, 5);
@@ -159,3 +161,11 @@ if (!variable_global_exists("ps_sparks") || !part_system_exists(global.ps_sparks
 
 }
 scr_items_init();
+
+// slimes in five colors, built once per game: each color crumbles into a different gas in the Hexweaver's sky
+// (green: oxygen teal, red: hydrogen, gold: sulphur, blue: reflection blue, violet: hers)
+if (!variable_global_exists("slime_sprites")) {
+	var _sv = scr_make_hue_variants(spr_enemy_slime, 92, [245, 30, 165, 200]);   // the art's own green sits at hue 92
+	array_insert(_sv, 0, spr_enemy_slime);                                        // the original green is one of the choices
+	global.slime_sprites = _sv;
+}

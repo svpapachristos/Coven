@@ -104,7 +104,7 @@ function scr_slot_delete(_slot) {
 
 // ---- settings, shared by every slot ----
 function scr_settings_defaults() {
-	return { screen_shake: 1, damage_numbers: 1, master_volume: 1, window_mode: 1 };
+	return { screen_shake: 1, damage_numbers: 1, master_volume: 1, window_mode: 1, auto_loot: 1 };
 }
 
 function scr_settings_load() {
@@ -130,7 +130,8 @@ function scr_options_rows() {
 		{ label: "Window",		   key: "window_mode", choices: scr_window_mode_names() },
 		{ label: "Screen Shake",   key: "screen_shake" },
 		{ label: "Damage Numbers", key: "damage_numbers" },
-		{ label: "Master Volume",  key: "master_volume" }
+		{ label: "Master Volume",  key: "master_volume" },
+		{ label: "Auto Loot",      key: "auto_loot", choices: ["Off", "On"] }   // souls and items fly to her on their own
 	];
 }
 

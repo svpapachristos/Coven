@@ -96,7 +96,7 @@ x += knock_x; y += knock_y;
 knock_x *= 0.8; knock_y *= 0.8;
 
 //tints the enemy ember orange or icy blue if burned or chilled
-image_blend = (burn_timer > 0) ? make_color_rgb(255, 170, 110) : ((chill_timer > 0) ? make_colour_rgb(150, 220, 255) : c_white);
+image_blend = (burn_timer > 0) ? make_color_rgb(255, 170, 110) : ((chill_timer > 0) ? make_color_rgb(150, 220, 255) : c_white);
 
 //tints the enemy hex violet when hexed
 if (hex > 0) image_blend = merge_color(image_blend, HEX_VIOLET, 0.35 + 0.5 * hex);

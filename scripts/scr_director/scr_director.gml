@@ -102,3 +102,46 @@ function scr_pack_ring(_obj, _n) {
 	}
 }
 		
+		
+// makes recolored copies of a sprite by turning every pixel's hue (saturation and brightness stay, so the shading is identical).
+// done once at startup. each copy is a real sprite, so everything that draws or reads it (its own draw, the Unmaking's crumble,
+// its dust colors) just works. _from: the sprite's own hue now (0-255). _hues: the hues to recolor it to
+function scr_make_hue_variants(_spr, _from, _hues) {
+	var _out = [];
+	var _w  = sprite_get_width(_spr), _h = sprite_get_height(_spr), _nf = sprite_get_number(_spr);
+	var _xo = sprite_get_xoffset(_spr), _yo = sprite_get_yoffset(_spr);
+	var _surf = surface_create(_w, _h);
+	var _buf  = buffer_create(_w * _h * 4, buffer_fixed, 1);
+	for (var v = 0; v < array_length(_hues); v++) {
+		var _shift = _hues[v] - _from;
+		var _new = -1;
+		for (var f = 0; f < _nf; f++) {
+			// copy the frame exactly (blending off, so see-through edges come across untouched)
+			surface_set_target(_surf);
+			draw_clear_alpha(c_black, 0);
+			gpu_set_blendenable(false);
+			draw_sprite_ext(_spr, f, _xo, _yo, 1, 1, 0, c_white, 1);
+			gpu_set_blendenable(true);
+			surface_reset_target();
+			buffer_get_surface(_buf, _surf, 0);
+			// turn each solid pixel's hue (a surface stores each pixel as blue, green, red, alpha)
+			for (var i = 0; i < _w * _h; i++) {
+				var _o = i * 4;
+				if (buffer_peek(_buf, _o + 3, buffer_u8) == 0) continue;
+				var _c  = make_color_rgb(buffer_peek(_buf, _o + 2, buffer_u8), buffer_peek(_buf, _o + 1, buffer_u8), buffer_peek(_buf, _o, buffer_u8));
+				var _nc = make_color_hsv((color_get_hue(_c) + _shift + 256) mod 256, color_get_saturation(_c), color_get_value(_c));
+				buffer_poke(_buf, _o,     buffer_u8, color_get_blue(_nc));
+				buffer_poke(_buf, _o + 1, buffer_u8, color_get_green(_nc));
+				buffer_poke(_buf, _o + 2, buffer_u8, color_get_red(_nc));
+			}
+			buffer_set_surface(_buf, _surf, 0);
+			if (f == 0) _new = sprite_create_from_surface(_surf, 0, 0, _w, _h, false, false, _xo, _yo);
+			else sprite_add_from_surface(_new, _surf, 0, 0, _w, _h, false, false);
+		}
+		sprite_set_speed(_new, sprite_get_speed(_spr), sprite_get_speed_type(_spr));   // animates like the original
+		array_push(_out, _new);
+	}
+	surface_free(_surf);
+	buffer_delete(_buf);
+	return _out;
+}		

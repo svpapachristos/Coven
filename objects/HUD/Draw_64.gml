@@ -1,5 +1,9 @@
 //hide the hude while game is paused (can remove if thats how we feel
 var _controller = instance_find(obj_game_controller, 0);
+// sitting in her universe with the HUD hidden (H): nothing but the sky
+if (global.game_state == "GAZE" && variable_global_exists("hex_hide_hud") && global.hex_hide_hud) exit;
+// the end of the universe: nothing is left, not even the HUD
+if (variable_global_exists("hex_aeon") && global.hex_aeon.phase == "void") exit;
 
 if (global.game_state == "MENU" 
 	|| global.game_state == "HUB" 

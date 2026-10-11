@@ -12,7 +12,7 @@ draw_set_alpha(1);
 // the frog, lifted by the hop
 draw_sprite_ext(sprite_index, 0, x, y - _hop, image_xscale, image_yscale, 0, c_white, _fade);
 
-// about to burst: it flashes white. fog paints the sprite as one solid colour, so this is a white silhouette on top
+// about to burst: it flashes white. fog paints the sprite as one solid color, so this is a white silhouette on top
 if (_warn > 0) {
 	gpu_set_fog(true, c_white, 0, 1);
 	draw_sprite_ext(sprite_index, 0, x, y - _hop, image_xscale, image_yscale, 0, c_white, 0.6 * _warn * _fade);

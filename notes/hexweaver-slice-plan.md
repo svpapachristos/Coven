@@ -30,11 +30,12 @@ Entrance beats (Create, top):
 
 How it works: the doomed, she and her familiar are hidden for one frame so the **bare world** can be photographed (Draw GUI). That photo is the ground that breaks. The horde is drawn live on top, frozen grey, until birth_at. Toads now have sprites (spr_hex_toad, spr_hex_toad_hop), so they take the full sprite path (grey shader, then starlit windows).
 
-**Done Oct 10: glitch-first opening.** The desaturated first frame felt empty: a filter isn't an event. New order: cast flash, then the glitch at once over the frozen world still in full colour; on the glitch's near-white frame the world comes back drained ("what just happened?", the JoJo time-skip beat); the hex sigil draws itself during a longer stillness (1.6s), then the crack. Code: lock_len = 0, still_len 1.6s, `_drained` switches desat/dark, hex `_hp` counts from still_at.
+**Done Oct 10: glitch-first opening.** The desaturated first frame felt empty: a filter isn't an event. New order: cast flash, then the glitch at once over the frozen world still in full color; on the glitch's near-white frame the world comes back drained ("what just happened?", the JoJo time-skip beat); the hex sigil draws itself during a longer stillness (1.6s), then the crack. Code: lock_len = 0, still_len 1.6s, `_drained` switches desat/dark, hex `_hp` counts from still_at.
 
 ## Bugs to fix
+- **Oct 10 evening: see `notes/away-batch-oct10.md`** for ready-to-type fixes and extras. Hub toasts never showed or faded (the HUD exits in HUB/STATION, the timer only ticks in PLAYING, and there was a `time:` typo). Also: the doubled hitstop line, the F10 comment, frog spacing, Danse Macabre cost scaling, the menu restyle, options sliders, a title screen, and crack dust. Already done before this: frogs skipped by missiles and the beam, hexed kills becoming frogs, the missile lifetime.
 - Fixed Oct 10: the horde and a second copy of her rode away on the breaking chunks, and looked like they shifted when they turned into windows. Cause: `if (clean_pending) exit;` had gone missing from the top of obj_unmaking Draw, so the Unmaking drew them into the photo itself. Fix: put the line back as line 2.
-- Oct 10: the glitch bars' nebula tint was `merge_color(_gc, 0.8, 0.3)`, which mixes toward a near-black colour (0.8 isn't a colour). Replaced by a two-depth nebula, dark edges, a cyan channel-split sliver and pinprick stars.
+- Oct 10: the glitch bars' nebula tint was `merge_color(_gc, 0.8, 0.3)`, which mixes toward a near-black color (0.8 isn't a color). Replaced by a two-depth nebula, dark edges, a cyan channel-split sliver and pinprick stars.
 - Magic missiles target frogs (on cast and on retarget). Fix given Oct 9: skip obj_toad in scr_magic_missile and in obj_magic_missile's retarget.
 - The arcane beam shows damage numbers on frogs without hurting them (scr_damage_enemy ignores toads, but the beam spawns its numbers first). Fix given Oct 9: skip hex < 0 at the top of the beam's enemy loop.
 - Done: magic missiles have a lifetime (3s, obj_magic_missile Create/Step).
@@ -60,11 +61,15 @@ Done Oct 10: glitch-first opening, darker/redder detailed bars, ground cliffs (6
 - **Hollow Purple** energy for the arcane beam.
 - **Runes** in the Hexweaver's kit, especially the E (code or art).
 - **Katana ZERO** as the feel benchmark: pixel art plus satisfying mechanics and animation.
-- Dio-style sphere / colour pulse for a **World tarot**.
+- Dio-style sphere / color pulse for a **World tarot**.
 - A cast pose or cut-in (the hex sigil stands in for now).
 - Hexweaver tuning: tier thresholds (maybe 100 / 400 / 1200), the 80-kill charge cost, a tier glow per ascension.
 
 ## How we work
+- **Interact with the world, not menus.** (Sophia, Oct 10.) As systems get built, prefer things you walk up to and use in the game world (stations, objects, the environment) over menus. Interacting with in-game things is more fun.
+- **When something truly needs a menu** (main menu, settings, small in-game choices): **make it click-friendly first**, with large hover-highlighted targets, click and drag, and no hidden keys. Keyboard support comes second. It should never feel like a dev-test screen.
+- **American spelling in code and comments: "color", not "color"** (Sophia's from NY; GML accepts both for built-ins). Cleanup day happened Oct 10: every "colour" in the project became "color" (scr_hex_star_color, scr_hex_gas_color, make_color_rgb, color_get_*, shader varyings v_vColor, uniform u_color). The ONE exception: shader attribute `in_Colour`, which is GameMaker's own required name and must stay.
+- **The bar for everything from here on: "Deadlock-level polish."** (Sophia, Oct 10.) The Unmaking's goal: a living sandbox universe that she tends like a gardener. Quiet growth between casts, spectacle on screen.
 - Sophia types every line herself for practice: full code plus the why, and exactly where it goes.
 - Claude reads the live project folder (Documents\GitHub\Coven) instead of .rar uploads. Save (Ctrl+S) before asking for a check.
 - Short clips, one question per clip. Claude steps through frames.
@@ -79,8 +84,9 @@ Done Oct 10: glitch-first opening, darker/redder detailed bars, ground cliffs (6
 - **Shader comments: no apostrophes.** Curly quotes from copy-paste break the Windows shader compiler with a "line past the end" error.
 - Shapes drawn with draw_ellipse / draw_circle are invisible through a texture shader. Give things sprites, or draw them without the shader.
 - A sprite's origin matters when flipping: a top-left origin makes a flipped sprite jump sideways.
-- Additive drawing can't darken. Mixing a colour with its own negative passes through grey: cut, don't fade.
-- `merge_color(a, b, amount)` takes two COLOURS. A number like 0.8 counts as an almost-black colour, not an alpha.
+- When Claude edits files directly: close the matching event tabs in GameMaker first (or accept its reload prompt). An open tab saved afterward overwrites the edit; this happened to the obj_unmaking Draw event on Oct 10.
+- Additive drawing can't darken. Mixing a color with its own negative passes through grey: cut, don't fade.
+- `merge_color(a, b, amount)` takes two COLORS. A number like 0.8 counts as an almost-black color, not an alpha.
 - The clean-frame `if (clean_pending) exit;` must stay at the top of obj_unmaking Draw (and Step). Without it, anything the Unmaking draws gets photographed into the breaking ground.
 - **`sprite_xoffset` / `sprite_yoffset` (instance variables) already include image_xscale/yscale, sign included.** For the asset's raw origin use `sprite_get_xoffset(spr)` / `sprite_get_yoffset(spr)`. Mixing them up caused the frog jump-and-flip when windows start stretching (Oct 10).
 - **One draw_primitive_begin/end batch holds only about 1000 vertices.** Anything past that is silently dropped (the cliff wall cut off at the fork). Start a fresh batch per column or per strip.

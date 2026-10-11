@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"sh_hex_lens",
+  "name":"sh_hex_lens",
+  "parent":{
+    "name":"hexweaver",
+    "path":"folders/Shaders/hexweaver.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}
