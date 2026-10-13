@@ -10,26 +10,42 @@ if (unmaking > 0) {
 	exit;
 }
 
-var _list = ds_list_create();
-var _n = collision_circle_list(x, y, sep_radius, obj_enemy_parent, false, true, _list, object_index == obj_toad);
-
-var _lim = min(_n, 8)
-for (var i = 0; i < _lim; i++) {
-	var _o = _list[| i];
-	var _d = point_distance(x, y, _o.x, _o.y);
-	if (_d >= sep_radius) continue; //bbox touched the circle but not too close
-	// exactly stacked? picked a random direction so they can split
-	var _push = (_d < 0.01) ? irandom(359) : point_direction(_o.x, _o.y, x, y);
-	var _amt = min((sep_radius - _d) * sep_strength, 3);
-	
-	x += lengthdir_x(_amt, _push);
-	y += lengthdir_y(_amt, _push);
+// keep your distance from the crowd: check only the crowd grid's buckets around you (obj_game_controller builds it each frame),
+// at most 8 pushes and 24 looks, so a packed horde costs the same as a loose one
+// (each enemy keeps its distance every other frame, half on even frames and half on odd, with double the push: half the cost,
+// and at 60 frames a second the crowd still spreads just as smoothly)
+if (variable_global_exists("sep_head") && variable_global_exists("sep_frame") && ((global.sep_frame + real(id)) mod 2 == 0)) {
+	var _head = global.sep_head;
+	var _gx = floor(x / SEP_CELL), _gy = floor(y / SEP_CELL);
+	var _pushes = 0, _looks = 0;
+	for (var _cx = _gx - 1; _cx <= _gx + 1 && _pushes < 6 && _looks < 16; _cx++) {
+		for (var _cy = _gy - 1; _cy <= _gy + 1 && _pushes < 6 && _looks < 16; _cy++) {
+			var _o = _head[((_cx * 73856093) ^ (_cy * 19349663)) & (SEP_BUCKETS - 1)];
+			while (_o != noone && _pushes < 6 && _looks < 16) {
+				if (_o != id && instance_exists(_o)) {
+					_looks++;
+					var _dx = x - _o.x, _dy = y - _o.y;
+					if (abs(_dx) < sep_radius && abs(_dy) < sep_radius) {
+						var _d = sqrt(_dx * _dx + _dy * _dy);
+						if (_d < sep_radius) {
+							// exactly stacked? pick a random direction so they can split
+							var _push = (_d < 0.01) ? irandom(359) : point_direction(_o.x, _o.y, x, y);
+							var _amt = min((sep_radius - _d) * sep_strength * 2, 6);
+							x += lengthdir_x(_amt, _push);
+							y += lengthdir_y(_amt, _push);
+							_pushes++;
+						}
+					}
+				}
+				_o = instance_exists(_o) ? _o.sep_next : noone;
+			}
+		}
+	}
 }
-ds_list_destroy(_list);
 
 // the witch is solid: get pushed out to the edge of her instead of standing inside her
 body_radius = (bbox_right - bbox_left) * 0.45;
-if (instance_exists(obj_player)) {
+if (instance_exists(obj_player) && abs(x - obj_player.x) < 96 && abs(y - obj_player.y) < 96) {   // (only worth the math when it's close)
 	var _p   = obj_player;
 	var _cx  = (bbox_left + bbox_right) / 2,       _cy  = (bbox_top + bbox_bottom) / 2;
 	var _pcx = (_p.bbox_left + _p.bbox_right) / 2, _pcy = (_p.bbox_top + _p.bbox_bottom) / 2;

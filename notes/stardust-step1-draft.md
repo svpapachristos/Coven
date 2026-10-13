@@ -586,3 +586,20 @@ Sophia: the stars go BOIOIOING when black holes merge and grow; the systems need
 - **Consumers:** Draw _bgk = mood.bg (backdrop), Draw GUI black overlay = mood.dark, disk clock += mood.spin/fps, lens θE × mood.lensk.
 - **Lens no longer follows the crunch swell** (θE divides out the 1 + 9ck⁵ factor), so the sky isn't magnified into blocky rectangles.
 - Next on the director: brightness/exposure, shake, gas brightness, quasar glow, hole formation ramps. Then the crunch as a fully scripted cinematic on top of it (see terrarium-status.md).
+
+## Color grade per age + a real Big Bang (Oct 11, ~6:55am, applied)
+2.9s clip: before the bang, still the blocky swollen horizon, no black, no white flash; the new universe just "poofs" into dust. GUI overlays not visible (question to Sophia: was this in G mode? no readout visible).
+- **Darkness and whiteout are also drawn in world space** at the very end of Draw_0 (normal blend, over the view), so they can't be missed even if the GUI layer misbehaves.
+- **The bang in the sky (HDR):** a singularity core flare (spr_glow, 16× shrinking to 2× over 2s) plus a warm halo, and a 7-ring shell of first light racing to ~1930px over 1.8s (white → blue-white).
+- **Color grade (director → sh_hex_tone u_grade/u_lift):** quasar (1.05, 1.03, 1.12); twilight amber (1.12, 0.86, 0.66); crunch blueshift lerping to (0.7, 0.88, 1.45) with a blue lift up to 0.05 (the background brightening); after the bang a cool (0.86, 0.96, 1.14) grade easing back to neutral over 16s. Eased 2%/frame (lift 3%).
+- Next science visuals (see the chat): Fermi bubbles during the quasar, stars reddening in twilight, the dark ages after the bang, then cosmic dawn (first massive blue stars blowing glowing reionization bubbles that merge).
+
+## The matter ledger + the biggest boom a witch ever saw (Oct 11, ~7:15am, applied)
+3.5s clip: the crunch → black → void → white → shell → gas all worked, but with no "mmph" (a long gray fade, then soft blobs).
+- **Ledger (scr_hex_matter_take, at crunch start):** total L = Σ wisp light + Σ star m·0.02 + Σ hole m·0.05, plus a sample of up to 64 colors. The bang releases clamp(L/1.2, 260, 720) wisps in clumps of 8, colored merge(old color, new palette, 0.5): the same matter, transformed. Only kills add new matter (full ledger for every system = next step).
+- **The void:** a trembling white pinprick at the singularity grows from 25% to 100% of the void, and vanishes 2 frames before the end (one frame of nothing).
+- **Impact frame:** hitstop 9, kind 2 at the bang point (time stops on creation). Then a white punch (full 0.12s, gone by 0.6s), in GUI and world, only after hitstop.
+- **Screen tearing:** sh_hex_lens u_chroma: red pushed outward and blue pulled inward from the bang, 16px fading over 1.2s.
+- **Triple ripple:** amps 46/26/14, staggered (negative start age = waiting).
+- **Inflation:** launch drag starts at 0.78 and relaxes to 0.985 (wisp.dmp); launch speed = distance / precomputed carry factor, so matter slams out almost at once, then drifts to rest.
+- **The fog that clears (recombination):** CMB strength 1.6 (blazing opaque-looking plasma) for 0.5s, falling to 0.42 by 1.6s (the universe turns transparent), then the mottled afterglow fades over 8s.

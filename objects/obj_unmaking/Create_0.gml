@@ -319,25 +319,9 @@ jbeads    = [];
 if (!variable_global_exists("hex_wisp_spr") || !sprite_exists(global.hex_wisp_spr)) global.hex_wisp_spr = scr_hex_wisp_sprite(); // built once, kept all game              // knots of gas fired out along the young stars' jets
 var _away   = (global.hex_last_peek < 0) ? 0 : (current_time - global.hex_last_peek) / 1000;  // seconds since she last looked
 var _pstart = shatter_at + floor(_fps * 0.9);                                                   // as the ground breaks and her sky shows through
-var _visr   = min(camera_get_view_width(view_camera[0]), camera_get_view_height(view_camera[0])) * 0.45; // on screen
 scr_hex_haze_merge();                                          // her gas spread and settled while she was away: smooth clouds, not froth
-var _cells = scr_hex_haze_expose(1);                           // how dense her gas is everywhere (and its exposure, set at once)
-array_sort(_cells, function(_p, _q) { return _q.L - _p.L; });  // densest first: dense gas collapses first, like real clouds
-var _gasL = 0;
-for (var i = 0; i < array_length(_cells); i++) _gasL += _cells[i].L;
-var _due = min(HEX_PEEK_BIRTHS, floor(_away / HEX_BIRTH_EVERY * clamp(_gasL / HEX_GAS_REF, 0.5, 2.5))); // more gas, more births: dense skies drain themselves
-for (var i = 0; i < array_length(_cells) && array_length(nurseries) < _due; i++) {
-	var _ce = _cells[i];
-	if (_ce.L < HEX_COLLAPSE_L) break;                         // nothing left dense enough to collapse
-	var _cd = point_distance(0, 0, _ce.x, _ce.y);
-	if (_cd < 90 || _cd > _visr) continue;                     // on screen, and not right on top of her
-	var _crowd = false;
-	for (var j = 0; j < array_length(nurseries); j++) if (point_distance(_ce.x, _ce.y, nurseries[j].ox, nurseries[j].oy) < 140) _crowd = true;
-	if (_crowd) continue;
-	var _nu = scr_hex_nursery_at(_ce.x, _ce.y, _pstart + array_length(nurseries) * floor(_fps * 1.3), false); // one after another
-	if (!is_undefined(_nu)) array_push(nurseries, _nu);
-}
-if (array_length(nurseries) > 0) duration = max(duration, nurseries[array_length(nurseries) - 1].t0 + nurse_len + _fps);
+scr_hex_haze_expose(1);                                        // (the wisps' exposure, for the fallback drawing)
+// (the old timed births from her haze are gone: stars are born from the gas itself, in the physics: scr_hex_fluid_sinks)
 
 // ---- the peek, part 2: her stars aged while she was away. sun-like stars swell into red giants, and one whose time is up
 // dies while she watches: it puffs its outer layers off into a glowing ring and leaves a white dwarf ----

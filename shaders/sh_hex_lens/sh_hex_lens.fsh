@@ -9,6 +9,7 @@ uniform vec4  u_disk[4];    // each black hole's disk: shadow radius (pixels), t
 uniform vec4  u_ringk;      // each black hole's photon ring brightness (it flares as it ignites)
 uniform vec4  u_ripple[4];  // each ripple through space: x, y (pixels), how far it has spread, how hard it shoves (pixels)
 uniform float u_time;       // seconds of her sky's time, so the disk turns (runs faster during the crunch)
+uniform vec3  u_chroma;     // the Big Bang tearing the image: center x, y (pixels), how far color splits (pixels)
 uniform vec4  u_cmb;        // the Big Bang's afterglow: strength, how far it has cooled (0 hot, 1 cold), seed, unused
 
 const float SQ  = 0.12;     // how flat the disk looks: nearly edge-on, like Gargantua (matches the gas falling in, in obj_unmaking Step)
@@ -128,6 +129,11 @@ void main()
 	c += texture2D(gm_BaseTexture, clamp((src - blur) / u_size, 0.0, 1.0)) * 0.15;
 	c += texture2D(gm_BaseTexture, clamp((src + blur * 0.5) / u_size, 0.0, 1.0)) * 0.15;
 	c += texture2D(gm_BaseTexture, clamp((src - blur * 0.5) / u_size, 0.0, 1.0)) * 0.15;
+	if (u_chroma.z > 0.01) {                       // chromatic tearing: red pushed outward, blue pulled inward, from the bang
+		vec2 cd = normalize(p - u_chroma.xy + 0.001) * u_chroma.z;
+		c.r = texture2D(gm_BaseTexture, clamp((src + cd) / u_size, 0.0, 1.0)).r;
+		c.b = texture2D(gm_BaseTexture, clamp((src - cd) / u_size, 0.0, 1.0)).b;
+	}
 
 	// the black holes themselves: shadow, disk, and the disk's light bent over the top and under the bottom (Gargantua, NASA 2019)
 	for (int i = 0; i < 4; i++) {

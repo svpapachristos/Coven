@@ -1,6 +1,20 @@
 if (pending_run_start) { pending_run_start = false; scr_start_run(); }
 if (pending_hub_setup) { pending_hub_setup = false; scr_apply_loadout(); scr_spawn_familiar(); }
 
+// ---- the crowd grid: once a frame, every enemy is dropped into a bucket by where it stands (a spatial hash). each enemy then
+// only checks the few buckets around it to keep its distance, instead of asking the engine for every enemy nearby. in a tight
+// crowd the old way returned hundreds of neighbors per enemy per frame (that's what lagged bunched slimes); this stays flat.
+// buckets are linked lists threaded through the enemies themselves (sep_next), so building it allocates one array, nothing more ----
+#macro SEP_CELL 48          // bucket size in pixels: about one enemy's personal space
+#macro SEP_BUCKETS 4096     // hash table size (a power of two)
+global.sep_head = array_create(SEP_BUCKETS, noone);
+global.sep_frame = variable_global_exists("sep_frame") ? global.sep_frame + 1 : 0;   // enemies take turns by it
+with (obj_enemy_parent) {
+	var _k = ((floor(x / SEP_CELL) * 73856093) ^ (floor(y / SEP_CELL) * 19349663)) & (SEP_BUCKETS - 1);
+	sep_next = global.sep_head[_k];
+	global.sep_head[_k] = id;
+}
+
 // Handles quit confirmation before regular menus
 if (quit_confirm) {
 	if (keyboard_check_pressed(vk_escape)) {
@@ -35,9 +49,10 @@ if (quit_confirm) {
 
 //open up a debug hud
 if (keyboard_check_pressed(vk_f1)) global.debug_hud = !global.debug_hud;
-if (keyboard_check_pressed(vk_f2)) {
-	global.auto_pick = !global.auto_pick;
-	global.toast = { text: global.auto_pick ? "AUTO-PICK ON" : "AUTO-PICK OFF", sub: "Level-ups choose a random item", color: c_yellow, timer: game_get_speed(gamespeed_fps) * 2 };
+if (keyboard_check_pressed(vk_f2)) {                                       // the Auto Loot setting, flipped and saved (same as Options)
+	global.settings.auto_loot = 1 - global.settings.auto_loot;
+	scr_settings_write();
+	global.toast = { text: (global.settings.auto_loot == 1) ? "AUTO LOOT ON" : "AUTO LOOT OFF", sub: "Loot flies to you and level-ups pick a random card", color: c_yellow, timer: game_get_speed(gamespeed_fps) * 2 };
 }
 if (keyboard_check_pressed(vk_f11)) { global.save.essence += 500; scr_save_write(); } // test for free essence
 if (keyboard_check(vk_shift) && keyboard_check_pressed(vk_f12)) { //test: wipe the save and start fresh
@@ -170,7 +185,7 @@ switch (global.game_state) {
 		
     case "PLAYING":
 		if (global.boss_down) { global.boss_down = false; scr_act_complete(); }
-		global.run_time += 1 / game_get_speed(gamespeed_fps); // run time in seconds
+		if (!instance_exists(obj_unmaking)) global.run_time += 1 / game_get_speed(gamespeed_fps); // run time in seconds (stopped while she is in her universe)
 		
 		
 		//debugging keys

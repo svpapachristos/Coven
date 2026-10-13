@@ -1,5 +1,15 @@
 var _prof_s = get_timer();   // PERF PROBE
+// THE CAPTURE KEY (C, held): stopwatches on every part of the Unmaking. while C is held, each section's time is recorded
+// frame by frame; let go and HUD shows the slowest parts during exactly that moment. scr_prof_lap marks each section's end
+// (HUD watches the key itself, so letting go after the Unmaking ends still shows the table)
+scr_prof_start("Step");
 if (!gaze && scr_freeze_if_paused()) exit;   // while gazing the world is frozen on purpose, but her sky keeps living
+// diagnostic (cast or stargazing): L hides the fluid gas (its simulation keeps running), so anything still moving is another system
+if (keyboard_check_pressed(ord("L"))) global.hex_fluid_hide = !(variable_global_exists("hex_fluid_hide") && global.hex_fluid_hide);
+// O: PHYSICS ONLY on/off (legacy systems that reach into the physics switched off: scr_hex_iso)
+if (keyboard_check_pressed(ord("O"))) global.hex_iso = !scr_hex_iso();
+// T: the clock, full speed (1 second = 1 million years) or half speed (a slower wallpaper)
+if (keyboard_check_pressed(ord("T"))) global.hex_time = (scr_hex_time() == 1) ? 0.5 : 1;
 // pausing while sitting in her universe: Esc or P holds everything still (G still leaves)
 if (gaze) {
 	if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(ord("P"))) gaze_paused = !gaze_paused;
@@ -7,6 +17,10 @@ if (gaze) {
 		global.hex_hide_hud = !(variable_global_exists("hex_hide_hud") && global.hex_hide_hud);
 		window_set_cursor(global.hex_hide_hud ? cr_none : cr_default);
 	}
+	if (keyboard_check_pressed(ord("J"))) global.hex_flow_on = !(!variable_global_exists("hex_flow_on") || global.hex_flow_on);   // debug: the currents on/off (compare)
+	if (keyboard_check_pressed(ord("Y"))) { scr_hex_fluid_tier(); global.hex_fluid_q = (global.hex_fluid_q + 1) mod 3; }   // the fluid's quality tier: Low, High, HYPERMAX (compare cost and look live)
+	if (keyboard_check_pressed(ord("R"))) global.hex_no_ripple = !(variable_global_exists("hex_no_ripple") && global.hex_no_ripple);   // debug: gravitational-wave ripples off/on
+	if (keyboard_check_pressed(ord("I"))) global.hex_inspect = !(variable_global_exists("hex_inspect") && global.hex_inspect);   // inspect: name everything in her sky (HUD draws it)
 	if (gaze_paused) {
 		if (keyboard_check_pressed(ord("G")) && duration == infinity) { gaze_paused = false; duration = t + floor(game_get_speed(gamespeed_fps) * 0.5); }
 		exit;
@@ -21,12 +35,17 @@ if (hitstop > 0) {
 	exit;
 }
 t++;
+scr_prof_lap("pausing + hitstop");   // (capture key: C)
 // the cast's heavy setup, a slice per frame while the entrance plays (Step has almost nothing else to do then):
 // each doomed body plans its star and has its pixels read. a few bodies per frame, and at most two fresh sprite reads
 // (each one waits on the graphics card), so casting never freezes
 if (plan_qi < array_length(plan_queue)) {
-	var _qn = array_length(plan_queue), _qend = min(_qn, plan_qi + 80), _qpx = 0;
-	while (plan_qi < _qend && _qpx < 2) {
+	// (sprite pixels are kept for the whole game session, not just this cast: the same slimes never get read twice, and at most one
+	// fresh read happens per frame, since each one stalls on the graphics card: that was the 49ms frame at the start of a big cast)
+	if (!variable_global_exists("hex_pix_cache")) global.hex_pix_cache = {};
+	pix_cache = global.hex_pix_cache;
+	var _qn = array_length(plan_queue), _qend = min(_qn, plan_qi + 60), _qpx = 0;
+	while (plan_qi < _qend && _qpx < 1) {
 		var _qe = plan_queue[plan_qi];
 		plan_qi++;
 		if (!instance_exists(_qe)) continue;
@@ -40,6 +59,7 @@ if (plan_qi < array_length(plan_queue)) {
 }
 if (t == shatter_at) { hitstop = 10; impact_kind = 1; }   // the ground's impact frame: time freezes, then BOOM
 
+scr_prof_lap("cast setup slices");   // (capture key: C)
 // her black holes keep time. while one is gathering, time itself drags: the sky's turning slows to a stop
 var _slow = 1;
 for (var h = 0; h < array_length(global.hex_holes); h++) {
@@ -63,6 +83,7 @@ for (var h = 0; h < array_length(global.hex_holes); h++) {
 		}
 	}
 }
+scr_prof_lap("hole aging");   // (capture key: C)
 // ---- the dance of black holes: they sink toward each other, and two that meet spiral together faster and faster, shaking
 // space with gravitational waves, until they merge into one bigger hole (5% of their mass leaves as the waves themselves).
 // three holes merged make a supermassive, and her whole sky turns around it: a galaxy ----
@@ -79,7 +100,7 @@ if (is_undefined(global.hex_merge)) {
 			var _mb = _bhl[k];
 			if (_mb.age < HEX_GATHER + _fpsn) continue;
 			var _md = point_distance(_ma.ox, _ma.oy, _mb.ox, _mb.oy);
-			if (_md > (scr_hex_hole_size(_ma) + scr_hex_hole_size(_mb)) * 2.4) continue;
+			if (_md > (scr_hex_hole_size(_ma) + scr_hex_hole_size(_mb)) * 1.6) continue;   // close first (migration brings them in), then a tight inspiral, not a wide waltz
 			var _hv = (_ma.m >= _mb.m) ? _ma : _mb, _lt = (_ma.m >= _mb.m) ? _mb : _ma;   // the heavier one survives
 			var _mcx = (_ma.ox * _ma.m + _mb.ox * _mb.m) / (_ma.m + _mb.m), _mcy = (_ma.oy * _ma.m + _mb.oy * _mb.m) / (_ma.m + _mb.m);
 			global.hex_merge = { a: _hv, b: _lt, t: 0, len: _fpsn * 5, d0: _md, cx: _mcx, cy: _mcy,
@@ -96,7 +117,7 @@ if (!is_undefined(_mg)) {
 		_mg.t++;
 		var _mk  = min(1, _mg.t / _mg.len);
 		var _sep = _mg.d0 * power(1 - _mk, 0.25);                             // the gap closes ever faster at the end (a real inspiral)
-		var _om  = min(40, 0.6 * power(_mg.d0 / max(_sep, 4), 1.5));         // and they whirl round faster and faster: the chirp
+		var _om  = min(14, 0.6 * power(_mg.d0 / max(_sep, 4), 1.5));         // and they whirl round faster and faster: the chirp (capped, so it never strobes)
 		_mg.ang += _om;
 		var _mmt = _mg.a.m + _mg.b.m;
 		_mg.a.ox = _mg.cx + lengthdir_x(_sep * _mg.b.m / _mmt, _mg.ang); _mg.a.oy = _mg.cy + lengthdir_y(_sep * _mg.b.m / _mmt, _mg.ang);
@@ -106,19 +127,28 @@ if (!is_undefined(_mg)) {
 			_mg.rip -= 180;
 			if (array_length(global.hex_ripples) < 12) array_push(global.hex_ripples, { ox: _mg.cx, oy: _mg.cy, age: 0, len: _fpsn * 1.6, amp: 1.5 + 5 * _mk });
 		}
-		var _mtouch = (_sep <= (scr_hex_hole_size(_mg.a) + scr_hex_hole_size(_mg.b)) * 0.95);   // horizons touching: they're already one
+		// they become one once the smaller horizon has mostly slipped inside the bigger one (a single, peanut-shaped horizon), not the
+		// moment their edges touch: merging at first touch snapped two separate shadows into one
+		var _mtouch = (_sep <= max(scr_hex_hole_size(_mg.a), scr_hex_hole_size(_mg.b)) * 0.6);
 		if (_mk >= 1 || _mtouch) {                                             // they're one
 			var _ga = variable_struct_exists(_mg.a, "gen") ? _mg.a.gen : 0, _gb = variable_struct_exists(_mg.b, "gen") ? _mg.b.gen : 0;
 			_mg.a.m   = _mmt * 0.95;
 			_mg.a.gen = _ga + _gb + 1;
-			_mg.a.ox  = _mg.cx; _mg.a.oy = _mg.cy;
+			// (it stays where it is: snapping it to the center jumped its lens, and the stars around it sprang)
+			// the bending of space carries over: the merged hole starts with both lenses' strength combined (Einstein radius squared adds,
+			// like mass), then eases to its new size (Draw), so the sky around a merger never springs
+			if (variable_struct_exists(_mg.a, "le") && variable_struct_exists(_mg.b, "le")) {
+				// the swallowed hole's lens fades out where it was over ~1s (a ghost, Draw) while the survivor's eases up to the combined
+				// mass's strength on its own, so no lens ever appears or vanishes in a single frame
+				if (!variable_global_exists("hex_lens_ghosts")) global.hex_lens_ghosts = [];
+				array_push(global.hex_lens_ghosts, { ox: _mg.b.ox, oy: _mg.b.oy, le: _mg.b.le, k: 1 });
+			}
 			_mg.a.feed = (variable_struct_exists(_mg.a, "feed") ? _mg.a.feed : 0) + (variable_struct_exists(_mg.b, "feed") ? _mg.b.feed : 0) + 60;
 			_mg.a.mf  = 0;                                                     // its photon ring flares (Draw)
 			for (var h = array_length(_bhl) - 1; h >= 0; h--) if (_bhl[h] == _mg.b) array_delete(_bhl, h, 1);
 			array_push(global.hex_ripples, { ox: _mg.cx, oy: _mg.cy, age: 0, len: _fpsn * 2.4, amp: 18 });   // the biggest wave of all
-			global.shake = max(global.shake, 18);
+			global.shake = max(global.shake, 7);                                 // felt, not jarring (it was 18, near the Big Bang's)
 			global.hex_merge = undefined;
-			scr_hex_holes_clear_her();
 		}
 	}
 }
@@ -129,26 +159,34 @@ for (var i = array_length(global.hex_ripples) - 1; i >= 0; i--) {
 }
 for (var h = 0; h < array_length(_bhl); h++) if (variable_struct_exists(_bhl[h], "mf") && _bhl[h].mf >= 0) _bhl[h].mf++;
 scr_hex_galaxy_turn(1);
+if (gaze && scr_hex_fluid_ok()) scr_hex_orbits();                         // stars and holes orbit in the same gravity as the gas (leapfrog). (during a
+                                                                          // cast the choreography owns the sky and the clock waits)
+scr_hex_flow_step();                                                    // the currents carry her settled gas (the flow field)
 scr_hex_aeon_step();                                                    // the ages of her universe: galaxy, quasar, twilight, evaporation, dawn
 time_scale = lerp(time_scale, _slow, 0.15); // ease into and out of the slowdown instead of snapping
-sky_angle += spin * time_scale / game_get_speed(gamespeed_fps);
+if (!scr_hex_iso()) sky_angle += spin * time_scale / game_get_speed(gamespeed_fps);   // (physics only: the view doesn't spin)
+scr_prof_lap("mergers, galaxy turn, aeon");   // (capture key: C)
 // ---- the peek: births from her old haze. the gas gathers into a dark knot, matter spirals in, the young star fires
 // jets from its poles, then catches, blows its cocoon away and lights up the gas around it ----
 _fpsn = game_get_speed(gamespeed_fps);
 if (t mod 10 == 0) scr_hex_haze_expose(0.25);           // the exposure curve keeps up as new gas lands: rich, never white
-if (keyboard_check_pressed(ord("B")) && instance_exists(obj_player)) {   // debug: seed a birth where the mouse is
+// B (debug): a giant cloud of gas (~30 million suns) drops in at the mouse, already orbiting like all new gas. dense enough to
+// collapse: watch it form star clusters, light up, and blow superbubbles
+if (keyboard_check_pressed(ord("B")) && instance_exists(obj_player) && variable_global_exists("hex_fluid") && variable_struct_exists(global.hex_fluid, "ret")) {
 	var _dbl = point_distance(obj_player.x, obj_player.y, mouse_x, mouse_y);
 	var _dba = point_direction(obj_player.x, obj_player.y, mouse_x, mouse_y) - sky_angle;   // into her sky's own frame
 	var _dbx = lengthdir_x(_dbl, _dba), _dby = lengthdir_y(_dbl, _dba);
-	var _dbfree = true;                                       // one birth at a time in one spot: spamming B there waits for it to finish
-	for (var n = 0; n < array_length(nurseries); n++) if (!nurseries[n].lit && point_distance(nurseries[n].ox, nurseries[n].oy, _dbx, _dby) < 70) _dbfree = false;
-	if (_dbfree) {
-		var _dbn = scr_hex_nursery_at(_dbx, _dby, t, true);   // undefined inside a black hole's reach: too torn apart to collapse
-		if (!is_undefined(_dbn)) {
-			array_push(nurseries, _dbn);
-			duration = max(duration, t + nurse_len + _fpsn);
-		}
-	}
+	var _dbr = max(1, point_distance(0, 0, _dbx, _dby)), _dbv = HEX_GAL_VC * HEX_FLUID_CS * _dbr / sqrt(_dbr * _dbr + HEX_GAL_R0 * HEX_GAL_R0);
+	var _dbc = [make_color_rgb(255, 85, 115), make_color_rgb(210, 110, 255), make_color_rgb(255, 85, 115)];
+	for (var k = 0; k < 3; k++) array_push(global.hex_fluid.ret, [_dbx + lengthdir_x(22, k * 120 + 30), _dby + lengthdir_y(22, k * 120 + 30), 2, 46, _dbc[k],
+		_dbv * _dby / _dbr, -_dbv * _dbx / _dbr]);
+	scr_hex_toast("B: a giant gas cloud (" + string_format(6 * HEX_SIGMA_UNIT * HEX_SAMPLE_PC * HEX_SAMPLE_PC / 1000000, 1, 0) + " million suns) dropped in");
+}
+// X (debug): the gas at the mouse becomes a young giant star cluster at once (scr_hex_fluid_sinks): its light, then its superbubble
+if (keyboard_check_pressed(ord("X")) && instance_exists(obj_player) && variable_global_exists("hex_fluid")) {
+	var _xl = point_distance(obj_player.x, obj_player.y, mouse_x, mouse_y);
+	var _xa = point_direction(obj_player.x, obj_player.y, mouse_x, mouse_y) - sky_angle;
+	global.hex_fluid.force_sf = [lengthdir_x(_xl, _xa), lengthdir_y(_xl, _xa)];
 }
 if (keyboard_check_pressed(ord("N"))) {                     // debug: a minute of cosmic time passes in an instant
 	for (var i = 0; i < array_length(global.hex_stars); i++) {
@@ -164,6 +202,7 @@ if (keyboard_check_pressed(ord("N"))) {                     // debug: a minute o
 		}
 	}
 }
+scr_prof_lap("births (peek)");   // (capture key: C)
 // V (debug): a giant appears at the mouse, already at the end of its life. it glows as a red supergiant for a moment,
 // then its core fails: a supernova right there (or, with F10 on, a collapse into a black hole)
 if (keyboard_check_pressed(ord("V")) && instance_exists(obj_player)) {
@@ -186,7 +225,22 @@ for (var i = array_length(deaths) - 1; i >= 0; i--) {
 	if (_ast.m >= HEX_MASS_GIANT) {
 		// a giant's core gives way. heavy enough, and her ascension allows it: it collapses into a black hole (the gather, the impact)
 		var _need = global.hex_debug_holes ? 15 : HEX_COLLAPSE_MASS;
-		if (_ast.m >= _need && (global.hex_debug_holes || scr_hex_tier() >= 4) && scr_hex_hole_room(_ast.ox, _ast.oy)) {
+		var _p3 = (_ast[$ "p3"] == true);                                      // a first star of a new aeon: born to become a black hole
+		// ...unless it's one of the very heaviest. a pair-instability supernova: its core gets so hot that light turns into matter
+		// and antimatter, the pressure holding it up collapses, and the runaway burning blows the whole star apart. nothing is
+		// left behind, not even a black hole, and every bit of it goes back into the sky as gas
+		if (_p3 && _ast.m > 60) {
+			array_push(novae, { ox: _ast.ox, oy: _ast.oy, t0: t, ph: random(1000), pisn: true });
+			scr_hex_flow_kick(_ast.ox, _ast.oy, 520, 1.6);                      // its shockwave stirs the currents
+			for (var j = array_length(global.hex_stars) - 1; j >= 0; j--) if (global.hex_stars[j] == _ast) { array_delete(global.hex_stars, j, 1); break; }
+			var _pvl = point_distance(0, 0, _ast.ox, _ast.oy), _pva = point_direction(0, 0, _ast.ox, _ast.oy) + sky_angle;
+			impact_x = obj_player.x + lengthdir_x(_pvl, _pva); impact_y = obj_player.y + lengthdir_y(_pvl, _pva);
+			hitstop = 8; impact_kind = 2;
+			global.shake = max(global.shake, 14);
+			duration = max(duration, t + nova_len + _fpsn);
+			continue;
+		}
+		if ((_p3 || (_ast.m >= _need && (global.hex_debug_holes || scr_hex_tier() >= 4))) && scr_hex_hole_room(_ast.ox, _ast.oy)) {
 			array_push(global.hex_holes, { ox: _ast.ox, oy: _ast.oy, m: _ast.m, s: _ast.s, age: 0, ph: random(1000), tilt: random_range(-12, 12), feed: 0 });
 			for (var j = array_length(global.hex_stars) - 1; j >= 0; j--) if (global.hex_stars[j] == _ast) { array_delete(global.hex_stars, j, 1); break; }
 			duration = max(duration, t + HEX_GATHER + _fpsn * 3);
@@ -197,6 +251,7 @@ for (var i = array_length(deaths) - 1; i >= 0; i--) {
 		_ast.s  = 0.6;
 		_ast.m  = 2;
 		array_push(novae, { ox: _ast.ox, oy: _ast.oy, t0: t, ph: random(1000) });
+		scr_hex_flow_kick(_ast.ox, _ast.oy, 380, 1.1);                         // its shockwave stirs the currents
 		var _nvl = point_distance(0, 0, _ast.ox, _ast.oy), _nva = point_direction(0, 0, _ast.ox, _ast.oy) + sky_angle;
 		impact_x = obj_player.x + lengthdir_x(_nvl, _nva); impact_y = obj_player.y + lengthdir_y(_nvl, _nva);
 		hitstop = 8; impact_kind = 2;                         // its own impact frame: time stops on the flash
@@ -207,6 +262,7 @@ for (var i = array_length(deaths) - 1; i >= 0; i--) {
 	_ast.s  = 0.7;
 	_ast.m  = max(1, _ast.m * 0.3);                        // most of its mass goes back into her nebula
 	array_push(shells, { ox: _ast.ox, oy: _ast.oy, t0: t, ang: random(180), ell: random_range(0.7, 1) }); // real rings are a little oval
+	scr_hex_flow_kick(_ast.ox, _ast.oy, 200, 0.4);                           // a gentle puff through the currents
 	array_push(ignitions, { ox: _ast.ox, oy: _ast.oy, t0: t, big: false, s: 1.6, merged: false, c: make_color_rgb(205, 225, 255) });
 }
 // a supernova remnant settles into her nebula: filaments of oxygen teal, sulphur and iron gold, and hydrogen red. food for new stars,
@@ -214,9 +270,11 @@ for (var i = array_length(deaths) - 1; i >= 0; i--) {
 for (var i = array_length(novae) - 1; i >= 0; i--) {
 	var _nv = novae[i];
 	if (t < _nv.t0 + nova_len) continue;
-	for (var _nvj = 0; _nvj < 48; _nvj++) {
+	var _nvpi = (_nv[$ "pisn"] == true);                    // a pair-instability supernova returns a whole monster star: twice the shell
+	var _nvn = _nvpi ? 96 : 48;
+	for (var _nvj = 0; _nvj < _nvn; _nvj++) {
 		var _nvh = scr_hash(_nv.ph + _nvj * 2.3);
-		var _nvr = 150 * random_range(0.82, 1.05), _nvd = _nvj * 7.5 + random_range(-3, 3);
+		var _nvr = (_nvpi ? 240 : 150) * random_range(0.82, 1.05), _nvd = _nvj * (360 / _nvn) + random_range(-3, 3);
 		scr_hex_haze_add({ ox: _nv.ox + lengthdir_x(_nvr, _nvd), oy: _nv.oy + lengthdir_y(_nvr, _nvd), ang: _nvd + 90,
 			c: (_nvh < 0.45) ? make_color_rgb(70, 220, 200) : ((_nvh < 0.8) ? make_color_rgb(255, 200, 90) : make_color_rgb(255, 85, 115)),
 			s: 16, s0: 16, smax: 34, a: 0.03, f: 1, at: 0.13, tx: 1, fr: 4 + irandom(3), ex: 1, st: 1.6, u: false });
@@ -323,7 +381,7 @@ for (var n = array_length(nurseries) - 1; n >= 0; n--) {
 		if (_nk >= 0.7) {
 			_nu.lit = true;
 			var _nss = min(2.6, 0.7 + sqrt(_nu.m) * 0.3);
-			array_push(global.hex_stars, { ox: _nu.ox, oy: _nu.oy, s: _nss, ph: _nu.ph, hx: false, big: false, m: _nu.m });
+			array_push(global.hex_stars, { ox: _nu.ox, oy: _nu.oy, s: _nss, ph: _nu.ph, hx: false, big: false, m: _nu.m, p3: (_nu[$ "p3"] == true) });
 			array_push(ignitions, { ox: _nu.ox, oy: _nu.oy, t0: t, big: (_nu.m >= 12), s: _nss, merged: false, c: _nu.c });
 			// its light and wind push the gas left around it outward: a bubble opens around the newborn
 			for (var j = 0; j < array_length(_nw); j++) {
@@ -338,6 +396,7 @@ for (var n = array_length(nurseries) - 1; n >= 0; n--) {
 		}
 	}
 }
+scr_prof_lap("deaths, remnants, rings, nurseries");   // (capture key: C)
 // the jet knots fly out and slow as they plough into the cloud
 for (var i = array_length(jbeads) - 1; i >= 0; i--) {
 	var _jb = jbeads[i];
@@ -347,6 +406,7 @@ for (var i = array_length(jbeads) - 1; i >= 0; i--) {
 	_jb.age++;
 	if (_jb.age > ((_jb.k == 1) ? 45 : 60)) { jbeads[i] = jbeads[array_length(jbeads) - 1]; array_pop(jbeads); }
 }
+scr_prof_lap("jet knots");   // (capture key: C)
 // ---- sitting in her universe (G): it keeps living while she watches. a second of watching is a second of cosmic time ----
 if (gaze) {
 	if (keyboard_check_pressed(ord("G")) && t > birth_at + 10 && duration == infinity) duration = t + floor(_fpsn * 0.5); // warp back out: the sky closes in on her
@@ -358,25 +418,9 @@ if (gaze) {
 			if (!is_undefined(_gdth)) { _gdth.dying = true; array_push(deaths, { st: _gdth, t0: t }); }
 		}
 	}
-	gaze_tick++;
-	if (gaze_tick >= HEX_BIRTH_EVERY * _fpsn) {                          // every so often, the densest knot of gas collapses into a star
-		gaze_tick = 0;
-		var _gcells = scr_hex_haze_expose(0.25);
-		array_sort(_gcells, function(_p, _q) { return _q.L - _p.L; });
-		var _gvr = min(camera_get_view_width(view_camera[0]), camera_get_view_height(view_camera[0])) * 0.45;
-		for (var i = 0; i < array_length(_gcells); i++) {
-			var _gce = _gcells[i];
-			if (_gce.L < HEX_COLLAPSE_L) break;
-			var _gcd = point_distance(0, 0, _gce.x, _gce.y);
-			if (_gcd < 90 || _gcd > _gvr) continue;
-			var _gcrowd = false;
-			for (var j = 0; j < array_length(nurseries); j++) if (point_distance(_gce.x, _gce.y, nurseries[j].ox, nurseries[j].oy) < 140) _gcrowd = true;
-			if (_gcrowd) continue;
-			var _gnu = scr_hex_nursery_at(_gce.x, _gce.y, t, false);
-			if (!is_undefined(_gnu)) { array_push(nurseries, _gnu); break; }
-		}
-	}
+	// (stars are born from the gas itself now: scr_hex_fluid_sinks. the old timed births from wisps are gone)
 }
+scr_prof_lap("G-mode living (aging)");   // (capture key: C)
 // ---- black holes feed on her gas. near a hole, a cloud is torn apart by the difference in pull between its near and far side
 // (tidal shredding): it breaks into smaller pieces, the inner ones orbit faster than the outer ones, and the cloud shears into a
 // curved spiral arm instead of moving as one stiff stick. the pieces sink into the disk's plane, heat up as they fall, and are
@@ -467,30 +511,51 @@ if (array_length(_fhl) > 0) {
 		// garden, cools and slows, and settles as fresh gas where new stars can form (real: jets trigger star birth where they hit)
 		_fho.out = min(_fho.out, 30);
 		var _femit = 0;
-		while (_fho.out >= 0.6 && _femit < 3 && array_length(_fhz) < HEX_HAZE_CAP + 800 && array_length(global.hex_flow) < 700) {
+		// it comes out in fits, not a steady stream: real outflows are clumpy and flicker. most frames a puff or two, sometimes nothing,
+		// and every so often a burst: a whole clump flung out at once in one direction
+		// bursts are rarer but never the same twice: any size from a handful to a real eruption, a tight spurt or a wide spray,
+		// slow or fast. and the jets precess (their axis slowly wobbles, like the real jets of SS 433), so nothing repeats
+		var _fburst = (_fho.out >= 4 && random(1) < 0.015);
+		var _fmax = _fburst ? irandom_range(4, 7) + floor(14 * power(random(1), 2)) : ((random(1) < 0.55) ? irandom_range(1, 2) : 0);
+		var _fprec = 18 * sin(current_time / 1900 + _fho.ph) + 7 * sin(current_time / 730 + _fho.ph * 2.3);
+		var _fbang = _fho.tilt - sky_angle + 90 + 180 * irandom(1) + _fprec + random_range(-35, 35);   // the burst's direction
+		var _fbsp = random_range(6, 30), _fbv = random_range(0.9, 1.8);                              // its spread and its force
+		if (_fburst) scr_hex_fluid_kick(_fho.ox + lengthdir_x(_fhr * 2.2, _fbang), _fho.oy + lengthdir_y(_fhr * 2.2, _fbang), _fhr * 2.5, 0.5 * _fbv, make_color_rgb(200, 215, 255));   // a burst stirs the fluid
+		while (_fho.out >= 0.6 && _femit < _fmax && array_length(_fhz) < HEX_HAZE_CAP + 800 && array_length(global.hex_flow) < 700) {
 			_fho.out -= 0.6; _femit++;
 			var _fwide = _fsm && random(1) < 0.4;
-			var _fpole = _fho.tilt - sky_angle + 90 + 180 * irandom(1);         // square to the disk, either pole (from screen into her sky)
-			var _fang  = _fpole + (_fwide ? random_range(-60, 60) : random_range(-9, 9));
-			var _fvel  = (_fwide ? random_range(2.5, 4.5) : random_range(5, 8)) * (_fsm ? (_fwide ? 1.4 : 2.1) : 1);
-			var _fsz   = random_range(10, 15);
+			var _fpole = _fho.tilt - sky_angle + 90 + 180 * irandom(1) + _fprec; // square to the disk, either pole (from screen into her sky)
+			var _fang  = _fburst ? _fbang + random_range(-_fbsp, _fbsp)
+			           : (_fpole + (_fwide ? random_range(-60, 60) : random_range(-9, 9) + random_range(-9, 9) * random(1)));
+			var _fvel  = (_fwide ? random_range(2.5, 4.5) : random_range(4, 9)) * (_fsm ? (_fwide ? 1.4 : 2.1) : 1) * (0.7 + 0.6 * power(random(1), 2)) * (_fburst ? _fbv : 1);
+			var _fsz   = random_range(6, 14) + 10 * power(random(1), 3);       // mostly small puffs, now and then a big one
+			// what it's made of: mostly hot hydrogen glowing blue-white, but each puff cools to the light of its own element:
+			// oxygen teal, hydrogen red, iron gold (the colors astronomers see in real outflows and remnants)
+			var _fel = random(1);
+			var _fcool = (_fel < 0.45) ? make_color_rgb(170, 140, 255) : ((_fel < 0.65) ? make_color_rgb(80, 215, 200) : ((_fel < 0.85) ? make_color_rgb(255, 95, 120) : make_color_rgb(255, 195, 95)));
+			// the disk's spin goes with it: the wind leaves with a little twist
+			var _ftw = random_range(0.3, 1.1) * ((_fho.tilt mod 2 < 1) ? 1 : -1);
 			var _fow = { ox: _fho.ox + lengthdir_x(_fhr * 1.4, _fang), oy: _fho.oy + lengthdir_y(_fhr * 1.4, _fang), ang: _fang,
-				c: make_color_rgb(195, 210, 255), s: _fsz, s0: _fsz, smax: _fsz * 2.4, a: 0.05, at: 0.05, f: 1, ex: 1, st: 1.3, tx: 1,
-				fr: irandom(3), u: false, vx: lengthdir_x(_fvel, _fang), vy: lengthdir_y(_fvel, _fang) };
+				c: make_color_rgb(205, 220, 255), s: _fsz, s0: _fsz, smax: _fsz * random_range(1.8, 3), a: random_range(0.035, 0.07), at: 0.05, f: 1, ex: 1, st: 1.3, tx: 1,
+				fr: irandom(3), u: false, vx: lengthdir_x(_fvel, _fang) + lengthdir_x(_ftw, _fang + 90), vy: lengthdir_y(_fvel, _fang) + lengthdir_y(_ftw, _fang + 90) };
 			scr_hex_wisp_norm(_fow);
-			_fow.fl = true;
+			_fow.fl = true; _fow.cool = _fcool;
+			_fow.dmp = random_range(0.93, 0.98);                               // each puff ploughs through its own drag: they land scattered
 			array_push(_fhz, _fow);
 			array_push(global.hex_flow, _fow);
 		}
 	}
 }
+scr_prof_lap("feeding + outflow");   // (capture key: C)
 // gas thrown out by black holes flies on, slowing and cooling from blue-white to her violet, then settles into the garden
 if (!variable_global_exists("hex_flow")) global.hex_flow = [];
 var _flyon = [], _flvio = make_color_rgb(165, 95, 210);
 for (var i = 0; i < array_length(global.hex_flow); i++) {
 	var _fl = global.hex_flow[i];
 	_fl.ox += _fl.vx; _fl.oy += _fl.vy;
-	_fl.vx *= 0.985;  _fl.vy *= 0.985;
+	var _fdm = 0.985;
+	if (variable_struct_exists(_fl, "dmp")) { _fdm = _fl.dmp; _fl.dmp = lerp(_fl.dmp, 0.985, 0.08); }   // the Big Bang's inflation: heavy drag relaxing
+	_fl.vx *= _fdm;  _fl.vy *= _fdm;
 	var _flv = abs(_fl.vx) + abs(_fl.vy);
 	_fl.ang = point_direction(0, 0, _fl.vx, _fl.vy);
 	_fl.st  = 1 + min(0.8, _flv * 0.15) * (variable_struct_exists(_fl, "cool") ? 0 : 1);   // a little drawn out by its speed, not a streak
@@ -500,12 +565,14 @@ for (var i = 0; i < array_length(global.hex_flow); i++) {
 	else array_push(_flyon, _fl);
 }
 global.hex_flow = _flyon;                                                  // rebuilt in one pass: far cheaper than deleting one by one
+scr_prof_lap("gas in flight");   // (capture key: C)
 // every couple of seconds, gas that's been eaten or faded to nothing is swept out, so there's always room for new gas
 if (t mod 120 == 0) {
 	var _sw = global.hex_haze, _swk = [];
 	for (var i = 0; i < array_length(_sw); i++) if (_sw[i].f > 0.01) array_push(_swk, _sw[i]);
 	if (array_length(_swk) < array_length(_sw)) { global.hex_haze = _swk; global.hex_haze_i = 0; }
 }
+scr_prof_lap("dead-gas sweep");   // (capture key: C)
 // a supermassive tears apart a star that strays too close (a tidal disruption event): about half of it is flung out in a
 // glowing stream, the rest spirals in, and its disk flares
 var _tsm = scr_hex_find_smbh();
@@ -541,6 +608,9 @@ if (!is_undefined(_tsm) && _tsm.age > HEX_GATHER + _fpsn * 3) {
 				array_push(global.hex_haze, _tw);
 			}
 			array_push(ignitions, { ox: _tbest.ox, oy: _tbest.oy, t0: t, big: true, s: 3, merged: false, c: _tc });
+			if (!variable_global_exists("hex_marks")) global.hex_marks = [];   // Inspect names it for a few seconds
+			array_push(global.hex_marks, { ox: _tbest.ox, oy: _tbest.oy, txt: "tidal disruption: a star torn apart", t: _fpsn * 5 });
+			if (array_length(global.hex_marks) > 12) array_delete(global.hex_marks, 0, 1);   // (only counted down while Inspect is on)
 			_tsm.m += _tbest.m * 0.5;
 			_tsm.feed = (variable_struct_exists(_tsm, "feed") ? _tsm.feed : 0) + 40;
 			_tbest.s = 0;
@@ -548,6 +618,7 @@ if (!is_undefined(_tsm) && _tsm.age > HEX_GATHER + _fpsn * 3) {
 		}
 	}
 }
+scr_prof_lap("tidal disruption");   // (capture key: C)
 // the infall: the closer it gets, the faster it goes round and the faster it falls, like a planet close to its sun
 for (var i = array_length(infall) - 1; i >= 0; i--) {
 	var _fi = infall[i];
@@ -558,6 +629,7 @@ for (var i = array_length(infall) - 1; i >= 0; i--) {
 	_fi.w = _fw;                                                            // Draw stretches it by how fast it's going round
 	if (_fi.r <= 3) { infall[i] = infall[array_length(infall) - 1]; array_pop(infall); }
 }
+scr_prof_lap("infall");   // (capture key: C)
 // ---- stardust: the quiet part. the doomed crumble head first, every pixel becoming a mote of its own color.
 // each mote has a fate: most is cloud dust that drifts like smoke and eases to rest around where its star is forming,
 // thinning into the dark or staying as haze (her nebula, growing from her dead). the rest is star dust: bright threads
@@ -756,6 +828,7 @@ if (t >= birth_at && instance_exists(obj_player)) {
 		duration  = max(duration, finale_at + floor(_fpsd * 2.5));
 	}
 }
+scr_prof_lap("stardust motes");   // (capture key: C)
 // the finale: once every star is lit, one great pulse
 if (!pulsed && t >= finale_at) {
 	pulsed = true;
@@ -763,7 +836,7 @@ if (!pulsed && t >= finale_at) {
 	global.shake = max(global.shake, 10);
 }
 if (pulse_t >= 0) pulse_t++;
-if (pulse_t >= 0 && (pulse_t mod 2) == 0) scr_hex_accrete(new_from); // after the finale, the newborn stars settle into each other (every other frame: half the cost, a gentler settle)
+// (the old accretion, newborn stars merging into black holes by script, is deleted: legacy #3)
 if (t >= duration) {
 	if (!gaze && instance_exists(obj_player)) scr_hex_return(obj_player.x, obj_player.y);   // no shockwave after just watching
 	instance_destroy();
@@ -773,5 +846,6 @@ if (t >= glitch_at && t < still_at) global.shake = max(global.shake, 3); //reali
 if (t >= tear_at && t < tear_at + tear_len) global.shake = max(global.shake, 4);   // the ground rumbles as it splits
 if (t >= still_at && t < tear_at) global.shake = 0;	 //total stillness:
 if (t >= tear_at + tear_len && t < shatter_at) global.shake = max(global.shake, 1 + 4 * sqr((t - tear_at - tear_len) / gape_len)); // pressure building
+scr_prof_lap("finale");   // (capture key: C)
 // PERF PROBE: the first few frames, and then once a second, print how long this Step took
 if (prof_frames < 6 || t mod 60 == 0) show_debug_message("[UNMAKING] t " + string(t) + " step " + string((get_timer() - _prof_s) / 1000) + " ms | motes " + string(array_length(motes)) + " | haze " + string(array_length(global.hex_haze)));

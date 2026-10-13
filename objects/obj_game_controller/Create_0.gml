@@ -28,6 +28,7 @@ global.hex_unmade = 0; // Enemies our lil Hexweaver has unmade this run, which w
 global.hex_stars = []; // one star for every enemy the Hexweaver unmakes this run
 global.hex_holes = [];          // black holes in her sky: { ox, oy, m, s, age, ph, tilt }
 global.hex_haze   = [];   // wisps of gas left by the dust of everyone the Hexweaver unmakes: her nebula, growing all run
+scr_hex_universe_reset();       // and her universe starts empty too: its gas (textures that would otherwise outlive the run), the aeon's clock, its mood
 global.hex_haze_i = 0;
 if (!variable_global_exists("hex_wisp_spr") || !sprite_exists(global.hex_wisp_spr)) global.hex_wisp_spr = scr_hex_wisp_sprite(); // her textured gas, built at game start so the first cast doesn't hitch    // once the haze is full, the oldest wisp to make way next
 global.hex_last_peek = -1; // when she last looked into her sky (current_time, in ms). -1: she never has this run
@@ -43,7 +44,7 @@ debug_items = [];
 debug_index = 0;
 debug_filter = "";
 global.debug_hud = false;
-global.auto_pick = false; // test toggle: level-ups pick a random item instead of opening the card screen
+// (level-up auto picking is part of the Auto Loot setting now: global.settings.auto_loot, saved)
 
 station_step = 0;  // 0 = witch, 1 = wand, 2 = familiar
 station_index = 0;

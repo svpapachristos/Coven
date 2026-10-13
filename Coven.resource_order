@@ -110,6 +110,8 @@
     {"name":"scr_try_drop","order":1,"path":"scripts/scr_try_drop/scr_try_drop.yy",},
     {"name":"sh_crumble","order":4,"path":"shaders/sh_crumble/sh_crumble.yy",},
     {"name":"sh_dissolve","order":3,"path":"shaders/sh_dissolve/sh_dissolve.yy",},
+    {"name":"sh_hex_fluid_p","order":8,"path":"shaders/sh_hex_fluid_p/sh_hex_fluid_p.yy",},
+    {"name":"sh_hex_fluid","order":7,"path":"shaders/sh_hex_fluid/sh_hex_fluid.yy",},
     {"name":"sh_hex_lens","order":5,"path":"shaders/sh_hex_lens/sh_hex_lens.yy",},
     {"name":"sh_hex_tone","order":6,"path":"shaders/sh_hex_tone/sh_hex_tone.yy",},
     {"name":"sh_starlit","order":1,"path":"shaders/sh_starlit/sh_starlit.yy",},

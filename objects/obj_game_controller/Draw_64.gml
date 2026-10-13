@@ -1,4 +1,5 @@
 if (global.game_state == "MENU") {
+	scr_draw_title_backdrop(); // placeholder title screen: her, casting, in the dark (scr_menu)
 	scr_draw_menu("COVEN", menu_options, menu_index);
 }
 if (global.game_state == "STATION") {
@@ -186,11 +187,12 @@ if (global.game_state == "SPREAD") {
 }
 
 if (global.game_state == "SLOTS") {
+	scr_draw_slots_backdrop(); // placeholder save screen: Munin, the saves, and her casting (scr_menu)
 	scr_draw_menu("Choose a Save", slot_labels, slot_index);
 	var _cx = display_get_gui_width() / 2;
 	var _y = display_get_gui_height() / 2 + array_length(slot_labels) * 28 + 24;
 	draw_set_halign(fa_center);
-	draw_set_color(c_dkgray);
+	draw_set_color(make_color_rgb(150, 140, 175));   // readable on the dark screen
 	draw_text(_cx, _y, "Enter to play   -   Delete twice to erase   -   Esc to go back");
 	draw_set_color(c_white);
 	draw_set_halign(fa_left);

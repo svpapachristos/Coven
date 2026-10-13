@@ -131,7 +131,7 @@ function scr_options_rows() {
 		{ label: "Screen Shake",   key: "screen_shake" },
 		{ label: "Damage Numbers", key: "damage_numbers" },
 		{ label: "Master Volume",  key: "master_volume" },
-		{ label: "Auto Loot",      key: "auto_loot", choices: ["Off", "On"] }   // souls and items fly to her on their own
+		{ label: "Auto Loot",      key: "auto_loot", choices: ["Off", "On"] }   // souls and items fly to her, and level-ups pick a card for her
 	];
 }
 

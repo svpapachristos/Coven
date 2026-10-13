@@ -165,6 +165,8 @@
     {"id":{"name":"scr_witch_spells","path":"scripts/scr_witch_spells/scr_witch_spells.yy",},},
     {"id":{"name":"sh_crumble","path":"shaders/sh_crumble/sh_crumble.yy",},},
     {"id":{"name":"sh_dissolve","path":"shaders/sh_dissolve/sh_dissolve.yy",},},
+    {"id":{"name":"sh_hex_fluid_p","path":"shaders/sh_hex_fluid_p/sh_hex_fluid_p.yy",},},
+    {"id":{"name":"sh_hex_fluid","path":"shaders/sh_hex_fluid/sh_hex_fluid.yy",},},
     {"id":{"name":"sh_hex_lens","path":"shaders/sh_hex_lens/sh_hex_lens.yy",},},
     {"id":{"name":"sh_hex_tone","path":"shaders/sh_hex_tone/sh_hex_tone.yy",},},
     {"id":{"name":"sh_silhouette","path":"shaders/sh_silhouette/sh_silhouette.yy",},},

@@ -1,4 +1,5 @@
 var _prof_d = get_timer();   // PERF PROBE
+scr_prof_start("Draw");
 if (!instance_exists(obj_player)) exit;
 if (clean_pending) exit; // the clean frame: draw nothing, so Draw GUI can photograph the bare world
 var _fps = game_get_speed(gamespeed_fps);
@@ -50,6 +51,7 @@ gpu_set_blendmode(bm_add);
 var _shl = asset_get_index("sh_hex_lens"), _sht = asset_get_index("sh_hex_tone");
 var _hdr = (_shl != -1 && _sht != -1 && shader_is_compiled(_shl) && shader_is_compiled(_sht));
 var _aw = surface_get_width(application_surface), _ah = surface_get_height(application_surface);
+scr_hex_fluid_update();                                                // the fluid steps forward (on the graphics card) before the sky is drawn
 if (_hdr) {
 	if (hdr_fmt == -1) hdr_fmt = surface_format_is_supported(surface_rgba16float) ? surface_rgba16float : surface_rgba8unorm;
 	if (surface_exists(sky_a) && (surface_get_width(sky_a) != _aw || surface_get_height(sky_a) != _ah)) { surface_free(sky_a); surface_free(sky_b); }
@@ -60,6 +62,7 @@ if (_hdr) {
 	camera_apply(_cam);                                                   // draw in the world's coordinates, as if on screen
 }
 
+scr_prof_lap("setup + tear");   // (capture key: C)
 // ---- 2) her nebula, centred on her and turning with the sky ----
 if (sprite_exists(nebula)) {
 	gpu_set_tex_filter(true);
@@ -75,6 +78,7 @@ if (sprite_exists(nebula)) {
 	gpu_set_tex_filter(false);
 }
 
+scr_prof_lap("nebula image");   // (capture key: C)
 // ---- 4) the deep field: baked at the cast, turning slowest. two halves twinkle out of step ----
 var _far = sky_angle * 0.5;
 draw_sprite_ext(dust[0], 0, _px, _py, 1, 1, _far, c_white, (0.75 + 0.25 * sin(current_time / 700)) * _neb * _bgk);
@@ -110,6 +114,7 @@ for (var h = 0; h < 16; h++) {
 	scr_draw_star_flare(_px + lengthdir_x(_l, _a), _py + lengthdir_y(_l, _a), 3 + scr_hash(h * 3.3) * 3, _hc,
 		(0.75 + 0.25 * sin(current_time / 400 + h * 2)) * _neb * _bgk);
 }
+scr_prof_lap("backdrop stars");   // (capture key: C)
 // ---- 6b) her haze: lasting wisps of gas left by the dust of everyone she has unmade this run, turning with her sky.
 // her nebula, growing from her dead. each wisp spreads and thins as it diffuses (same light, spread wider).
 // soot first (it dims what is behind it), then the glowing gas ----
@@ -136,9 +141,10 @@ for (var i = 0; i < _hn; i++) {
 		_hxs, _hys, _hrot, _hcol, _hcol, _hcol, _hcol, 1);                            // a dark lane with structure
 	if (_hq.tx < 1) draw_sprite_ext(spr_soft, 0, _hdx, _hdy, _hxs, _hys, _hrot, merge_color(c_black, c_white, _hsk * (1 - _hq.tx)), 1);
 }
-// then the glowing gas
+// then the glowing gas (faint while the fluid is on: the fluid is the gas you see, the wisps are its mass)
 gpu_set_blendmode(bm_add);
-for (var i = 0; i < _hn; i++) {
+var _wfk = scr_hex_fluid_ok() ? HEX_FLUID_WISP : 1;
+for (var i = 0; i < ((_wfk > 0) ? _hn : 0); i++) {                       // (pure fluid: the wisps aren't drawn at all, which saves their whole cost)
 	var _hq = _hz[i];
 	if (_hq.c == -1 || _hq.f <= 0.01) continue;
 	var _hox = _hq.ox, _hoy = _hq.oy;
@@ -147,7 +153,7 @@ for (var i = 0; i < _hn; i++) {
 	var _thin = sqrt(_hq.s0 / _hq.s);
 	var _hxs = _hq.s * (1 + 0.25 * (1 - _hq.s0 / _hq.s)) * _hq.st / 20, _hys = _hq.s / 20;
 	var _hrot = _hq.ang + sky_angle;
-	var _hga = _hq.a * _neb * _hq.f * _thin * _hq.ex;                                // ex: the exposure curve, rich but never white
+	var _hga = _hq.a * _neb * _hq.f * _thin * _hq.ex * _wfk;                         // ex: the exposure curve, rich but never white
 	var _hcs = dcos(_hrot), _hsn = dsin(_hrot), _hhx = 32 * _hxs, _hhy = 32 * _hys;
 	draw_sprite_general(_wspr, 0, (_hq.fr mod 4) * 64, (_hq.fr div 4) * 64, 64, 64, _hdx - _hhx * _hcs - _hhy * _hsn, _hdy + _hhx * _hsn - _hhy * _hcs,
 		_hxs, _hys, _hrot, _hq.c, _hq.c, _hq.c, _hq.c, _hga * _hq.tx);               // wisps, threads and tendrils
@@ -167,6 +173,8 @@ for (var i = 0; i < _hn; i++) {
 		}
 	}
 }
+scr_hex_fluid_draw(_px, _py, sky_angle, 1);                          // the fluid: curling smoke in her nebula's colors (scr_hexweaver)
+scr_prof_lap("gas (haze wisps)");   // (capture key: C)
 // ---- 6c) the peek: births from her old haze ----
 for (var n = 0; n < array_length(nurseries); n++) {
 	var _nu = nurseries[n];
@@ -359,6 +367,7 @@ for (var i = 0; i < array_length(shells); i++) {
 	}
 	draw_sprite_ext(spr_soft, 0, _shx, _shy, 10 / 20, 10 / 20, 0, make_color_rgb(205, 225, 255), 0.35 * _sha * _neb); // the white dwarf lighting its ring
 }
+scr_prof_lap("births, jets, deaths");   // (capture key: C)
 // ---- 7) her sky: one star for every enemy she has unmade this run ----
 var _stars = global.hex_stars;
 var _n = array_length(_stars);
@@ -376,8 +385,10 @@ for (var h = 0; h < array_length(global.hex_holes); h++) {
 	array_push(_lens, { x: _px + lengthdir_x(_lhl, _lha), y: _py + lengthdir_y(_lhl, _lha), r: _lhr, re2: sqr(_lhr * 2.1) });
 }
 var _nlens = _hdr ? 0 : array_length(_lens);                     // with the lens shader, the stars bend along with everything else
+var _mred = (variable_global_exists("hex_mood") && variable_struct_exists(global.hex_mood, "red")) ? global.hex_mood.red : 0;   // the twilight tint, looked up once
 for (var i = max(0, _n - 800); i < _n; i++) {
 	var _st = _stars[i];
+	if (!is_struct(_st)) continue;                                     // (never trust a slot blindly: one bad entry shouldn't crash the sky)
 	var _l = point_distance(0, 0, _st.ox, _st.oy);
 	if (_l > _r) continue;
 	var _a = point_direction(0, 0, _st.ox, _st.oy) + sky_angle;
@@ -394,16 +405,24 @@ for (var i = max(0, _n - 800); i < _n; i++) {
 	if (_hidden) continue;
 
 	// color first, since the wave glow below needs it
-	var _sc = scr_hex_star_color(_st.m, _st.ph, _st.hx); // its mass sets its color: red dwarf to blue giant
+	// its mass sets its color: red dwarf to blue giant. worked out once and kept on the star (redone only if its mass changes)
+	var _spop = (_st[$ "pop"] == true);                                        // a star cluster born from the gas: its color and size come from its population (scr_hex_pops_update)
+	if (!_spop) {
+		var _ckey = _st.m + (_st.hx ? 100000 : 0);
+		if (_st[$ "cm"] != _ckey) { _st.cm = _ckey; _st.c0 = scr_hex_star_color(_st.m, _st.ph, _st.hx); }
+	}
+	var _sc = _st.c0;
 	var _sgk = 0;                                          // how far into its red giant years it is
 	var _sns = (_st[$ "ns"] == true);
 	if (_st[$ "wd"] == true) _sc = make_color_rgb(205, 225, 255);              // a white dwarf: the bare core, white-hot and tiny
 	else if (_sns) _sc = make_color_rgb(170, 210, 255);                        // a neutron star: a city-sized core, spinning
-	else if (_st.m >= HEX_MASS_SUN_MIN) {                                      // sun-like stars swell into red giants, giants into red supergiants
+	else if (!_spop && _st.m >= HEX_MASS_SUN_MIN) {                            // sun-like stars swell into red giants, giants into red supergiants
 		var _slf = scr_hex_age(_st) / scr_hex_star_life(_st.m);
 		_sgk = clamp((_slf - 0.7) / 0.3, 0, 1);                                // the last of a sun-like life: it swells into a red giant
 		_sc = merge_color(_sc, make_color_rgb(255, 120, 60), 0.75 * _sgk);
 	}
+	// an old galaxy's light: in the twilight every star left glows warmer (the blue ones have died; scr_hex_aeon_step)
+	if (_mred > 0.01 && _st[$ "wd"] != true && !_sns) _sc = merge_color(_sc, make_color_rgb(255, 150, 85), 0.7 * _mred);
 	var _tw = 0.8 + 0.2 * sin(current_time / (300 + (i mod 7) * 90) + _st.ph); // a gentle twinkle that never goes dark
 	var _wb = 0;
 	if (_wave_on && i >= new_from) {
@@ -419,9 +438,23 @@ for (var i = max(0, _n - 800); i < _n; i++) {
 		scr_draw_star_flare(_sx, _sy, _ss, _sc, _tw);
 	} else {
 		var _core = max(1.2, _ss * 0.8); // never smaller than a crisp pixel, or it vanishes once its flare ends
-		if (i >= new_from) draw_sprite_ext(spr_soft, 0, _sx, _sy, (6 + _ss * 3) / 20, (6 + _ss * 3) / 20, 0, _sc, 0.12 * _tw); // this cast's newborns keep a soft halo, so you can see your new stars
+		if (i >= new_from && !_spop) draw_sprite_ext(spr_soft, 0, _sx, _sy, (6 + _ss * 3) / 20, (6 + _ss * 3) / 20, 0, _sc, 0.12 * _tw); // this cast's newborns keep a soft halo, so you can see your new stars
 		draw_sprite_ext(spr_glow, 0, _sx, _sy, _ss * 3 / 15, _ss * 3 / 15, 0, _sc, 0.5 * _tw);                    // soft glow
 		draw_sprite_ext(spr_dot,  0, _sx, _sy, _core / 15, _core / 15, 0, merge_color(_sc, c_white, 0.5), _tw); // white-hot core
+	}
+	// a young cluster's brightest members: a few hot blue-white stars around its heart, each shining until it goes supernova
+	if (_spop && _st.age < 40) {
+		for (var k = 0; k < _st.nm; k++) {
+			var _mdk = scr_hex_pop_death(_st, k);
+			if (_mdk <= _st.age) continue;                                     // (already gone: its flash was its last light)
+			var _mo = scr_hex_pop_member(_st, k);
+			var _mdl = point_distance(0, 0, _mo[0], _mo[1]), _mda = point_direction(0, 0, _mo[0], _mo[1]) + sky_angle;
+			var _mx = _sx + lengthdir_x(_mdl, _mda), _my = _sy + lengthdir_y(_mdl, _mda);
+			var _mtw = 0.75 + 0.25 * sin(current_time / (260 + k * 70) + _st.ph + k);
+			var _mc = merge_color(make_color_rgb(150, 185, 255), c_white, 0.25 + 0.2 * scr_hash(_st.ph + k));
+			draw_sprite_ext(spr_glow, 0, _mx, _my, 1.6 / 15, 1.6 / 15, 0, _mc, 0.45 * _mtw);
+			draw_sprite_ext(spr_dot,  0, _mx, _my, 1.1 / 15, 1.1 / 15, 0, merge_color(_mc, c_white, 0.5), _mtw);
+		}
 	}
 	if (_sns) {                                                                 // a pulsar: two beams sweeping round like a lighthouse
 		var _pba = current_time * 0.35 + _st.ph * 50;
@@ -431,6 +464,30 @@ for (var i = max(0, _n - 800); i < _n; i++) {
 		draw_set_alpha(1);
 	}
 }
+// supernovae in her clusters: one blinding point that fades over a moment, and the faint ring of its blast wave rolling out
+if (variable_global_exists("hex_snf") && variable_global_exists("hex_fluid")) {
+	var _snT = global.hex_fluid.t;
+	gpu_push_state();
+	gpu_set_blendmode(bm_add);
+	for (var i = array_length(global.hex_snf) - 1; i >= 0; i--) {
+		var _sf = global.hex_snf[i], _sfa = _snT - _sf.t0;
+		if (_sfa > 50 || _sfa < 0) { array_delete(global.hex_snf, i, 1); continue; }
+		var _sfl = point_distance(0, 0, _sf.ox, _sf.oy);
+		if (_sfl > _r) continue;
+		var _sfd = point_direction(0, 0, _sf.ox, _sf.oy) + sky_angle;
+		var _fx = _px + lengthdir_x(_sfl, _sfd), _fy = _py + lengthdir_y(_sfl, _sfd);
+		var _sfk = _sfa / 50;
+		var _fb = (_sfk < 0.06) ? _sfk / 0.06 : sqr(1 - (_sfk - 0.06) / 0.94);   // up in a blink, then a slow fade
+		draw_sprite_ext(spr_glow, 0, _fx, _fy, (3 + 9 * _sfk) / 15, (3 + 9 * _sfk) / 15, 0, make_color_rgb(205, 225, 255), 0.7 * _fb);
+		draw_sprite_ext(spr_dot,  0, _fx, _fy, 2 / 15, 2 / 15, 0, c_white, _fb);
+		draw_set_color(make_color_rgb(110, 215, 205));                         // its blast wave: shocked oxygen glowing teal
+		draw_set_alpha(0.22 * (1 - _sfk));
+		draw_circle(_fx, _fy, 3 + 16 * sqrt(_sfk), true);
+	}
+	draw_set_alpha(1);
+	gpu_pop_state();
+}
+scr_prof_lap("her stars");   // (capture key: C)
 // ---- 7b) her black holes, turning with her stars ----
 var _holes = global.hex_holes;
 if (_hdr) {
@@ -445,16 +502,27 @@ if (_hdr) {
 		var _ha = point_direction(0, 0, _ho.ox, _ho.oy) + sky_angle;
 		// the lens follows the smoothed size (no ringdown, so stars never bounce) but NOT the crunch's swelling horizon (that would
 		// magnify the sky into blocks); the director strengthens it gently instead
-		var _er = scr_hex_hole_vis(_ho) / (variable_struct_exists(_ho, "ck") ? 1 + 9 * power(_ho.ck, 5) : 1) * 1.3 * _ksx
+		// the Einstein radius grows with the SQUARE ROOT of the mass (real lensing physics), not with the drawn size, which a
+		// supermassive inflates. so a merger, which keeps 95% of the mass, barely changes the bending: no slingshot in the stars.
+		// it never shrinks inside the shadow though, so the ring of bent light always shows around the horizon
+		var _hck = variable_struct_exists(_ho, "ck") ? _ho.ck : 0;
+		var _er = max(scr_hex_hole_radius(40) * 1.3 * sqrt(max(1, _ho.m) / 40), scr_hex_hole_vis(_ho) / (1 + 9 * power(_hck, 5)) * 1.15) * _ksx
 		        * (variable_global_exists("hex_mood") ? global.hex_mood.lensk : 1);                   // the Einstein radius: where the light behind it smears into a ring
 		_lu[_ln * 4]     = (_px + lengthdir_x(_hl, _ha) - _vx) * _ksx;
 		_lu[_ln * 4 + 1] = (_py + lengthdir_y(_hl, _ha) - _vy) * _ksy;
-		_lu[_ln * 4 + 2] = _er * _er;
+		// eased, so a merger or a growing hole bends the sky smoothly instead of springing (a merger hands over its lens: Step)
+		if (!variable_struct_exists(_ho, "le")) _ho.le = _er;
+		else _ho.le = lerp(_ho.le, _er, (_hck > 0) ? 0.2 : 0.015);          // (fast only during the crunch)
+		_lu[_ln * 4 + 2] = _ho.le * _ho.le;
+		_ho.le_w = _ho.le / _ksx;                                          // (in world pixels, for Inspect's lens circles)
 		_lu[_ln * 4 + 3] = (_ho.age < HEX_GATHER) ? sqr(_ho.age / HEX_GATHER) : 1;   // space bends harder and harder as the giant collapses
 		// its disk, drawn by the shader: the horizon swells into place (overshooting a touch) and the disk lights up after the impact
 		var _da = _ho.age - HEX_GATHER;
 		var _dg = clamp(_da / (_fps * 0.6), 0, 1);
-		_dk[_ln * 4]     = scr_hex_hole_vis(_ho) * scr_hex_ringk(_ho) * (1 + 2.7 * power(_dg - 1, 3) + 1.7 * power(_dg - 1, 2)) * _ksx;   // the shadow rings, the lens doesn't
+		// (no ringdown in the size: the shader draws the whole disk at multiples of this radius, so ringing it made the entire disk
+		// swell and shrink 4 times a second after a merge, the "boioioing" measured in Sophia's clip. a real ringdown is a tiny,
+		// brief ripple of the horizon; the disk orbiting far outside doesn't resize. the bell now rings in light instead: _rgk below)
+		_dk[_ln * 4]     = scr_hex_hole_vis(_ho) * (1 + 2.7 * power(_dg - 1, 3) + 1.7 * power(_dg - 1, 2)) * _ksx;
 		_dk[_ln * 4 + 1] = degtorad(_ho.tilt);
 		var _dfeed = variable_struct_exists(_ho, "feed") ? _ho.feed : 0;
 		var _dsp = clamp(_da / (_fps * 2.5), 0, 1);                           // the disk builds over a couple of seconds as the leftovers spiral in
@@ -464,7 +532,10 @@ if (_hdr) {
 		if (variable_struct_exists(_ho, "evk")) _dk[_ln * 4 + 2] *= max(0, 1 - _ho.evk * 1.4);          // evaporating: its disk is long gone
 		// the photon ring ignites first: a flash of light caught circling the new horizon, settling into its hairline
 		_rgk[_ln] = (_da > 0 && _hl <= _r) ? min(1, _da / (_fps * 0.12)) * (1 + 2 * exp(-_da / (_fps * 0.25))) : 0;
-		if (variable_struct_exists(_ho, "mf") && _ho.mf >= 0) _rgk[_ln] *= 1 + 3 * exp(-_ho.mf / (_fps * 0.3));   // two holes just became one: its ring blazes
+		if (variable_struct_exists(_ho, "mf") && _ho.mf >= 0) {
+			_rgk[_ln] *= 1 + 3 * exp(-_ho.mf / (_fps * 0.3));                 // two holes just became one: its ring blazes
+			_rgk[_ln] *= 1 + 0.6 * exp(-_ho.mf / 40) * sin(_ho.mf * 0.85);    // and rings like a struck bell, in brightness: nothing moves
+		}
 		// and a ripple of bent space rolls out from the collapse, through her whole sky
 		if (_da > 0 && _da < _fps * 1.4 && _rn < 4) {
 			var _rpk = _da / (_fps * 1.4);
@@ -477,10 +548,29 @@ if (_hdr) {
 		_dk[_ln * 4 + 3] = frac(_ho.ph * 0.137) * 6.28;
 		_ln++;
 	}
+	// a swallowed hole's lens doesn't vanish in one frame: it fades out where it was while the survivor's grows in (Step leaves
+	// a ghost at the merger), so the stars between them glide instead of jumping. a lens with no disk and no shadow
+	if (variable_global_exists("hex_lens_ghosts")) {
+		for (var i = array_length(global.hex_lens_ghosts) - 1; i >= 0; i--) {
+			var _gh = global.hex_lens_ghosts[i];
+			_gh.k -= 1 / (_fps * 1.2);
+			if (_gh.k <= 0) { array_delete(global.hex_lens_ghosts, i, 1); continue; }
+			if (_ln >= 4) continue;
+			var _ghl = point_distance(0, 0, _gh.ox, _gh.oy), _gha = point_direction(0, 0, _gh.ox, _gh.oy) + sky_angle;
+			_lu[_ln * 4]     = (_px + lengthdir_x(_ghl, _gha) - _vx) * _ksx;
+			_lu[_ln * 4 + 1] = (_py + lengthdir_y(_ghl, _gha) - _vy) * _ksy;
+			_lu[_ln * 4 + 2] = sqr(_gh.le) * _gh.k * _gh.k * (3 - 2 * _gh.k);   // strength eases out smoothly
+			_gh.le_w = sqrt(_lu[_ln * 4 + 2]) / _ksx;
+			_lu[_ln * 4 + 3] = 1;
+			_dk[_ln * 4] = 0; _dk[_ln * 4 + 2] = 0; _rgk[_ln] = 0;             // nothing to draw: only the bending
+			_ln++;
+		}
+	}
 	// gravitational waves from black holes spiralling together and merging, newest first
-	if (variable_global_exists("hex_ripples")) {
+	if (variable_global_exists("hex_ripples") && !(variable_global_exists("hex_no_ripple") && global.hex_no_ripple)) {   // R (debug) turns them off, to tell apart what moves the stars
 		for (var i = array_length(global.hex_ripples) - 1; i >= 0 && _rn < 4; i--) {
 			var _rpl = global.hex_ripples[i];
+			if (_rpl.age < 0) continue;                                         // a ripple still waiting its turn
 			var _rpq = _rpl.age / _rpl.len;
 			var _rpd = point_distance(0, 0, _rpl.ox, _rpl.oy), _rpa = point_direction(0, 0, _rpl.ox, _rpl.oy) + sky_angle;
 			_rp[_rn * 4]     = (_px + lengthdir_x(_rpd, _rpa) - _vx) * _ksx;
@@ -501,10 +591,21 @@ if (_hdr) {
 	// the afterglow of creation, mottled like the real cosmic microwave background: hot orange cooling through deep red to dark
 	var _cmb = [0, 0, 0, 0];
 	if (variable_global_exists("hex_bang") && is_struct(global.hex_bang)) {
-		var _cbk = min(1, global.hex_bang.t / (_fps * 8));
-		_cmb = [0.42 * sqr(1 - _cbk) * min(1, global.hex_bang.t / (_fps * 0.4)), _cbk, frac(global.hex_aeon.n * 0.37) * 50, 0];
+		// first the universe is a blazing opaque fog of plasma; then, all at once, it turns transparent (recombination) and what's
+		// left is the faint mottled afterglow, cooling and fading
+		var _cbt = global.hex_bang.t / _fps;
+		var _cbk = min(1, _cbt / 8);
+		var _fog = (_cbt < 0.5) ? 1.6 : lerp(1.6, 0.42, clamp((_cbt - 0.5) / 1.1, 0, 1));
+		_cmb = [_fog * sqr(1 - _cbk), _cbk, frac(global.hex_aeon.n * 0.37) * 50, 0];
 	}
 	shader_set_uniform_f(shader_get_uniform(_shl, "u_cmb"), _cmb[0], _cmb[1], _cmb[2], _cmb[3]);
+	// the bang tears the image: color splits outward from the instant of creation for a moment
+	var _chr = [0, 0, 0];
+	if (variable_global_exists("hex_bang") && is_struct(global.hex_bang) && global.hex_bang.t < _fps * 1.2) {
+		var _chd = point_distance(0, 0, global.hex_bang.ox, global.hex_bang.oy), _cha = point_direction(0, 0, global.hex_bang.ox, global.hex_bang.oy) + sky_angle;
+		_chr = [(_px + lengthdir_x(_chd, _cha) - _vx) * _ksx, (_py + lengthdir_y(_chd, _cha) - _vy) * _ksy, 16 * _ksx * sqr(1 - global.hex_bang.t / (_fps * 1.2))];
+	}
+	shader_set_uniform_f(shader_get_uniform(_shl, "u_chroma"), _chr[0], _chr[1], _chr[2]);
 	shader_set_uniform_f(shader_get_uniform(_shl, "u_ringk"), _rgk[0], _rgk[1], _rgk[2], _rgk[3]);
 	draw_surface(sky_a, 0, 0);
 	shader_reset();
@@ -536,6 +637,7 @@ for (var h = 0; h < array_length(_holes); h++) {
 	scr_hex_draw_hole(_ho, _hx, _hy, spr_glow, _hdr);   // with the shader on, the disk, shadow and rings are drawn there
 }
 
+scr_prof_lap("black holes + lens shader");   // (capture key: C)
 // THE BIG BANG, in her sky: a blinding core, and a shell of the universe's first light racing outward across everything
 if (variable_global_exists("hex_bang") && is_struct(global.hex_bang)) {
 	var _bt = global.hex_bang.t / _fps;
@@ -547,17 +649,52 @@ if (variable_global_exists("hex_bang") && is_struct(global.hex_bang)) {
 		draw_sprite_ext(spr_glow, 0, _bgx, _bgy, 14 * (1 - _ck2) + 2, 14 * (1 - _ck2) + 2, 0, c_white, sqr(1 - _ck2) * 1.5);   // the singularity's light
 		draw_sprite_ext(spr_soft, 0, _bgx, _bgy, (60 + 400 * _ck2) / 20, (60 + 400 * _ck2) / 20, 0, make_color_rgb(255, 225, 190), 0.6 * sqr(1 - _ck2));
 	}
-	if (_bt < 1.8) {
-		var _sk = _bt / 1.8;
+	if (_bt < 2.2) {
+		var _sk = _bt / 2.2;
 		var _bsr = 30 + 1900 * (1 - sqr(1 - _sk));                               // the first light, racing out
-		for (var w = 0; w < 7; w++) {
-			draw_set_alpha((1 - _sk) * (1 - w / 7) * 0.9);
-			draw_set_color(merge_color(c_white, make_color_rgb(180, 205, 255), w / 7));
-			draw_circle(_bgx, _bgy, max(1, _bsr - w * 5), true);
+		// it cools as it expands, like the real early universe: blue-white, white, gold, orange, ember red
+		var _bcol = (_sk < 0.25) ? merge_color(make_color_rgb(220, 235, 255), c_white, _sk / 0.25)
+		          : ((_sk < 0.5) ? merge_color(c_white, make_color_rgb(255, 215, 140), (_sk - 0.25) / 0.25)
+		          : merge_color(make_color_rgb(255, 215, 140), make_color_rgb(230, 80, 40), (_sk - 0.5) / 0.5));
+		// rays of creation: streaks of light flung straight out from the instant, longest first, fading as the shell passes
+		var _bseed = global.hex_aeon.n * 17.3;
+		for (var w = 0; w < 56; w++) {
+			var _ra = w * (360 / 56) + (scr_hash(_bseed + w) - 0.5) * 5;
+			var _rl = _bsr * (0.55 + 0.5 * scr_hash(_bseed + w * 3.1));
+			draw_set_alpha((1 - _sk) * 0.45 * (0.4 + 0.6 * scr_hash(_bseed + w * 1.7)));
+			draw_line_width_color(_bgx + lengthdir_x(_rl * 0.15, _ra), _bgy + lengthdir_y(_rl * 0.15, _ra),
+				_bgx + lengthdir_x(_rl, _ra), _bgy + lengthdir_y(_rl, _ra), 2 + 6 * (1 - _sk), c_black, _bcol);
 		}
+		// the shell itself: a thick, soft, glowing front, not a thin line
+		var _bsw = 30 + 120 * _sk;
+		for (var w = 0; w < 80; w++) {
+			var _sa = w * 4.5;
+			draw_sprite_ext(spr_soft, 0, _bgx + lengthdir_x(_bsr, _sa), _bgy + lengthdir_y(_bsr, _sa), _bsw / 20, _bsw / 20, 0, _bcol, sqr(1 - _sk) * 0.5);
+		}
+		draw_set_alpha((1 - _sk) * 0.9);                                         // and its leading edge, crisp and bright
+		draw_set_color(merge_color(_bcol, c_white, 0.5));
+		for (var w = 0; w < 3; w++) draw_circle(_bgx, _bgy, max(1, _bsr + w * 1.5), true);
 		draw_set_alpha(1);
 	}
 }
+// THE SKY CATCHES FIRE (the crunch): as the universe packs together, its leftover light is squeezed hotter and hotter until
+// the night sky itself glows, red, then orange, then white-hot, brighter than the stars (Martin Rees worked this out in 1969)
+var _heat = (variable_global_exists("hex_mood") && variable_struct_exists(global.hex_mood, "heat")) ? global.hex_mood.heat : 0;
+if (_heat > 0.01) {
+	var _hc = (_heat < 0.5) ? merge_color(make_color_rgb(110, 15, 10), make_color_rgb(255, 110, 40), _heat / 0.5)
+	                        : merge_color(make_color_rgb(255, 110, 40), make_color_rgb(255, 235, 200), (_heat - 0.5) / 0.5);
+	gpu_set_blendmode(bm_add);
+	draw_set_color(_hc);
+	draw_set_alpha(0.45 * _heat);
+	draw_rectangle(_vx, _vy, _vx + _vw, _vy + _vh, false);
+	var _hsm = scr_hex_find_smbh();                                          // hottest where it's densest: around the heart
+	if (!is_undefined(_hsm)) {
+		var _hhd = point_distance(0, 0, _hsm.ox, _hsm.oy), _hha = point_direction(0, 0, _hsm.ox, _hsm.oy) + sky_angle;
+		draw_sprite_ext(spr_soft, 0, _px + lengthdir_x(_hhd, _hha), _py + lengthdir_y(_hhd, _hha), 40, 40, 0, _hc, 0.5 * _heat);
+	}
+	draw_set_alpha(1);
+}
+scr_prof_lap("bang + sky fire");   // (capture key: C)
 // the gathered light reaches the screen through the camera curve: rich color that rolls off toward white, never clipping flat
 if (_hdr) {
 	surface_reset_target();
@@ -571,6 +708,7 @@ if (_hdr) {
 	shader_reset();
 }
 
+scr_prof_lap("tone curve");   // (capture key: C)
 // ---- 7c) the entrance: time locks, her hex draws itself beneath her, reality glitches, everything holds its breath,
 // then a crack runs in from the right, forks behind her, and the world breaks into chunks that drift away ----
 if (t < shatter_at + slab_len && surface_exists(snap)) {
@@ -865,34 +1003,10 @@ if (t < shatter_at + slab_len && surface_exists(snap)) {
 	var _hal = (_glitch && scr_hash(_tick * 4.7) < 0.3) ? 0.3 : 1;
 	if (t >= tear_at) _hal = ((t - tear_at < 3) ? 2 : 1) * max(0, 1 - (t - tear_at) / (tear_len + gape_len));
 	if (t >= shatter_at) _hal = 0;
-	for (var _pass = 0; _pass < 2; _pass++) {
-		draw_set_color((_pass == 0) ? HEX_VIOLET : make_color_rgb(235, 215, 255));
-		draw_set_alpha(((_pass == 0) ? 0.35 : 1) * _hal);
-		var _lw = (_pass == 0) ? 7 : 2;
-		for (var _ring = 0; _ring < 2; _ring++) {
-			var _rr  = (_ring == 0) ? _hr : _hr * 0.78;
-			var _dir = (_ring == 0) ? 1 : -1;
-			var _rp  = clamp((_hp - _ring * 0.15) / 0.5, 0, 1);
-			for (var q = 0; q < 48 * _rp; q++) {
-				var _a1 = _rot * _dir + q / 48 * 360 * _dir, _a2 = _rot * _dir + (q + 1) / 48 * 360 * _dir;
-				draw_line_width(_hxc + lengthdir_x(_rr, _a1), _hyc + lengthdir_y(_rr, _a1) * 0.5,
-				                _hxc + lengthdir_x(_rr, _a2), _hyc + lengthdir_y(_rr, _a2) * 0.5, _lw);
-			}
-		}
-		for (var k = 0; k < 6; k++) {
-			var _lp = clamp((_hp - 0.4 - k * 0.07) / 0.15, 0, 1);
-			if (_lp <= 0) continue;
-			var _s1 = _rot + 90 + k * 60, _s2 = _s1 + 120;
-			var _x1 = _hxc + lengthdir_x(_hr * 0.78, _s1), _y1 = _hyc + lengthdir_y(_hr * 0.78, _s1) * 0.5;
-			var _x2 = _hxc + lengthdir_x(_hr * 0.78, _s2), _y2 = _hyc + lengthdir_y(_hr * 0.78, _s2) * 0.5;
-			draw_line_width(_x1, _y1, lerp(_x1, _x2, _lp), lerp(_y1, _y2, _lp), _lw);
-		}
-		if (_hp > 0.85) for (var k = 0; k < 12; k++) {
-			var _ta = _rot + k * 30 + 15;
-			draw_line_width(_hxc + lengthdir_x(_hr * 0.82, _ta), _hyc + lengthdir_y(_hr * 0.82, _ta) * 0.5,
-			                _hxc + lengthdir_x(_hr * 0.96, _ta), _hyc + lengthdir_y(_hr * 0.96, _ta) * 0.5, _lw);
-		}
-	}
+	// her mark, the occult hex (scr_draw_hex_sigil in scr_menu, the same one on the title screen), lying flat on the ground
+	// and drawing itself in. it blazes when the crack hits (an alpha past 1 burns brighter in the additive blend)
+	if (_hal > 0 && _hp > 0) scr_draw_hex_sigil(_hxc, _hyc, _hr, 0.5, _rot, min(_hal, 1.6), _hp);
+	gpu_set_blendmode(bm_add);                                         // (the sigil restores normal blending when it's done)
 
 		// the glitch: rectangular bars slashing diagonally across the screen, each a window onto her nebula behind the
 	// world. solid and saturated like Diavolo's, mottled by the sky behind, with a shine along the top. the nebula is
@@ -976,6 +1090,7 @@ if (t < shatter_at + slab_len && surface_exists(snap)) {
 }
 
 
+scr_prof_lap("entrance");   // (capture key: C)
 // ---- stardust (stage 1): the doomed stand in full color, then burn away pixel by pixel from the head down.
 // every pixel that goes becomes a mote (Step), so the body really does turn into the dust ----
 gpu_set_blendmode(bm_normal);
@@ -1011,6 +1126,7 @@ for (var i = 0; i < array_length(protos); i++) {
 	draw_sprite_ext(spr_glow, 0, _pgx, _pgy, _pgs * 3 / 15, _pgs * 3 / 15, 0, _pgc, 0.5);                          // the forming star
 }
 
+scr_prof_lap("stardust bodies + protostars");   // (capture key: C)
 // ---- stardust (stage 3): the motes. each is born a solid chunk of the body, the exact color of its pixel, tumbling as it falls,
 // then burns down into glowing dust in the color of its gas. star dust streams in as long bright threads, condensing into its
 // star's color. cloud dust melts into gas: its streak fades out as a soft, edgeless glow fades in, drawn exactly like the haze it
@@ -1071,17 +1187,25 @@ var _il = 18;
 for (var i = array_length(ignitions) - 1; i >= 0; i--) {
 	var _ig = ignitions[i];
 	var _age = t - _ig.t0;
-	if (_age > _il) { array_delete(ignitions, i, 1); continue; }
-	var _k = _age / _il;
+	var _igp = (_ig[$ "pop"] == true), _ill = _igp ? 60 : _il;                // (a cluster switching on blooms longer)
+	if (_age > _ill) { array_delete(ignitions, i, 1); continue; }
+	var _k = _age / _ill;
 	var _ke = 1 - power(1 - _k, 3); // fast at first, then easing gently into place
 	var _gl = point_distance(0, 0, _ig.ox, _ig.oy);
 	var _ga = point_direction(0, 0, _ig.ox, _ig.oy) + sky_angle;
 	var _gx = _px + lengthdir_x(_gl, _ga), _gy = _py + lengthdir_y(_gl, _ga);
 	var _rest = variable_struct_exists(_ig, "s") ? _ig.s : 1.5;
+	if (_igp) {                                                                 // a cluster born from the gas: a soft bloom of young starlight, no spikes
+		var _bl = sin(min(1, _k * 3) * pi * 0.5) * (1 - _k);
+		draw_sprite_ext(spr_soft, 0, _gx, _gy, (8 + 34 * _ke) / 20, (8 + 34 * _ke) / 20, 0, _ig.c, 0.22 * _bl);
+		draw_sprite_ext(spr_glow, 0, _gx, _gy, _rest * (2 + 5 * _ke) / 15, _rest * (2 + 5 * _ke) / 15, 0, _ig.c, 0.6 * _bl);
+		continue;
+	}
 	scr_draw_star_flare(_gx, _gy, _rest * lerp(_ig.big ? 6 : (_ig.merged ? 2.5 : 4), 1, _ke),
 	variable_struct_exists(_ig, "c") ? _ig.c : c_white, 1 - _k * 0.6);
 }
 
+scr_prof_lap("stardust motes + ignition");   // (capture key: C)
 // ----- 8) the glowing edge of the tear while it's opening or closing ----
 if (_open < 1) {
 	draw_set_color(HEX_VIOLET);
@@ -1114,8 +1238,9 @@ gpu_pop_state();
 gpu_set_blendmode(bm_add);
 
 var _pulse = 0.7 + 0.3 * sin(current_time / 250) + ((pulse_t >= 0 && pulse_t < _fps * 0.6) ? 1 - pulse_t / (_fps * 0.6) : 0);
+if (gaze) _pulse = 0.18 + 0.05 * sin(current_time / 900);                // stargazing: only the faintest violet edge, slow as breath
 scr_draw_glow_outline(obj_player, HEX_VIOLET, 2, 0.55 * _pulse);
-scr_draw_glow_outline(obj_player, make_color_rgb(230, 200, 255), 1, 0.5 * _pulse);
+if (!gaze) scr_draw_glow_outline(obj_player, make_color_rgb(230, 200, 255), 1, 0.5 * _pulse);
 scr_draw_glow_outline(obj_familiar_controller, HEX_VIOLET, 1, 0.4 * _pulse);
 gpu_set_blendmode(bm_normal);
 // the end of the universe and the first instant of the next, also in the world itself, so nothing can hide them
@@ -1124,15 +1249,35 @@ if (variable_global_exists("hex_mood") && global.hex_mood.dark > 0.003) {
 	draw_rectangle(_vx - 8, _vy - 8, _vx + _vw + 8, _vy + _vh + 8, false);
 	draw_set_alpha(1);
 }
-if (variable_global_exists("hex_bang") && is_struct(global.hex_bang) && global.hex_bang.t < _fps * 1.4) {
+if (hitstop <= 0 && variable_global_exists("hex_bang") && is_struct(global.hex_bang) && global.hex_bang.t < _fps * 1.6) {
 	var _wt = global.hex_bang.t / _fps;
-	draw_set_color(make_color_rgb(255, 250, 240)); draw_set_alpha((_wt < 0.25) ? 1 : sqr(1 - (_wt - 0.25) / 1.15));
-	draw_rectangle(_vx - 8, _vy - 8, _vx + _vw + 8, _vy + _vh + 8, false);
+	if (_wt < 0.12) {                                                      // a punch of pure white...
+		draw_set_color(make_color_rgb(255, 250, 240)); draw_set_alpha(1);
+		draw_rectangle(_vx - 8, _vy - 8, _vx + _vw + 8, _vy + _vh + 8, false);
+	} else {                                                               // ...then the fireball cooling: gold, orange, ember (added light, not a gray veil)
+		var _wk = (_wt - 0.12) / 1.48;
+		var _wc = (_wk < 0.4) ? merge_color(make_color_rgb(255, 235, 190), make_color_rgb(255, 150, 60), _wk / 0.4)
+		                      : merge_color(make_color_rgb(255, 150, 60), make_color_rgb(150, 30, 20), (_wk - 0.4) / 0.6);
+		gpu_set_blendmode(bm_add);
+		draw_set_color(_wc); draw_set_alpha(0.8 * sqr(1 - _wk));
+		draw_rectangle(_vx - 8, _vy - 8, _vx + _vw + 8, _vy + _vh + 8, false);
+		gpu_set_blendmode(bm_normal);
+	}
 	draw_set_alpha(1);
 }
 
-with (obj_player) event_perform(ev_draw, 0);
-with (obj_familiar_controller) if (sprite_index != -1) draw_self();
+// in the cast she is fully there: she broke reality to bring her universe food. stargazing, she is a silent observer: a midnight
+// violet silhouette, more presence than body, simply appreciating the universe she helped nurture. (in neither does anything in
+// her sky react to her: no clear space, no holes steering round her. she is outside the physics, so the physics stays clean)
+if (gaze) {
+	scr_silhouette_begin(make_color_rgb(30, 22, 68));
+	with (obj_player) draw_sprite_ext(sprite_index, image_index, x, y, image_xscale, image_yscale, image_angle, c_white, 0.9);
+	with (obj_familiar_controller) if (sprite_index != -1) draw_sprite_ext(sprite_index, image_index, x, y, image_xscale, image_yscale, image_angle, c_white, 0.9);
+	shader_reset();
+} else {
+	with (obj_player) event_perform(ev_draw, 0);
+	with (obj_familiar_controller) if (sprite_index != -1) draw_self();
+}
 
 // ---- the impact frame: time stops and the moment is burned into the screen,
 // first in negative (white world, black ink), then in positive (black world, white ink) ----
@@ -1187,6 +1332,7 @@ if (hitstop > 0) {
 
 draw_set_alpha(1);
 draw_set_color(c_white);
+scr_prof_lap("edges, flashes, impact frame");   // (capture key: C)
 // PERF PROBE: the first few frames, and then once a second, print how long this Draw took
 if (prof_frames < 6 || t mod 60 == 0) show_debug_message("[UNMAKING] t " + string(t) + " draw " + string((get_timer() - _prof_d) / 1000) + " ms | fps " + string(fps_real));
 prof_frames++;

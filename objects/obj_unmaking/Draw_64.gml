@@ -29,44 +29,47 @@ if (variable_global_exists("hex_mood") && global.hex_mood.dark > 0.003) {
 	draw_rectangle(-4, -4, display_get_gui_width() + 4, display_get_gui_height() + 4, false);
 	draw_set_alpha(1);
 }
-// the Big Bang's first instant: the whole screen washes white, then fades into the afterglow (Draw)
-if (variable_global_exists("hex_bang") && is_struct(global.hex_bang)) {
+// in the void: a single pinprick of light, trembling, swelling... then one frame of nothing at all
+if (variable_global_exists("hex_aeon") && global.hex_aeon.phase == "void" && instance_exists(obj_player)) {
+	var _vsm = scr_hex_find_smbh();
+	var _vt = global.hex_aeon.t, _vlen = game_get_speed(gamespeed_fps) * 1.1;
+	if (!is_undefined(_vsm) && _vt > _vlen * 0.25 && _vt < _vlen - 2) {
+		var _cam = view_camera[0];
+		var _vd = point_distance(0, 0, _vsm.ox, _vsm.oy), _va = point_direction(0, 0, _vsm.ox, _vsm.oy) + sky_angle;
+		var _gx = (obj_player.x + lengthdir_x(_vd, _va) - camera_get_view_x(_cam)) / camera_get_view_width(_cam) * display_get_gui_width();
+		var _gy = (obj_player.y + lengthdir_y(_vd, _va) - camera_get_view_y(_cam)) / camera_get_view_height(_cam) * display_get_gui_height();
+		var _vk2 = (_vt - _vlen * 0.25) / (_vlen * 0.75);
+		draw_set_color(c_white);
+		draw_set_alpha(0.25 + 0.75 * _vk2);
+		draw_circle(_gx + random_range(-1, 1) * _vk2, _gy + random_range(-1, 1) * _vk2, 1 + 2.5 * _vk2 * _vk2, false);
+		draw_set_alpha(1);
+	}
+}
+// the Big Bang's first instant (after the impact frame): a punch of pure white, gone in half a second, revealing the fog (Draw)
+if (hitstop <= 0 && variable_global_exists("hex_bang") && is_struct(global.hex_bang)) {
 	var _bt = global.hex_bang.t / game_get_speed(gamespeed_fps);
-	if (_bt < 1.4) {
+	if (_bt < 0.12) {                                                      // the white covers everything for an instant; the cooling glow is in Draw
 		draw_set_color(make_color_rgb(255, 250, 240));
-		draw_set_alpha((_bt < 0.25) ? 1 : sqr(1 - (_bt - 0.25) / 1.15));
+		draw_set_alpha(1);
 		draw_rectangle(0, 0, display_get_gui_width(), display_get_gui_height(), false);
 		draw_set_alpha(1);
 	}
 }
-// paused while sitting in her universe
+// paused while sitting in her universe: unmistakable, even with the HUD hidden (H). the sky dims, and a large label sits in the middle
+// (it used to be a small line at the top, under the item and age title cards, so pausing was easy to miss)
 var _hhud = variable_global_exists("hex_hide_hud") && global.hex_hide_hud;
-if (gaze && gaze_paused && !_hhud) {
+if (gaze && gaze_paused) {
 	var _gw = display_get_gui_width(), _gh = display_get_gui_height();
+	draw_set_color(c_black); draw_set_alpha(0.35);
+	draw_rectangle(0, 0, _gw, _gh, false);
 	draw_set_halign(fa_center); draw_set_valign(fa_middle);
-	draw_set_alpha(0.85);
+	draw_set_alpha(0.95);
 	draw_set_color(make_color_rgb(230, 215, 255));
-	draw_text(_gw / 2, _gh * 0.12, "PAUSED");
-	draw_set_alpha(0.55);
-	draw_text(_gw / 2, _gh * 0.12 + 24, "Esc / P to resume  -  G to leave");
+	draw_text_transformed(_gw / 2, _gh / 2 - 60, "PAUSED", 3, 3, 0);
+	draw_set_alpha(0.75);
+	draw_text(_gw / 2, _gh / 2 - 15, "Esc / P to resume  -  G to leave");
 	draw_set_alpha(1);
 	draw_set_halign(fa_left); draw_set_valign(fa_top);
 }
 
-// debug readout while sitting in her universe (hidden with H): what age her universe is in, and how full it is
-if (gaze && !_hhud) {
-	var _gw = display_get_gui_width(), _gh = display_get_gui_height();
-	var _ae  = variable_global_exists("hex_aeon") ? global.hex_aeon : { phase: "dawn", n: 0 };
-	var _sm  = scr_hex_find_smbh();
-	var _ml  = (!is_undefined(_sm) && variable_struct_exists(_sm, "meal")) ? string(floor(_sm.meal)) + "/" + string(HEX_QUASAR_MEAL) : "-";
-	var _nf  = variable_global_exists("hex_flow") ? array_length(global.hex_flow) : 0;
-	var _txt = "aeon " + string(_ae.n) + ": " + _ae.phase + "   |   holes " + string(array_length(global.hex_holes))
-	         + "   |   gas " + string(array_length(global.hex_haze)) + " (" + string(_nf) + " flying)   |   meal " + _ml
-	         + "\nV giant  B birth  N +1 min  M rush holes  K next age  H hide HUD  P pause  G leave";
-	draw_set_halign(fa_right); draw_set_valign(fa_bottom);
-	draw_set_alpha(0.7);
-	draw_set_color(make_color_rgb(220, 205, 255));
-	draw_text(_gw - 16, _gh - 12, _txt);
-	draw_set_alpha(1);
-	draw_set_halign(fa_left); draw_set_valign(fa_top);
-}
+// (the G-mode readout lives in HUD's Draw GUI now)

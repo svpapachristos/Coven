@@ -36,8 +36,9 @@ function scr_open_levelup() {
 		return;
 	}
 
-	// testing shortcut: grab one of the three at random and keep playing
-	if (global.auto_pick) {
+	// AUTO LOOT (Options, saved, on by default; F2 flips it): level-ups grab one of the three at random and play keeps going, so
+	// spawning and casting for a test never stops at the card screen. turn it off to choose cards yourself
+	if (global.settings.auto_loot == 1) {
 		var _pick = _picks[irandom(array_length(_picks) - 1)];
 		scr_give_item(_pick);
 		var _it = global.item_db[$ _pick];
