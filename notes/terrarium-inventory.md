@@ -261,3 +261,9 @@ Each needs a distinct silhouette or behavior, an Inspect name, and a short real-
 | Graphics settings, low to HYPERMAX (Sophia's 4070 Ti Super as the top tier) | ⬜ on the list for real (not parked): build once optimization gives headroom |
 | Haze culling off-screen, shader LOD for small/far holes, staggered full-haze passes | ⬜ |
 | Before a real build: restore `_covers` [0.87, 0.73, 0.62, 0.55] and HEX_BIRTH_EVERY ~20, gate debug keys, remove PERF PROBES | ⬜ |
+
+## Cast polish (Oct 13, after the garden went dormant)
+| Piece | What you should see | How to check | Status |
+|---|---|---|---|
+| Tighter cast timing (edit45) | The cast runs ~8–9 s instead of ~13. Hex stillness 1.2 s, slabs 1.3 s, crumble starts after 0.2 s and ripples over 0.8 s, dust lands within 2 s, settle after the finale 1.2 s. The dead gap is gone | cast into a crowd | ✅ (Sophia 12:15am: "looks quicker") |
+| The weave (edit46) | Violet threads from her to each unmade enemy, tried first as spokes, then as a web | — | ❌ cut (Sophia: "just not hitting me"); code removed |

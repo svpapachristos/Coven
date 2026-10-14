@@ -11,18 +11,18 @@ t = 0;
 
 lock_len   = 0;                    // no lead-in: the glitch IS the cast
 glitch_len = floor(_fps * 0.7);   // reality glitches: windows onto her cosmos slash across the screen
-still_len  = floor(_fps * 2);    // longer: her hex draws itself in the stillness now
+still_len  = floor(_fps * 1.2);  // her hex draws itself in the stillness (edit45: 2 -> 1.2 s, the ult is ~6-8 s now)
 tear_len   = floor(_fps * 0.3); // a crack runs in from the right edge, under her, and forks
 gape_len   = floor(_fps * 0.95);  // the line of light holds, building, before the impact
-slab_len   = floor(_fps * 2);   // how long the chunks take to drift away
+slab_len   = floor(_fps * 1.3); // how long the chunks take to drift away (edit45: 2 -> 1.3)
 
 // when each beat starts, counted from the cast
 glitch_at  = lock_len;
 still_at   = glitch_at + glitch_len;
 tear_at    = still_at + still_len;
 shatter_at = tear_at + tear_len + gape_len;      // the ground breaks into chunks and starts to drift
-birth_at   = shatter_at + floor(slab_len * 0.8); // the stardust begins once the chunks have mostly gone: just her and them
-duration   = birth_at + _fps * 7;
+birth_at   = shatter_at + floor(slab_len * 0.5); // the stardust begins once the chunks have mostly gone: just her and them
+duration   = birth_at + _fps * 4.5;   // (edit45: 7 -> 4.5 s after the stardust starts)
 
 // her nebula and sky for this cast, fuller the further she has ascended
 if (!variable_global_exists("hex_neb") || is_undefined(global.hex_neb)) global.hex_neb = scr_hex_nebula_fields(global.hex_seed);
@@ -132,17 +132,17 @@ with (obj_enemy_parent) {
 
 show_debug_message("[UNMAKING]   setup: gather doomed " + string((get_timer() - _prof1) / 1000) + " ms"); _prof1 = get_timer();   // PERF PROBE
 // ---- stardust: the doomed crumble into dust that swirls into her sky and gathers into stars ----
-crumble_delay = _fps * 0.58;          // a held breath once the world is gone: just her and them, nothing moving
-crumble_wave  = _fps * 1.2;          // the crumbling ripples out from her over this long, nearest first
+crumble_delay = _fps * 0.2;           // a held breath once the world is gone: just her and them, nothing moving
+crumble_wave  = _fps * 0.8;          // the crumbling ripples out from her over this long, nearest first
 crumble_len   = _fps * 0.7;          // how long one body takes to crumble away
 dust_total    = 3200;                // motes for the whole horde, shared between them (the main cost knob)
-dust_fall     = _fps * 0.35;         // motes drift down like ash this long before her sky takes hold
+dust_fall     = _fps * 0.2;          // motes drift down like ash this long before her sky takes hold
 dust_swirl    = 0.6;                 // the galaxy swirl around her: 0 = straight to their stars, 1 = big sweeping orbits
-dust_life     = _fps * 3;            // a mote that still hasn't landed by now lands anyway
+dust_life     = _fps * 2;            // a mote that still hasn't landed by now lands anyway
 gas_time      = _fps * 0.9;          // how long a mote takes to go from its creature's color to the glow of its gas
 chunk_time    = _fps * 0.45;         // how long a mote stays a solid pixel chunk before it burns down into glowing dust
 settle_frac   = 0.7;                 // how much of the dust drifts and settles into cloud instead of streaming into stars (real nebulae: most of it)
-settle_life   = _fps * 3.5;          // cloud dust that still hasn't settled by now just thins away
+settle_life   = _fps * 2.5;          // cloud dust that still hasn't settled by now just thins away
 wisp_keep     = 0.3;                // the share of settled dust that stays as lasting haze: how fast her nebula thickens each cast
 crumble_end   = birth_at + crumble_delay + crumble_wave + crumble_len; // the last body is all dust by now
 motes     = [];                      // every mote in flight

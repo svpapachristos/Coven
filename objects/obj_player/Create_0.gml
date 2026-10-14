@@ -149,23 +149,37 @@ function update_facing_sprite() {
 	// Pick which direction value actually determines the sprite this frame
 	var _display_dir = _firing ? facing_dir_4 : (_moving ? _move_dir_4 : facing_dir_4);
 	image_xscale = 1;
+	// channeling the arcane beam: hold the wand-raised pose (frame 2 of the fire sprite)
+	var _channel = instance_exists(obj_arcane_beam);
+	if (_channel) {
+		_firing = true;
+		_display_dir = facing_dir_4;
+	}
 	if (_firing) {
 		sprite_index = _moving ? _walk_fire[_display_dir] : _idle_fire[_display_dir];
 	} else {
 		sprite_index = _moving ? _walk[_display_dir] : _idle[_display_dir];
+	}
+	if (_channel) {
+		image_index = 1;
+		image_speed = 0;
+		beam_pose = true;
+	} else if (beam_pose) {
+		image_speed = 1; // let her animate again once the beam ends
+		beam_pose = false;
 	}
 }
 function player_idle(){
 	if (keyboard_check(ord("W"))) || (keyboard_check(ord("A"))) || (keyboard_check(ord("S"))) || (keyboard_check(ord("D"))) {
 		state = "WALK";
 	}
-	if (mouse_check_button(mb_left) && can_shoot) {
+	if (mouse_check_button(mb_left) && can_shoot && !hex_active) { // (in her hex stance, left click belongs to the hex)
 		state = "ATTACK";
 	}
 }
 function player_walk() {
 	movement();
-	if (mouse_check_button(mb_left) && can_shoot) {
+	if (mouse_check_button(mb_left) && can_shoot && !hex_active) { // (in her hex stance, left click belongs to the hex)
 		state = "ATTACK";
 	}
 	if (!keyboard_check(ord("W")) && !keyboard_check(ord("A")) && !keyboard_check(ord("S")) && !keyboard_check(ord("D"))) {
@@ -173,6 +187,7 @@ function player_walk() {
 	}
 }
 function player_attack() {
+	if (hex_active) { state = "IDLE"; can_shoot = true; return; } // her wand stands down in her hex stance
 	movement();
 	if (can_shoot) {
 		can_shoot = false;
@@ -209,4 +224,139 @@ function player_attack() {
 		can_shoot = true;
 		if (!mouse_check_button(mb_left)) state = "IDLE";
 	}
+}
+
+// ---- E: the living hex (rudimentary) ----
+hex_held = noone;  // the world object her hex is holding
+hex_reach = 4000;  // how far from her the hex can reach (4000 = the whole screen)
+hex_grab_r = 64;   // how close the cursor must be to grab something
+// a few rocks to play with
+repeat (6) {
+	var _a = random(360);
+	var _d = random_range(80, 220);
+	instance_create_depth(x + lengthdir_x(_d, _a), y + lengthdir_y(_d, _a), depth, obj_env_rock);
+}
+
+// The living hex itself: a thing with a position that leaves her hand, travels, grabs and throws.
+hex_active = false;  // true while E is held and the hex is out in the world
+hex_hx = x;          // where the hex is
+hex_hy = y;
+hex_hvx = 0;         // how it's moving (a throw inherits this)
+hex_hvy = 0;
+hex_speed = 9;       // how fast it travels to the cursor
+hex_kind = "";       // "rock" or "enemy": what it's holding
+hex_charge = 0;      // frames spent balled up with nothing to hold
+hex_tear_time = 50;  // frames of charge before it tears a rock out of the ground
+hex_thrown = [];     // enemies currently flying through the air
+hex_px = x;          // her position last frame, so the ball and aura move with her
+hex_py = y;
+beam_pose = false;   // true while she holds the beam-channeling pose
+
+// Where her off hand is in each sprite, across her width: 0 = her left edge on screen, 1 = her right edge.
+// Sprites missing here fall back to "opposite the mouse". If the orb lands in her wand hand on some
+// sprite, add that sprite's name with the other side (0.12 or 0.88).
+hex_hand_side = {};
+hex_hand_side[$ "spr_player_witch1_walk_left"]        = 0.12;
+hex_hand_side[$ "spr_player_witch1_walk_right"]       = 0.12;
+hex_hand_side[$ "spr_player_witch1_walk_down"]        = 0.12;
+hex_hand_side[$ "spr_player_witch1_idle_left"]        = 0.88;
+hex_hand_side[$ "spr_player_witch1_idle_right"]       = 0.12;
+hex_hand_side[$ "spr_player_witch1_idle_left_fire"]   = 0.88;
+hex_hand_side[$ "spr_player_witch1_walk_left_fire"]   = 0.88;
+hex_hand_side[$ "spr_player_witch1_idle_right_fire"]  = 0.12;
+hex_hand_side[$ "spr_player_witch1_walk_right_fire"]  = 0.12;
+// up and down: the wand is on her right side on screen, so her off hand is on the left
+hex_hand_side[$ "spr_player_witch1_idle_up"]           = 0.12;
+hex_hand_side[$ "spr_player_witch1_walk_up"]           = 0.12;
+hex_hand_side[$ "spr_player_witch1_idle_up_fire"]      = 0.12;
+hex_hand_side[$ "spr_player_witch1_walk_up_fire"]      = 0.12;
+hex_hand_side[$ "spr_player_witch1_idle_down"]         = 0.12;
+hex_hand_side[$ "spr_player_witch1_idle_down_fire"]    = 0.12;
+hex_hand_side[$ "spr_player_witch1_walk_down_fire"]    = 0.12;
+// its body: motes that flock like starlings.
+// hex_budget is how much hex she holds. Up to hex_ball_max it gathers as a ball in her off hand;
+// anything beyond overflows into an aura that orbits her body. Raise hex_budget to see it.
+hex_budget = 32;
+hex_ball_max = 32;
+hex_motes = [];
+for (var _i = 0; _i < hex_budget; _i++) {
+	var _ball = min(hex_budget, hex_ball_max);
+	array_push(hex_motes, { x: x, y: y, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: (_i < _ball) ? _i / max(1, _ball - 1) : 1, st: 0, wait: 0 });
+}
+
+// ---- Hex energy: the motes ARE her hex. Each mote is one unit of it. ----
+// mote states: st 0 = home (in her hand, or her aura), 1 = out in the world, 2 = spent (regrowing),
+//              3 = flowing back to her, 4 = inside a shot she fired (they come back when it bursts or leaves the screen)
+hex_flow = 2;         // motes she pours out per frame while E is held
+hex_flow_acc = 0;
+hex_regen = 12;       // frames to regrow one spent mote
+hex_regen_t = 0;
+hex_ready_r = 40;     // how close to the hex a mote has to be to count as arrived
+hex_arrived = 0;      // how many motes have arrived right now
+hex_cost = 0;         // what the thing she's holding cost
+hex_cost_rock = 8;    // motes it takes to lift a rock
+hex_cost_enemy = 14;  // motes it takes to lift an enemy
+hex_bolt_min = 4;     // fewest motes the charged ball needs before it can be lobbed
+hex_mode = "";        // "grab" if E was pressed over something liftable, "charge" if over nothing
+hex_ball_dist = 30;   // how far in front of her hand the charging ball gathers
+hex_boom_dmg = 3;     // damage per mote in the lobbed ball (plus a base of 10)
+hex_boom_r = 4;       // blast radius per mote (plus a base of 40)
+hex_blast_cost = 4;   // a tap of E: a quick hand blast
+hex_blast_dmg = 10;
+hex_tap = 0;          // frames E has been held this press (short = a tap)
+cam_hex_settle = 0;   // frames left that the camera stays settled on her for the hex
+cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
+hex_trail = 5;        // every Nth mote out in the world lags behind as a trail (lower = more trail)
+hex_return_gap = 2;   // frames between each mote setting off home (lower = it all comes back faster)
+
+// spend _k motes of hex, the ones already out in the world first. returns how many it spent
+// _to is what they become: 3 = they flow back from where they are, 4 = they ride inside a shot
+hex_spend = function(_k, _to = 2) {
+	var _s = 0;
+	for (var _p = 1; _p >= 0; _p--) {
+		for (var _i = 0; _i < array_length(hex_motes) && _s < _k; _i++) {
+			if (hex_motes[_i].st == _p) {
+				hex_motes[_i].st = _to;
+				hex_motes[_i].wait = _s * hex_return_gap; // flowing home: they leave one after another
+				_s++;
+			}
+		}
+	}
+	return _s;
+}
+// a shot burst or left the screen at _x,_y: its _k motes scatter out of it and flow back home to her
+hex_return = function(_k, _x, _y) {
+	var _r = 0;
+	for (var _i = 0; _i < array_length(hex_motes) && _r < _k; _i++) {
+		var _m = hex_motes[_i];
+		if (_m.st == 4) {
+			_m.st = 3;
+			_m.x = _x + random_range(-10, 10);
+			_m.y = _y + random_range(-10, 10);
+			_m.vx = random_range(-3, 3);
+			_m.vy = random_range(-3, 3);
+			_m.wait = _r * hex_return_gap; // one after another, so they pour home as a single stream
+			_r++;
+		}
+	}
+}
+// throw whatever her hex is holding: the hex that lifted it lets go and flows back to her
+hex_throw = function() {
+	if (hex_held == noone || !instance_exists(hex_held)) { hex_held = noone; hex_kind = ""; return; }
+	if (hex_kind == "rock") {
+		hex_held.grabbed = false;
+		hex_held.vx *= 1.6;
+		hex_held.vy *= 1.6;
+	} else {
+		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
+	}
+	hex_spend(hex_cost, 3);
+	hex_held = noone;
+	hex_kind = "";
+}
+// how much hex she has that isn't spent
+hex_available = function() {
+	var _c = 0;
+	for (var _i = 0; _i < array_length(hex_motes); _i++) if (hex_motes[_i].st <= 1) _c++;
+	return _c;
 }

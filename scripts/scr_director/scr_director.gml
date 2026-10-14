@@ -40,7 +40,9 @@ function scr_pick_pack(_types, _t, _deficit) {
 
 function scr_spawn_enemy(_obj, _x, _y) {
 	if (_x < 0 || _x > room_width || _y < 0 || _y > room_height) return noone;
-	return instance_create_layer(_x, _y, "Instances", _obj);
+	var _i = instance_create_layer(_x, _y, "Instances", _obj);
+	if (global.endless) with (_i) { max_hp *= 1 + (global.run_time - global.endless_t0) / 180; hp = max_hp; }   // ENDLESS (edit49): +100% health every 3 minutes
+	return _i;
 }
 
 //Distance from the player to spawn just past the camera view

@@ -8,6 +8,16 @@ if (director_timer > 0) exit;
 director_timer = 15; // about 4 times a second 
 
 var _goal = min(scr_director_target(global.run_time), max_enemy_count);
+// ENDLESS (edit49): the horde keeps growing past the act's peak, +50% every 5 minutes, up to the cap, and an elite every 2 minutes
+if (global.endless) {
+	var _et = global.run_time - global.endless_t0;
+	_goal = min(scr_director_target(99999) * (1 + _et / 600), max_enemy_count);
+	if (!variable_instance_exists(id, "endless_elite")) endless_elite = 60;
+	if (_et >= endless_elite) {
+		endless_elite += 120;
+		scr_spawn_elite(obj_enemy_zombie, 20 * (1 + _et / 180), 2.5, "");
+	}
+}
 if (instance_exists(obj_boss_act1)) _goal *= 0.4;
 var _deficit = _goal - instance_number(obj_enemy_parent);
 if (_deficit < 1) exit;

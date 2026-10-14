@@ -73,6 +73,7 @@
     {"name":"obj_enemy_parent","order":1,"path":"objects/obj_enemy_parent/obj_enemy_parent.yy",},
     {"name":"obj_enemy_pumpkin_fireball","order":1,"path":"objects/obj_enemy_pumpkin_fireball/obj_enemy_pumpkin_fireball.yy",},
     {"name":"obj_enemy_spawner","order":2,"path":"objects/obj_enemy_spawner/obj_enemy_spawner.yy",},
+    {"name":"obj_env_rock","order":1,"path":"objects/obj_env_rock/obj_env_rock.yy",},
     {"name":"obj_familiar_controller","order":4,"path":"objects/obj_familiar_controller/obj_familiar_controller.yy",},
     {"name":"obj_game_controller","order":5,"path":"objects/obj_game_controller/obj_game_controller.yy",},
     {"name":"obj_pickup_healthorb","order":1,"path":"objects/obj_pickup_healthorb/obj_pickup_healthorb.yy",},

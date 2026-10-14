@@ -122,7 +122,7 @@ void main()
 		float fO = smoothstep(0.45, 0.88, ion) * 0.7, fS = (1.0 - smoothstep(0.06, 0.35, ion)) * 0.55;
 		vec3 line = mix(mix(HA, S2, fS), O3, fO);
 		vec3 el = c / max(max(c.r, max(c.g, c.b)), 0.0001);          // her kills' colors: the elements this gas is made of
-		line = mix(line, el, u_tint);
+		line = mix(line, mix(el, vec3(0.62, 0.38, 1.0), 0.55), u_tint);   // (edit48) her kills' colors, steeped in her violet
 		line /= max(line.r + line.g + line.b, 0.0001);
 		vec3 dig = mix(HA, el, 0.5);                                  // the faint, diffuse ionized gas everywhere (lit by all her stars)
 		dig /= (dig.r + dig.g + dig.b);

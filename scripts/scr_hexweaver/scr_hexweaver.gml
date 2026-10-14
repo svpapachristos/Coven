@@ -1805,9 +1805,10 @@ function scr_hex_flow_draw_gui() {
 #macro HEX_POUR_PIECES 4          // new gas arrives as a TIDAL STREAM: this many clumps strung along its orbit (like the Sagittarius
                                   // Stream, a small galaxy the Milky Way tore apart), each sheared along the orbit too
 #macro HEX_POUR_ARC 7             // the stream's length, in stamp radii (capped at a third of a radian of its orbit)
+#macro HEX_POUR_SOFT 1.8          // (edit48) how much wider than the dust itself each poured stamp is: neighbors blend into one cloud
 #macro HEX_POUR_PER_FRAME 120     // the most wisps poured in one frame (a big cast lands thousands at once: spread over a few frames)
 #macro HEX_SPELL_GLOW 0.6         // how brightly her spell lights the gas during a cast (fades over ~4 s after it)
-#macro HEX_GAS_TINT 0.3           // how much of her kills' own colors stays in the gas's light; the rest is the physics of its emission lines
+#macro HEX_GAS_TINT 0.45          // (edit48: 0.3 -> 0.45, now steeped in violet) how much of her kills' own colors stays in the gas's light; the rest is the physics of its emission lines
 #macro HEX_POUR_STRETCH 3       // new gas arrives as a streak this many times longer than wide, along its orbit (same area: same gas)
 #macro HEX_POUR_TILT 25         // and tilted up to this many degrees off the orbit, so the streaks don't all line up
                                  // main brightness knob, with HEX_FLUID_GAIN
@@ -2614,7 +2615,7 @@ function scr_hex_fluid_update() {
 		_np++;
 		var _m = scr_hex_wisp_gas(_w);
 		// its gas: amount ~ ink x mass, spread wider (not brighter) when there's a lot of it
-		var _r = max(_w.s * 0.9, 24 * sqrt(HEX_FLUID_INK * _m));
+		var _r = max(_w.s * 0.9, 24 * sqrt(HEX_FLUID_INK * _m)) * HEX_POUR_SOFT;   // (edit48: wider, softer stamps merge into clouds instead of shearing into rainbow dashes)
 		var _A = min(1, HEX_FLUID_INK * _m * 576 / (_r * _r));
 		var _rr = max(0.8, _r / _CS) / 20;                                      // spr_soft is 20px of radius per unit of scale
 		var _wc = (_w.c == -1) ? make_color_rgb(70, 62, 88) : _w.c;              // (soot is dust: real mass too, poured in dim and dusty)

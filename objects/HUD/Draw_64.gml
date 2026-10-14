@@ -74,19 +74,7 @@ draw_text(_gw - 16, 16, _time);
 draw_text(_gw - 16, 34, "Kills: " + string(global.kill_count));
 draw_set_halign(fa_left);
 
-// Item Pickup
-if (!is_undefined(global.toast)) {
-	var _i = global.toast;
-	draw_set_alpha(clamp(_i.timer / 30, 0, 1)); //fades in its last half second
-	draw_set_halign(fa_center);
-	draw_set_color(_i.color);
-	draw_text_transformed(_gw / 2, 60, _i.text, 2, 2, 0);
-	draw_set_color(c_ltgray);
-	draw_text(_gw / 2, 92, _i.sub);
-	draw_set_halign(fa_left);
-	draw_set_color(c_white);
-	draw_set_alpha(1);
-}
+// (item pickup toasts are drawn by obj_game_controller's Draw GUI now, in every screen: edit52)
 
 
 

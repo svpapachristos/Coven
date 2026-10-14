@@ -81,8 +81,10 @@ levelup_my = -1;
 
 //"Final" Boss
 global.boss_down = false;
+global.endless = false;      // (edit49) past the boss: the hunt goes on, harder and harder, until she falls
+global.endless_t0 = 0;       // the run time when endless began
 global.blast_queue = [];
-victory_options = ["Return to Hideout", "Quit to Desktop"];
+victory_options = ["Continue (Endless)", "Return to Hideout", "Quit to Desktop"];
 victory_index = 0;
 
 //Tryin somethin new here..

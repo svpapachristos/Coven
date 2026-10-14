@@ -103,6 +103,7 @@
     {"id":{"name":"obj_enemy_slime","path":"objects/obj_enemy_slime/obj_enemy_slime.yy",},},
     {"id":{"name":"obj_enemy_spawner","path":"objects/obj_enemy_spawner/obj_enemy_spawner.yy",},},
     {"id":{"name":"obj_enemy_zombie","path":"objects/obj_enemy_zombie/obj_enemy_zombie.yy",},},
+    {"id":{"name":"obj_env_rock","path":"objects/obj_env_rock/obj_env_rock.yy",},},
     {"id":{"name":"obj_env_tree","path":"objects/obj_env_tree/obj_env_tree.yy",},},
     {"id":{"name":"obj_fam_cat","path":"objects/obj_fam_cat/obj_fam_cat.yy",},},
     {"id":{"name":"obj_fam_raven","path":"objects/obj_fam_raven/obj_fam_raven.yy",},},

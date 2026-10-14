@@ -1,3 +1,9 @@
+// TOASTS (edit52) tick down in every state, not only mid-run: an unlock in the hideout or a pickup before the stargazer opens
+// now fades out on time instead of freezing (drawn on top of everything at the end of this object's Draw GUI)
+if (variable_global_exists("toast") && !is_undefined(global.toast)) {
+	global.toast.timer--;
+	if (global.toast.timer <= 0) global.toast = undefined;
+}
 if (pending_run_start) { pending_run_start = false; scr_start_run(); }
 if (pending_hub_setup) { pending_hub_setup = false; scr_apply_loadout(); scr_spawn_familiar(); }
 
@@ -210,10 +216,6 @@ switch (global.game_state) {
 			pause_index = 0;
 			io_clear();
 		}
-		if (!is_undefined(global.toast)) {
-			global.toast.timer--;
-			if (global.toast.timer <= 0) global.toast = undefined;
-		}
 
 		if (keyboard_check_pressed(vk_insert) && instance_exists(obj_player)) obj_player.ultimate_charge = obj_player.ultimate_charge_max; //test key: full ult charge
 		if (keyboard_check_pressed(vk_f6)) global.hex_unmade += 50; //test key to push the hexweaver up a tier in her ascension
@@ -283,7 +285,15 @@ switch (global.game_state) {
 			pause_index = _ppick
 			switch (pause_options[pause_index]) {
 				case "Resume":		 global.game_state = pause_return; break;
-				case "Abandon Run": room_goto(rm_hideout); break; 
+				case "Abandon Run":
+					if (pause_return == "PLAYING") {
+						// walking away ends the run like a death: bank her essence and show the run summary
+						global.run_abandoned = true;
+						scr_essence_bank_run();
+						end_index = 0;
+						global.game_state = "DEAD";
+					} else room_goto(rm_hideout);
+					break;
 				case "Quit to Desktop": quit_confirm = true; quit_confirm_index = 1; break;
 				case "Options":     options_return = "PAUSED"; options_index = 0; global.game_state = "OPTIONS"; break;
 				case "Main Menu":   menu_index = 0; global.game_state = "MENU"; break;
@@ -297,6 +307,7 @@ switch (global.game_state) {
 		var _end_pick = scr_menu_pick(end_index, array_length(end_options));
 		if (_end_pick != -1) {
 			end_index = _end_pick;
+			global.run_abandoned = false; // leaving the summary clears it for the next run
 			switch (end_index) {
 				case 0: room_restart(); break; //new run same loadout
 				case 1: room_goto(rm_hideout); break; // back to menu
@@ -309,7 +320,14 @@ switch (global.game_state) {
 		victory_index = scr_menu_nav(victory_index, array_length(victory_options));
 		var _vpick = scr_menu_pick(victory_index, array_length(victory_options));
 		if (_vpick != -1) {
-			if (_vpick == 0) room_goto(rm_hideout);
+			if (_vpick == 0) {                                  // ENDLESS (edit49): back into the fight, and it keeps escalating
+				global.endless = true;
+				global.endless_t0 = global.run_time;
+				global.run_banked = false;                       // (her essence from here on banks again when she falls)
+				global.run_essence = 0;
+				global.game_state = "PLAYING";
+			}
+			else if (_vpick == 1) room_goto(rm_hideout);
 			else { quit_confirm = true; quit_confirm_index = 1; }
 			io_clear();
 		}

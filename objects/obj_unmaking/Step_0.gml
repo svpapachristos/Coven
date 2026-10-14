@@ -825,7 +825,7 @@ if (t >= birth_at && instance_exists(obj_player)) {
 	// 4) every body crumbled and every thread of star dust landed: the finale, with time after it for the sky to settle
 	if (finale_at == infinity && t > crumble_end && streams_live <= 0) {
 		finale_at = t + floor(_fpsd * 0.15);
-		duration  = max(duration, finale_at + floor(_fpsd * 2.5));
+		duration  = max(duration, finale_at + floor(_fpsd * 1.2));   // (edit45: the settle after the finale 2.5 -> 1.2 s)
 	}
 }
 scr_prof_lap("stardust motes");   // (capture key: C)
