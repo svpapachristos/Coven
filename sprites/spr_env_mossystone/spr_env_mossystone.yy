@@ -2,7 +2,7 @@
   "$GMSprite":"v2",
   "%Name":"spr_env_mossystone",
   "bboxMode":0,
-  "bbox_bottom":43,
+  "bbox_bottom":42,
   "bbox_left":20,
   "bbox_right":42,
   "bbox_top":27,

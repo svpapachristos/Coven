@@ -31,7 +31,10 @@
   "resourceType":"GMObject",
   "resourceVersion":"2.0",
   "solid":false,
-  "spriteId":null,
+  "spriteId":{
+    "name":"spr_env_stone",
+    "path":"sprites/spr_env_stone/spr_env_stone.yy",
+  },
   "spriteMaskId":null,
   "visible":true,
 }

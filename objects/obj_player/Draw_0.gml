@@ -13,7 +13,7 @@ draw_self();
 // The living hex: soft plum glow (smoke) + bright lilac cores (threads), drawn as added light.
 gpu_set_blendmode(bm_add);
 if (hex_active) {
-	var _knot = (hex_mode == "charge") ? clamp(hex_arrived / 32, 0, 1) : 0; // how full the charging ball is
+	var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0; // how full the charging orb is
 	// her magic lights the ground under it
 	draw_set_color(make_color_rgb(70, 40, 140));
 	draw_set_alpha(0.22 + 0.05 * sin(current_time / 120) + 0.2 * _knot);

@@ -50,6 +50,12 @@ if (is_undefined(_f)) _f = (mouse_x >= x) ? 0.12 : 0.88;
 var _hx = lerp(bbox_left, bbox_right, _f);
 var _hy = lerp(bbox_top, bbox_bottom, 0.78); // 0 = top of her head, 1 = her feet
 if (hex_held != noone && !instance_exists(hex_held)) hex_held = noone;
+// max hex: an item can raise it through the "max_hex" stat; H adds 8 while testing
+if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
+var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
+while (array_length(hex_motes) < _want) {
+	array_push(hex_motes, { x: _hx, y: _hy, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: 1, st: 0, wait: 0 });
+}
 var _n = array_length(hex_motes);
 var _ox = hex_hx, _oy = hex_hy;
 
@@ -122,7 +128,13 @@ if (keyboard_check(ord("E"))) {
 			if (_kind == "rock") _target.grabbed = true;
 		}
 	}
-	if (hex_mode == "charge") hex_charge++; // how long it's been overcharging (drives the pulse)
+	if (hex_mode == "charge") {
+		// the orb builds up a mote at a time, up to a full charge (or as much hex as she has out)
+		hex_charge++;
+		var _out = 0;
+		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 1) _out++;
+		hex_orb_n = min(floor(hex_charge * hex_charge_rate), hex_charge_cap, _out);
+	} else hex_orb_n = 0;
 	if (hex_held != noone && hex_kind == "rock") {
 		hex_held.vx = lerp(hex_held.vx, (hex_hx - hex_held.x) * 0.5, 0.7);
 		hex_held.vy = lerp(hex_held.vy, (hex_hy - hex_held.y) * 0.5, 0.7);
@@ -131,10 +143,10 @@ if (keyboard_check(ord("E"))) {
 
 	// letting go of a mouse button finishes that spell; the hex stays out around her for the next one
 	if (hex_mode == "charge" && !_lmb) {
-		if (hex_arrived >= 2) {
+		if (hex_orb_n >= 2) {
 			// fire the orb forward: it flies until it hits something or leaves the screen.
 			// every mote in it adds to the boom, and they all find their way back to her afterward
-			var _c = hex_arrived;
+			var _c = hex_orb_n;
 			var _b = instance_create_depth(hex_hx, hex_hy, depth, obj_env_rock);
 			_b.is_bolt = true;
 			_b.vx = lengthdir_x(15, _ha);
@@ -144,7 +156,7 @@ if (keyboard_check(ord("E"))) {
 			_b.bolt_size = 0.6 + _c / 16;
 			_b.mote_n = hex_spend(_c, 4);
 		}
-		hex_mode = ""; hex_charge = 0;
+		hex_mode = ""; hex_charge = 0; hex_orb_n = 0;
 	}
 	if (hex_mode == "grab" && !_rmb) {
 		hex_throw();
@@ -201,8 +213,9 @@ var _pdx = x - hex_px, _pdy = y - hex_py;
 hex_px = x; hex_py = y;
 var _cx = (bbox_left + bbox_right) / 2;
 var _cy = (bbox_top + bbox_bottom) / 2;
-var _knot = (hex_mode == "charge") ? clamp(hex_arrived / 32, 0, 1) : 0; // how full the charging ball is
+var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0; // how full the charging orb is
 var _home_i = 0;
+var _orank = 0; // which out-mote this is, so only the first hex_orb_n of them join the orb
 for (var _i = 0; _i < _n; _i++) {
 	var _m = hex_motes[_i];
 	if (_m.st == 2 || _m.st == 4) continue; // spent, or riding inside a shot: not here
@@ -246,7 +259,13 @@ for (var _i = 0; _i < _n; _i++) {
 		_home_i++;
 	} else {
 		var _gx = hex_hx, _gy = hex_hy, _rad;
-		if (hex_held != noone) {
+		var _in_orb = (hex_mode == "charge" && _orank < hex_orb_n);
+		_orank++;
+		if (hex_mode == "charge" && !_in_orb) {
+			// not in the orb (yet): keep swirling around her
+			_gx = (bbox_left + bbox_right) / 2; _gy = (bbox_top + bbox_bottom) / 2;
+			_rad = 34;
+		} else if (hex_held != noone) {
 			_gx = hex_held.x; _gy = hex_held.y;
 			_rad = ((hex_kind == "rock") ? hex_held.r : 22) + 6;
 		} else if (hex_mode == "charge") {

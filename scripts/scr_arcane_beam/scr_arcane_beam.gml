@@ -1,4 +1,4 @@
-#macro BEAM_MAX_HEAT 0.01 // how hot the beam can get on a percent scale between 0 and 1
+#macro BEAM_MAX_HEAT 1 // how hot the beam can get on a percent scale between 0 and 1
 
 function scr_arcane_beam(_caster){
 	var _step = _caster.alt_pulse_max; //frames between ticks

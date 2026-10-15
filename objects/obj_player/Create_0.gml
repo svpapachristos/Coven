@@ -307,6 +307,10 @@ hex_tap = 0;          // frames E has been held this press (short = a tap)
 cam_hex_settle = 0;   // frames left that the camera stays settled on her for the hex
 cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
 hex_trail = 5;        // every Nth mote out in the world lags behind as a trail (lower = more trail)
+hex_charge_cap = 24;  // motes in a fully charged orb (the most one shot can hold)
+hex_charge_rate = 0.5; // motes added to a charging orb per frame (0.5 = full in about 0.8s)
+hex_orb_n = 0;        // motes in the orb charging right now
+hex_bonus = 0;        // extra max hex (debug: press H in a run for +8)
 hex_return_gap = 2;   // frames between each mote setting off home (lower = it all comes back faster)
 
 // spend _k motes of hex, the ones already out in the world first. returns how many it spent
