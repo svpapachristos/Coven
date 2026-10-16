@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"sh_hex_wisp_draw",
+  "name":"sh_hex_wisp_draw",
+  "parent":{
+    "name":"Shaders",
+    "path":"folders/Shaders.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}
