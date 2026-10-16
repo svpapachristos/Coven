@@ -1,10 +1,5 @@
-scr_prof_capture();   // the capture key (C): watched here, since HUD always exists (before any exit below)
 //hide the hude while game is paused (can remove if thats how we feel
 var _controller = instance_find(obj_game_controller, 0);
-// sitting in her universe with the HUD hidden (H): nothing but the sky
-if (global.game_state == "GAZE" && variable_global_exists("hex_hide_hud") && global.hex_hide_hud) exit;
-// the end of the universe: nothing is left, not even the HUD
-if (variable_global_exists("hex_aeon") && global.hex_aeon.phase == "void") exit;
 
 if (global.game_state == "MENU" 
 	|| global.game_state == "HUB" 
@@ -105,87 +100,6 @@ if (global.debug_hud) {
 	draw_text(16, 217, "FPS: " + string(fps) + "   (could run " + string(floor(fps_real)) + ")   worst frame " + string_format(global.ft_shown, 1, 1) + "ms");
 	draw_text(16, 234, "Target: " + string(floor(scr_director_target(global.run_time))) + " Alive: " + string(instance_number(obj_enemy_parent)));
 	if (instance_exists(obj_player)) draw_text(16, 183, "iframes: " + string(obj_player.iframes));
-	// the fluid's books: how much gas it holds, how much the game's ledger says there should be, and how fast it's being thinned to match
-	if (variable_global_exists("hex_fluid") && variable_struct_exists(global.hex_fluid, "F")) {
-		var _hf = global.hex_fluid;
-		// the MASS BUDGET: gas -> stars -> gas. gas in the fluid, what's in star clusters now, what they've handed back, and the sum
-		// (the sum only drops where gas leaves the edge of her sky or falls into a black hole). 1 unit = HEX_SIGMA_UNIT x 480 pc squared
-		var _sfg = variable_struct_exists(_hf, "sf_gas") ? _hf.sf_gas : 0, _sfn = variable_struct_exists(_hf, "sf_n") ? _hf.sf_n : 0;
-		var _rtg = variable_struct_exists(_hf, "ret_gas") ? _hf.ret_gas : 0, _bhg = variable_struct_exists(_hf, "bh_gas") ? _hf.bh_gas : 0;
-		draw_text(16, 251, "Gas " + string_format(_hf.F, 1, 1) + "   in clusters " + string_format(_sfg - _rtg, 1, 1) + " (" + string(_sfn) + " formed)"
-			+ "   returned " + string_format(_rtg, 1, 1) + "   swallowed by holes " + string_format(_bhg, 1, 1)
-			+ "   total " + string_format(_hf.F + _sfg - _rtg + _bhg, 1, 1)
-			+ "   (1 = " + string_format(HEX_SIGMA_UNIT * HEX_SAMPLE_PC * HEX_SAMPLE_PC / 1000000, 1, 1) + " million suns)"
-			+ (variable_struct_exists(_hf, "myr") ? "   age " + string(floor(_hf.myr)) + " Myr, " + string(_hf.fbn) + " bubbles" : "")
-			+ (variable_struct_exists(_hf, "rgas") ? "   gas radius " + string_format(_hf.rgas, 1, 2) + " kpc" : "")
-			+ (variable_struct_exists(_hf, "rstar") ? ", clusters " + string_format(_hf.rstar, 1, 2) + " kpc" : "")
-			+ ((variable_global_exists("hex_fluid_hide") && global.hex_fluid_hide) ? "   [fluid HIDDEN: L]" : "   (L hides it)"));
-		// the heart: the supermassive black hole's mass and how hard it's feeding (share of its Eddington limit), quasar above 10^45 erg/s
-		var _hsm = scr_hex_find_smbh();
-		if (!is_undefined(_hsm) && variable_struct_exists(_hsm, "mdsm"))
-			draw_text(16, 269, "Heart " + string_format(scr_hex_pop_msun(_hsm.m) / 1000000, 1, 2) + " million suns   feeding " + string_format(_hsm.mdot, 1, 0)
-				+ " suns/Myr (" + string_format(100 * _hsm.edd, 1, 1) + "% of Eddington)   " + ((_hsm.mdsm >= HEX_QSO_MDOT) ? "QUASAR" : "quasar at " + string(HEX_QSO_MDOT)));
-		// the universe: its age against its Friedmann lifetime (set by all its matter), and its baryons (in her sky + the reservoir)
-		if (variable_global_exists("hex_cosmo") && variable_struct_exists(_hf, "myr")) {
-			var _hcs = global.hex_cosmo;
-			draw_text(16, 287, "Universe " + string(floor(_hf.myr)) + " / " + string(floor(_hcs.T)) + " Myr (crunch in " + string_format(max(0, _hcs.T - HEX_CRUNCH_MYR - _hf.myr) / 60, 1, 1)
-				+ " min at full speed)   matter " + string_format(_hcs.B, 1, 0) + " (reservoir " + string_format(_hcs.R, 1, 0) + ")   star formation " + string_format(_hcs.sfr, 1, 2) + "/Myr");
-		}
-	}
+
 }
 
-scr_prof_draw();   // the capture key's table (hold C during the Unmaking, let go to see where the time went)
-
-// sitting in her universe (G): a small readout of what age it's in and how full it is (hidden with H, above)
-if (global.game_state == "GAZE" && instance_exists(obj_unmaking)) {
-	// what a debug key just did (scr_hex_toast), for a few seconds above the readout
-	if (variable_global_exists("hex_toast") && is_struct(global.hex_toast) && global.hex_toast.t > 0) {
-		global.hex_toast.t--;
-		draw_set_halign(fa_center); draw_set_valign(fa_bottom);
-		draw_set_alpha(min(1, global.hex_toast.t / 30)); draw_set_color(make_color_rgb(190, 230, 220));
-		draw_text(display_get_gui_width() / 2, display_get_gui_height() - 70, global.hex_toast.txt);
-		draw_set_alpha(1); draw_set_halign(fa_left); draw_set_valign(fa_top);
-	}
-	if (variable_global_exists("hex_inspect") && global.hex_inspect) scr_hex_inspect_draw();   // I: name everything in her sky
-	// each age of her universe announces itself: a title card fades in at the top when the age changes
-	if (!variable_global_exists("hex_card_ph")) { global.hex_card_ph = ""; global.hex_card_t = 999; }
-	var _aph = variable_global_exists("hex_aeon") ? global.hex_aeon.phase : "dawn";
-	if (_aph != global.hex_card_ph) { global.hex_card_ph = _aph; global.hex_card_t = 0; }
-	global.hex_card_t++;
-	var _ct = global.hex_card_t;
-	var _cfp = game_get_speed(gamespeed_fps), _cts = _ct / _cfp;
-	if (_cts < 4.5 && _aph != "void") {
-		var _cnames = { dawn: ["DAWN", "the first stars kindle"], galaxy: ["THE GALAXY", "the garden turns around its heart"],
-			quasar: ["QUASAR", "the heart ignites"], twilight: ["TWILIGHT", "the long dimming"], crunch: ["THE CRUNCH", "all things return"] };
-		var _cn = _cnames[$ _aph];
-		if (!is_undefined(_cn)) {
-			var _ca = min(1, _cts / 0.6) * min(1, (4.5 - _cts) / 1.2);
-			var _cgw = display_get_gui_width(), _cy0 = display_get_gui_height() * 0.14;
-			var _ctl = "";                                                     // letter-spaced, like an engraving
-			for (var i = 1; i <= string_length(_cn[0]); i++) _ctl += string_char_at(_cn[0], i) + ((i < string_length(_cn[0])) ? " " : "");
-			draw_set_halign(fa_center); draw_set_valign(fa_middle);
-			draw_set_color(make_color_rgb(170, 90, 255)); draw_set_alpha(0.35 * _ca);
-			for (var _o = 0; _o < 4; _o++) draw_text_transformed(_cgw / 2 + lengthdir_x(2, _o * 90), _cy0 + lengthdir_y(2, _o * 90), _ctl, 2.4, 2.4, 0);
-			draw_set_color(make_color_rgb(240, 228, 255)); draw_set_alpha(_ca);
-			draw_text_transformed(_cgw / 2, _cy0, _ctl, 2.4, 2.4, 0);
-			draw_set_color(make_color_rgb(200, 180, 240)); draw_set_alpha(0.8 * _ca);
-			draw_text(_cgw / 2, _cy0 + 30, "aeon " + string(variable_global_exists("hex_aeon") ? global.hex_aeon.n : 0) + "  ·  " + _cn[1]);
-			draw_set_alpha(1); draw_set_halign(fa_left); draw_set_valign(fa_top); draw_set_color(c_white);
-		}
-	}
-	var _rgw = display_get_gui_width(), _rgh = display_get_gui_height();
-	var _rae = variable_global_exists("hex_aeon") ? global.hex_aeon : { phase: "dawn", n: 0, t: 0 };
-	var _rsm = scr_hex_find_smbh();
-	var _rml = (!is_undefined(_rsm) && variable_struct_exists(_rsm, "edd")) ? string_format(100 * _rsm.edd, 1, 1) + "% Eddington" : "-";
-	var _rnf = variable_global_exists("hex_flow") ? array_length(global.hex_flow) : 0;
-	var _rtx = ((variable_global_exists("hex_no_ripple") && global.hex_no_ripple) ? "[ripples OFF]   " : "")
-	         + ((variable_global_exists("hex_flow_on") && !global.hex_flow_on) ? "[currents OFF]   " : "") + (scr_hex_fluid_ok() ? "[fluid " + scr_hex_fluid_tier()[3] + "]   " + (scr_hex_iso() ? "[PHYSICS ONLY]   " : "[+ legacy]   ") + "[" + string(HEX_MYR_PER_S * scr_hex_time()) + " Myr/s]   " : ((global.hex_fluid_why != "") ? "[fluid OFF: " + global.hex_fluid_why + "]   " : "")) + "aeon " + string(_rae.n) + ": " + _rae.phase + " " + string(floor(_rae.t / game_get_speed(gamespeed_fps))) + "s   |   holes " + string(array_length(global.hex_holes))
-	         + "   |   gas " + string(array_length(global.hex_haze)) + " (" + string(_rnf) + " flying)   |   heart " + _rml
-	         + "\nV giant  B gas cloud  X young cluster  N +1 min  M rush holes  K next age  I inspect  R ripples  J currents  Y fluid quality  L hide fluid  O physics only  T speed  H hide HUD  P pause  G leave";
-	draw_set_halign(fa_right); draw_set_valign(fa_bottom);
-	draw_set_alpha(0.75);
-	draw_set_color(make_color_rgb(220, 205, 255));
-	draw_text(_rgw - 16, _rgh - 12, _rtx);
-	draw_set_alpha(1);
-	draw_set_halign(fa_left); draw_set_valign(fa_top);
-}

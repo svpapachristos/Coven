@@ -1,4 +1,4 @@
-// TOASTS (edit52) tick down in every state, not only mid-run: an unlock in the hideout or a pickup before the stargazer opens
+// Toasts tick down in every state, so messages do not freeze while a menu is open.
 // now fades out on time instead of freezing (drawn on top of everything at the end of this object's Draw GUI)
 if (variable_global_exists("toast") && !is_undefined(global.toast)) {
 	global.toast.timer--;
@@ -191,7 +191,7 @@ switch (global.game_state) {
 		
     case "PLAYING":
 		if (global.boss_down) { global.boss_down = false; scr_act_complete(); }
-		if (!instance_exists(obj_unmaking)) global.run_time += 1 / game_get_speed(gamespeed_fps); // run time in seconds (stopped while she is in her universe)
+		global.run_time += 1 / game_get_speed(gamespeed_fps);
 		
 		
 		//debugging keys
@@ -218,20 +218,10 @@ switch (global.game_state) {
 		}
 
 		if (keyboard_check_pressed(vk_insert) && instance_exists(obj_player)) obj_player.ultimate_charge = obj_player.ultimate_charge_max; //test key: full ult charge
-		if (keyboard_check_pressed(vk_f6)) global.hex_unmade += 50; //test key to push the hexweaver up a tier in her ascension
+		if (keyboard_check_pressed(vk_f6)) scr_curse_add_progress(50); // test key for curse tiers
 		if (keyboard_check_pressed(vk_f7)) scr_gain_souls(100); //test key to give souls
 		if (keyboard_check_pressed(vk_f8)) scr_add_corruption(15); //test key to corrupt the player
 		if (keyboard_check_pressed(vk_f9)) global.boss_down = true;
-		if (keyboard_check_pressed(vk_f10)) global.hex_debug_holes = !global.hex_debug_holes; //test key: black holes form easily
-		// G: sit in her universe. the world freezes and her sky opens with no cast and no horde, and it keeps living while you watch
-		// (births from dense gas, stars aging a second per second, deaths). G again to leave. B and N work in here too
-		if (keyboard_check_pressed(ord("G")) && !instance_exists(obj_unmaking) && instance_exists(obj_player)) {
-			global.hex_gaze = true;
-			instance_create_depth(0, 0, -100000, obj_unmaking);
-		}
-		
-		
-		
 		if (global.levelups_pending > 0) scr_open_levelup();
 		if (variable_global_exists("necro_frenzy") && global.necro_frenzy > 0) global.necro_frenzy--;
 		var _bn = min(array_length(global.blast_queue), 20);   // at most 20 blasts a frame

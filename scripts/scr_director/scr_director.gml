@@ -106,7 +106,7 @@ function scr_pack_ring(_obj, _n) {
 		
 		
 // makes recolored copies of a sprite by turning every pixel's hue (saturation and brightness stay, so the shading is identical).
-// done once at startup. each copy is a real sprite, so everything that draws or reads it (its own draw, the Unmaking's crumble,
+// done once at startup. each copy is a real sprite, so everything that draws or reads it (its own draw and later effects,
 // its dust colors) just works. _from: the sprite's own hue now (0-255). _hues: the hues to recolor it to
 function scr_make_hue_variants(_spr, _from, _hues) {
 	var _out = [];

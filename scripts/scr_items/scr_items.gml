@@ -174,9 +174,9 @@ function scr_items_init() {
 			desc: "Your beam reaches 25% further.",
 			add: {}, mult: { beam_length: 1.25 }
 		},
-		toadstone: { name: "Toadstone", rarity: "charm", tags: ["hex"], req: ["hexweaver"],
-			desc: "A jewel grown in a toad's skull, said to have magical properties. Causes your toads to spread their hex.",
-			add: { hex_spread: 1 }, mult: {}
+		toadstone: { name: "Toadstone", rarity: "charm", tags: ["curse"], req: ["hexweaver"],
+			desc: "A jewel grown in a toad's skull, said to have magical properties. Causes your toads to spread their curse.",
+			add: { curse_spread: 1 }, mult: {}
 		},
 		
 		//Scroll Tier

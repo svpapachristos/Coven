@@ -1,12 +1,4 @@
 if (scr_freeze_if_paused()) exit; // freeze on game pause
-// inside her own space she is the still centre: no walking, no casting, the world waits for her
-if (instance_exists(obj_unmaking)) {
-	state = "IDLE";
-	can_shoot = true;
-	shoot_timer = 0;
-	image_alpha = 1; // her i-frames stop ticking in here, so a see-through flicker frame would otherwise last the whole ult
-	exit;
-}
 var _old_max_hp = max_hp;
 max_hp = scr_stat("max_health", base_max_hp);
 if (max_hp > _old_max_hp) hp += max_hp - _old_max_hp;
@@ -21,7 +13,7 @@ beam_heat = max(0, beam_heat - 0.01);
 
 if (!is_undefined(witch)) {
 	if (ability_cd > 0) ability_cd--;
-	// OLD E (toad hex), parked while we test the living hex. Uncomment to restore.
+	// OLD E (toad curse), parked while we test the living curse. Uncomment to restore.
 	//if (keyboard_check(ord("E")) && ability_cd <= 0) {
 	//	witch.ability.fn(id);
 	//	ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
@@ -35,13 +27,13 @@ if (!is_undefined(witch)) {
 }
 	
 	
-// ---- E: the living hex ----
-// Her hex energy IS the motes: each one is a unit of hex. Hold E and they pour out of her hand one by one toward
+// ---- E: the living curse ----
+// Her curse energy IS the motes: each one is a unit of curse. Hold E and they pour out of her hand one by one toward
 // the cursor; when enough have arrived, they act. Spent motes regrow in her hand over time.
 //  - enough motes reach a rock (hex_cost_rock) or an enemy (hex_cost_enemy): it's lifted. Release E to throw it.
 //  - pressed over nothing: the motes pour into a ball in front of her hand that grows and overcharges.
 //    Release to lob it in an arc to the cursor, where it explodes (more motes, bigger boom).
-//  - tap E: a quick hand blast from the hex in her palm (hex_blast_cost).
+//  - tap E: a quick hand blast from the curse in her palm (hex_blast_cost).
 var _ha = point_direction(x, y, mouse_x, mouse_y);
 // her off hand (the one not holding the wand) depends on how each sprite is drawn: look it up in hex_hand_side,
 // and fall back to "opposite the mouse" for any sprite not in the table
@@ -50,7 +42,7 @@ if (is_undefined(_f)) _f = (mouse_x >= x) ? 0.12 : 0.88;
 var _hx = lerp(bbox_left, bbox_right, _f);
 var _hy = lerp(bbox_top, bbox_bottom, 0.78); // 0 = top of her head, 1 = her feet
 if (hex_held != noone && !instance_exists(hex_held)) hex_held = noone;
-// max hex: an item can raise it through the "max_hex" stat; H adds 8 while testing
+// max curse: an item can raise it through the "max_hex" stat; H adds 8 while testing
 if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
 var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
 while (array_length(hex_motes) < _want) {
@@ -60,8 +52,8 @@ var _n = array_length(hex_motes);
 var _ox = hex_hx, _oy = hex_hy;
 
 if (keyboard_check(ord("E"))) {
-	// HEX STANCE: while E is held her hex pours out and swirls around her, ready. Her wand stands down and the
-	// mouse casts with the hex instead: hold left click to coalesce an orb in front of her hand (release to fire it),
+	// HEX STANCE: while E is held her curse pours out and swirls around her, ready. Her wand stands down and the
+	// mouse casts with the curse instead: hold left click to coalesce an orb in front of her hand (release to fire it),
 	// hold right click to coalesce at the cursor and lift what's there (release to throw it).
 	var _bcx = (bbox_left + bbox_right) / 2, _bcy = (bbox_top + bbox_bottom) / 2;
 	if (!hex_active) {
@@ -86,7 +78,7 @@ if (keyboard_check(ord("E"))) {
 	if (hex_mode == "" && mouse_check_button_pressed(mb_left)) { hex_mode = "charge"; hex_charge = 0; }
 	if (hex_mode == "" && mouse_check_button_pressed(mb_right)) hex_mode = "grab";
 
-	// where the hex gathers: an orb in front of her hand, the cursor (within her reach), or swirling around her
+	// where the curse gathers: an orb in front of her hand, the cursor (within her reach), or swirling around her
 	var _tx, _ty;
 	if (hex_mode == "charge") {
 		_tx = _hx + lengthdir_x(hex_ball_dist, _ha);
@@ -98,7 +90,7 @@ if (keyboard_check(ord("E"))) {
 	} else {
 		_tx = _bcx; _ty = _bcy;
 	}
-	hex_hx = lerp(hex_hx, _tx, 0.7); // snappy: the hex keeps up with the cursor
+	hex_hx = lerp(hex_hx, _tx, 0.7); // snappy: the curse keeps up with the cursor
 	hex_hy = lerp(hex_hy, _ty, 0.7);
 
 	// how many have arrived where they're going
@@ -118,18 +110,18 @@ if (keyboard_check(ord("E"))) {
 			_target = _r; _kind = "rock"; _cost = hex_cost_rock;
 		} else {
 			var _e = instance_nearest(hex_hx, hex_hy, obj_enemy_parent);
-			if (_e != noone && !_e.is_boss && _e.hex >= 0 && point_distance(hex_hx, hex_hy, _e.x, _e.y) <= hex_grab_r) {
+			if (_e != noone && !_e.is_boss && _e.curse >= 0 && point_distance(hex_hx, hex_hy, _e.x, _e.y) <= hex_grab_r) {
 				_target = _e; _kind = "enemy"; _cost = hex_cost_enemy;
 			}
 		}
 		if (_target != noone && hex_arrived >= _cost) {
-			// enough of her hex has reached it: it lifts
+			// enough of her curse has reached it: it lifts
 			hex_held = _target; hex_kind = _kind; hex_cost = _cost;
 			if (_kind == "rock") _target.grabbed = true;
 		}
 	}
 	if (hex_mode == "charge") {
-		// the orb builds up a mote at a time, up to a full charge (or as much hex as she has out)
+		// the orb builds up a mote at a time, up to a full charge (or as much curse as she has out)
 		hex_charge++;
 		var _out = 0;
 		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 1) _out++;
@@ -139,9 +131,9 @@ if (keyboard_check(ord("E"))) {
 		hex_held.vx = lerp(hex_held.vx, (hex_hx - hex_held.x) * 0.5, 0.7);
 		hex_held.vy = lerp(hex_held.vy, (hex_hy - hex_held.y) * 0.5, 0.7);
 	}
-	// a held enemy is pinned to the hex in End Step, after it has tried to move
+	// a held enemy is pinned to the curse in End Step, after it has tried to move
 
-	// letting go of a mouse button finishes that spell; the hex stays out around her for the next one
+	// letting go of a mouse button finishes that spell; the curse stays out around her for the next one
 	if (hex_mode == "charge" && !_lmb) {
 		if (hex_orb_n >= 2) {
 			// fire the orb forward: it flies until it hits something or leaves the screen.
@@ -163,7 +155,7 @@ if (keyboard_check(ord("E"))) {
 		hex_mode = "";
 	}
 } else if (hex_active) {
-	// letting go of E: anything held is thrown, a quick tap is a palm blast, and the rest of her hex flows home
+	// letting go of E: anything held is thrown, a quick tap is a palm blast, and the rest of her curse flows home
 	if (hex_held != noone) hex_throw();
 	else if (hex_tap <= 10) {
 		if (hex_available() >= hex_blast_cost) {
@@ -192,7 +184,7 @@ if (!hex_active) {
 hex_hvx = hex_hx - _ox;
 hex_hvy = hex_hy - _oy;
 
-// spent hex regrows in her hand, one mote at a time
+// spent curse regrows in her hand, one mote at a time
 var _spent = noone;
 for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 2) { _spent = hex_motes[_i]; break; }
 if (_spent != noone) {
@@ -206,7 +198,7 @@ if (_spent != noone) {
 } else hex_regen_t = 0;
 
 // Its body: starling motes. At home they curl in her hand (and past hex_ball_max, orbit her as an aura).
-// Out in the world they stream to the hex, swirl around it, wrap what it holds, and crush into a knot as it charges.
+// Out in the world they stream to the curse, swirl around it, wrap what it holds, and crush into a knot as it charges.
 var _t = current_time / 1000;
 // how far she moved, so the motes in her hand and aura travel with her instead of trailing
 var _pdx = x - hex_px, _pdy = y - hex_py;
@@ -220,7 +212,7 @@ for (var _i = 0; _i < _n; _i++) {
 	var _m = hex_motes[_i];
 	if (_m.st == 2 || _m.st == 4) continue; // spent, or riding inside a shot: not here
 	if (_m.st == 3) {
-		// flowing home: each mote waits its turn where the hex let go, then races back to her hand at full speed,
+		// flowing home: each mote waits its turn where the curse let go, then races back to her hand at full speed,
 		// weaving slightly as it goes, so together they pour home as one living tendril
 		if (_m.wait > 0) {
 			_m.wait--;
@@ -278,7 +270,7 @@ for (var _i = 0; _i < _n; _i++) {
 		_mx = _gx + lengthdir_x(_rad, _ang);
 		_my = _gy + lengthdir_y(_rad, _ang);
 		if (_i mod hex_trail == 0) {
-			// a few stragglers trail behind the clump, so the hex leaves a wake as it moves
+			// a few stragglers trail behind the clump, so the curse leaves a wake as it moves
 			_pull = 0.1;
 			_cap = 22;
 		} else {
@@ -322,7 +314,7 @@ if (alt_regen_delay > 0 ) {
 
 //Channel alt fire while holding m2
 var _cost = scr_stat("alt_drain", alt_drain) * alt_pulse_max / game_get_speed(gamespeed_fps); 
-if (mouse_check_button(mb_right) && mana >= _cost && !hex_active) { // (in her hex stance, right click belongs to the hex)
+if (mouse_check_button(mb_right) && mana >= _cost && !hex_active) { // (in her curse stance, right click belongs to the curse)
 	if (alt_pulse > 0) {
 		alt_pulse--;
 	} else {

@@ -1,15 +1,5 @@
 if (scr_freeze_if_paused()) exit;
 
-// being unmade: frozen, rising toward its place in her sky, then igniting on its cue
-if (unmaking > 0) {
-	speed_mult = 0;
-	speed = 0;
-	if (!instance_exists(obj_unmaking)) { scr_unmake(id); exit; } // the realm closed early: finish at once
-	unmaking = clamp(obj_unmaking.t / unmake_at, 0.001, 1);      // 0 at the cast, 1 at its ignition
-	if (obj_unmaking.t >= unmake_at) scr_unmake(id);
-	exit;
-}
-
 // keep your distance from the crowd: check only the crowd grid's buckets around you (obj_game_controller builds it each frame),
 // at most 8 pushes and 24 looks, so a packed horde costs the same as a loose one
 // (each enemy keeps its distance every other frame, half on even frames and half on odd, with double the push: half the cost,
@@ -103,9 +93,9 @@ if (chill_timer > 0) {
 
 if (stun_timer > 0) { stun_timer--; speed_mult = 0; }
 
-//hexweavers hex: the curse ripens on its own until the enemy is fully hexed
-if (hex > 0 && hex < 1) hex = min(1, hex + 1 / (game_get_speed(gamespeed_fps) * scr_hex_ripen_time()));
-if (hex >= 1 && scr_hex_can_toad(id)) { scr_hex_toadify(id); exit; }
+//hexweavers curse: the curse ripens on its own until the enemy is fully hexed
+if (curse > 0 && curse < 1) curse = min(1, curse + 1 / (game_get_speed(gamespeed_fps) * scr_curse_ripen_time()));
+if (curse >= 1 && scr_curse_can_toad(id)) { scr_curse_toadify(id); exit; }
 
 // knockback slides the enemy and fades out
 x += knock_x; y += knock_y;
@@ -114,5 +104,5 @@ knock_x *= 0.8; knock_y *= 0.8;
 //tints the enemy ember orange or icy blue if burned or chilled
 image_blend = (burn_timer > 0) ? make_color_rgb(255, 170, 110) : ((chill_timer > 0) ? make_color_rgb(150, 220, 255) : c_white);
 
-//tints the enemy hex violet when hexed
-if (hex > 0) image_blend = merge_color(image_blend, HEX_VIOLET, 0.35 + 0.5 * hex);
+//tints the enemy curse violet when hexed
+if (curse > 0) image_blend = merge_color(image_blend, CURSE_VIOLET, 0.35 + 0.5 * curse);

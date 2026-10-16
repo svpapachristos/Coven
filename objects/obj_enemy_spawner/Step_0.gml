@@ -1,4 +1,4 @@
-if (global.game_state != "PLAYING" || instance_exists(obj_unmaking)) exit;   // (no spawning while time outside is stopped)
+if (global.game_state != "PLAYING") exit;
 if (event_index < array_length(run_events) && global.run_time >= run_events[event_index].t) {
 	if (scr_run_event(run_events[event_index])) event_index++;
 }

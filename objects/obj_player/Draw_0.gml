@@ -10,7 +10,7 @@ if (_stage > 0) {
 }
 draw_self();
 
-// The living hex: soft plum glow (smoke) + bright lilac cores (threads), drawn as added light.
+// The living curse: soft plum glow (smoke) + bright lilac cores (threads), drawn as added light.
 gpu_set_blendmode(bm_add);
 if (hex_active) {
 	var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0; // how full the charging orb is
@@ -37,8 +37,8 @@ var _ga = hex_active ? 0.12 : 0.07;   // glow
 var _ca = hex_active ? 0.85 : 0.55;   // core
 for (var _i = 0; _i < array_length(hex_motes); _i++) {
 	var _m = hex_motes[_i];
-	if (_m.st == 2 || _m.st == 4) continue; // spent hex, or hex inside a shot, isn't drawn here
-	var _dim = (_m.st == 3) ? 0.6 : 1;  // hex flowing home is a little fainter
+	if (_m.st == 2 || _m.st == 4) continue; // spent curse, or curse inside a shot, isn't drawn here
+	var _dim = (_m.st == 3) ? 0.6 : 1;  // curse flowing home is a little fainter
 	// smoke: wide, faint, overlapping so neighbors merge into one cloud
 	draw_set_color(make_color_rgb(60, 30, 120));
 	draw_set_alpha(_sa * _dim);
@@ -56,7 +56,7 @@ gpu_set_blendmode(bm_normal);
 draw_set_alpha(1);
 draw_set_color(c_white);
 
-// her hex energy, under her feet, only while it isn't full
+// her curse energy, under her feet, only while it isn't full
 var _avail = hex_available();
 if (_avail < array_length(hex_motes)) {
 	var _bw = 40, _bx = x - _bw / 2, _by = bbox_bottom + 6;

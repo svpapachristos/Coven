@@ -7,7 +7,7 @@ if (!instance_exists(target)) {                     // its target died: find the
 	target = noone;
 	var _best = infinity;
 	with (obj_enemy_parent) {
-		if (object_index == obj_toad) continue;
+		if (object_index == obj_curse_toad) continue;
 		var _d = point_distance(x, y, other.x, other.y);
 		if (_d < _best) { _best = _d; other.target = id; }
 	}

@@ -1,4 +1,4 @@
-// A hex bolt draws as a glowing knot of her magic.
+// A curse bolt draws as a glowing knot of her magic.
 if (is_bolt) {
 	var _yo = 0;
 	if (is_lob) {
@@ -33,7 +33,7 @@ draw_circle(x, y, r, false);
 draw_set_color(make_color_rgb(200, 196, 210));
 draw_circle(x - r * 0.3, y - r * 0.3, r * 0.35, false);
 if (grabbed) {
-	// violet ring while a witch's hex holds it
+	// violet ring while a witch's curse holds it
 	draw_set_color(make_color_rgb(150, 110, 255));
 	draw_circle(x, y, r + 3, true);
 }

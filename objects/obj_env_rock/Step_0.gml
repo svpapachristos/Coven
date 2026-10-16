@@ -1,6 +1,6 @@
 if (scr_freeze_if_paused()) exit;
 
-// A lobbed ball of hex: arcs over everything to where she aimed, then bursts.
+// A lobbed ball of curse: arcs over everything to where she aimed, then bursts.
 if (is_lob) {
 	lob_t++;
 	var _p = min(1, lob_t / lob_dur);
@@ -34,7 +34,7 @@ if (is_lob) {
 	exit;
 }
 
-// A hex shot: flies straight until it hits an enemy or leaves the screen. On a hit it bursts: full damage at the
+// A curse shot: flies straight until it hits an enemy or leaves the screen. On a hit it bursts: full damage at the
 // center, less toward the edge of boom_r, a shove outward. Either way, the motes inside flow back to her.
 if (is_bolt) {
 	x += vx;

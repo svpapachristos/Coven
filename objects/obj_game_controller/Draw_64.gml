@@ -101,13 +101,13 @@ if (global.game_state == "DEAD" || global.game_state == "VICTORY") {
 	// the stats: each counts up in turn
 	var _tt = floor(global.run_time), _ts = string(_tt div 60) + ":" + ((_tt mod 60 < 10) ? "0" : "") + string(_tt mod 60);
 	if (_tt >= 3600) _ts = string(_tt div 3600) + ":" + (((_tt mod 3600) div 60 < 10) ? "0" : "") + string((_tt mod 3600) div 60) + ":" + ((_tt mod 60 < 10) ? "0" : "") + string(_tt mod 60);
-	var _unm = variable_global_exists("hex_unmade") ? global.hex_unmade : 0;
+	var _curse_progress = variable_global_exists("curse_unmade") ? global.curse_unmade : 0;
 	var _rows = [
 		["Time", -1, _ts, c_white],
 		["Endless", -1, (variable_global_exists("endless") && global.endless) ? string(floor(global.run_time - global.endless_t0) div 60) + ":" + ((floor(global.run_time - global.endless_t0) mod 60 < 10) ? "0" : "") + string(floor(global.run_time - global.endless_t0) mod 60) : "-", make_color_rgb(255, 140, 120)],
 		["Level", global.level, "", c_white],
 		["Enemies felled", global.kill_count, "", c_white],
-		["Unmade", _unm, "", make_color_rgb(190, 150, 255)],
+		["Curse progress", _curse_progress, "", make_color_rgb(190, 150, 255)],
 		["Corruption", round(_cor), "%", _pcol],
 		["Essence earned", global.run_total, "", make_color_rgb(200, 150, 255)]
 	];

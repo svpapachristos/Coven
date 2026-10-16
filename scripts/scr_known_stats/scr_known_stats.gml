@@ -6,5 +6,6 @@ function scr_known_stats() {
 	"chill_freeze_duration", "alt_drain", "missile_count", "missile_damage", "soul_gain", "tower_damage", 
 	"homing", "pierce", "primary_damage", "primary_count", "beam_damage", "beam_length",  "army_cap",
 	"raise_count", "raise_radius", "thrall_damage", "thrall_health", "thrall_speed", "frenzy_duration",
-	"beam_max_heat" ];
+	"beam_max_heat", "curse_ripen_time", "curse_spread", "curse_splash", "curse_radius",
+	"curse_strength", "curse_vulnerability" ];
 }
