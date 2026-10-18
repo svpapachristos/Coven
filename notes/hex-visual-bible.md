@@ -30,6 +30,8 @@ an evenly colored line reads as thread, not a strand of light. Lit the same way 
 - **Design for what survives at 1x:** a bright heart, a moving silhouette, color and glow. Texture is a bonus, never the point.
 - **Pixel art without dither:** a few flat brightness steps, drawn on a 2-pixel grid (`HEX_ORB_PX`; K/L keys tune it live).
 - **Palette is locked:** Coven violet-blue (smoke 14,0,86 / glow 41,7,175 / core 57,17,243 / spark 222,190,255). Don't retune unprompted.
+- **The source stays in her hand.** The orb never flies to the cursor. What reaches into the world is her hex itself, flowing as
+  motes, and it gathers where it arrives. The hex is a system of ways to manipulate her magic, not a controllable ball.
 - **No outlines, no clean discs, no spirals, no hard lightning.** (Every one of these failed in lookdev.)
 
 ## The hex speaks differently depending on what it's doing
@@ -49,6 +51,8 @@ an evenly colored line reads as thread, not a strand of light. Lit the same way 
 - Mote puffs drawn as light (the same ramp) instead of flat squares.
 - Blast: tendrils lashing out on impact.
 - Recolor her drawn hex (curse visuals) to the violet-blue palette.
+- Fewer bars, more world: let the hex itself show how much she has (the hand orb already shrinks as her reserve empties),
+  then retire the placeholder hex bar on the HUD.
 
 ## Where things live
 - Shader: `shaders/sh_hex_orb` (the light model; header comment lists every part).

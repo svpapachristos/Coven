@@ -43,9 +43,17 @@ if (instance_exists(obj_player)) {
 if (_inf) scr_draw_infinity(236, 45, 10, _mana_col);
 
 if (!is_undefined(_p.witch)) {
-	var _cd_max = max(1, game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", _p.witch.ability.cooldown));
-	scr_draw_bar(16, 60, 200, 8, 1 - _p.ability_cd / _cd_max, c_lime,
-		_p.witch.ability.name + ((_p.ability_cd <= 0) ? " [Space]" : ""));
+	if (_p.witch.name == "Hexweaver") {
+		// her hex: how much of it is in her hand right now (out in the world or spent, it comes back), in her hex violet.
+		// A placeholder: this may move off the bars entirely as the hex itself shows how much she has
+		var _hn = array_length(_p.hex_motes), _ha = _p.hex_available();
+		scr_draw_bar(16, 60, 200, 8, _ha / max(1, _hn), hex_wisp_col(hex_wisp_pal().core),
+			_p.witch.ability.name + " [Space]   " + string(_ha) + " / " + string(_hn));
+	} else {
+		var _cd_max = max(1, game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", _p.witch.ability.cooldown));
+		scr_draw_bar(16, 60, 200, 8, 1 - _p.ability_cd / _cd_max, c_lime,
+			_p.witch.ability.name + ((_p.ability_cd <= 0) ? " [Space]" : ""));
+	}
 
 	var _ready = (_p.ultimate_charge >= _p.ultimate_charge_max);
 	var _ult_col = _ready ? merge_color(c_fuchsia, c_white, 0.5 + 0.5 * sin(current_time / 120)) : c_purple;
