@@ -30,7 +30,7 @@ if (!is_undefined(witch)) {
 // ---- E: the living curse ----
 // Her curse energy IS the motes: each one is a unit of curse. Hold E and they pour out of her hand one by one toward
 // the cursor; when enough have arrived, they act. Spent motes regrow in her hand over time.
-//  - enough motes reach a rock (hex_cost_rock) or an enemy (hex_cost_enemy): it's lifted. Release E to throw it.
+//  - enough motes reach a rock or other environment object (hex_cost_lift x its weight) or an enemy (hex_cost_enemy): it's lifted. Release E to throw it.
 //  - pressed over nothing: the motes pour into a ball in front of her hand that grows and overcharges.
 //    Release to lob it in an arc to the cursor, where it explodes (more motes, bigger boom).
 //  - tap E: a quick hand blast from the curse in her palm (hex_blast_cost).
@@ -118,9 +118,15 @@ if (keyboard_check(ord("E"))) {
 	if (hex_held == noone && hex_mode == "grab") {
 		// is there something here to lift?
 		var _target = noone, _kind = "", _cost = 0;
-		var _r = instance_nearest(hex_hx, hex_hy, obj_env_rock);
-		if (_r != noone && !_r.is_bolt && point_distance(hex_hx, hex_hy, _r.x, _r.y) <= _r.r + hex_grab_r) {
-			_target = _r; _kind = "rock"; _cost = hex_cost_rock;
+		// the nearest environment object her magic can lift (measured to its edge, so big things are easier to catch)
+		var _r = noone, _rd = infinity, _sx = hex_hx, _sy = hex_hy;
+		with (obj_env_parent) {
+			if (!liftable || !movable || grabbed) continue;
+			var _d = point_distance(_sx, _sy, x, y) - r;
+			if (_d < _rd) { _rd = _d; _r = id; }
+		}
+		if (_r != noone && _rd <= hex_grab_r) {
+			_target = _r; _kind = "env"; _cost = round(hex_cost_lift * _r.weight);
 		} else {
 			var _e = instance_nearest(hex_hx, hex_hy, obj_enemy_parent);
 			if (_e != noone && !_e.is_boss && _e.curse >= 0 && point_distance(hex_hx, hex_hy, _e.x, _e.y) <= hex_grab_r) {
@@ -130,7 +136,7 @@ if (keyboard_check(ord("E"))) {
 		if (_target != noone && hex_arrived >= _cost) {
 			// enough of her curse has reached it: it lifts
 			hex_held = _target; hex_kind = _kind; hex_cost = _cost;
-			if (_kind == "rock") _target.grabbed = true;
+			if (_kind == "env") _target.grabbed = true;
 		}
 	}
 	if (hex_mode == "charge") {
@@ -140,9 +146,11 @@ if (keyboard_check(ord("E"))) {
 		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 1) _out++;
 		hex_orb_n = min(floor(hex_charge * hex_charge_rate), hex_charge_cap, _out);
 	} else hex_orb_n = 0;
-	if (hex_held != noone && hex_kind == "rock") {
-		hex_held.vx = lerp(hex_held.vx, (hex_hx - hex_held.x) * 0.5, 0.7);
-		hex_held.vy = lerp(hex_held.vy, (hex_hy - hex_held.y) * 0.5, 0.7);
+	if (hex_held != noone && hex_kind == "env") {
+		// steer what she holds toward the curse; heavier things follow more sluggishly
+		var _wk = 0.5 / max(0.25, hex_held.weight);
+		hex_held.vx = lerp(hex_held.vx, (hex_hx - hex_held.x) * _wk, 0.7);
+		hex_held.vy = lerp(hex_held.vy, (hex_hy - hex_held.y) * _wk, 0.7);
 	}
 	// a held enemy is pinned to the curse in End Step, after it has tried to move
 
@@ -152,13 +160,12 @@ if (keyboard_check(ord("E"))) {
 			// fire the orb forward: it flies until it hits something or leaves the screen.
 			// every mote in it adds to the boom, and they all find their way back to her afterward
 			var _c = hex_orb_n;
-			var _b = instance_create_depth(hex_hx, hex_hy, depth, obj_env_rock);
-			_b.is_bolt = true;
+			var _b = instance_create_depth(hex_hx, hex_hy, depth, obj_hex_shot);
 			_b.vx = lengthdir_x(15, _ha);
 			_b.vy = lengthdir_y(15, _ha);
-			_b.bolt_dmg = round(10 + hex_boom_dmg * _c);
+			_b.dmg = round(10 + hex_boom_dmg * _c);
 			_b.boom_r = 40 + hex_boom_r * _c;
-			_b.bolt_size = 0.6 + _c / 16;
+			_b.size = 0.6 + _c / 16;
 			_b.mote_n = hex_spend(_c, 4);
 		}
 		hex_mode = ""; hex_charge = 0; hex_orb_n = 0;
@@ -173,13 +180,12 @@ if (keyboard_check(ord("E"))) {
 	else if (hex_tap <= 10) {
 		if (hex_available() >= hex_blast_cost) {
 			hex_spend(hex_blast_cost, 4);
-			var _b = instance_create_depth(_hx, _hy, depth, obj_env_rock);
-			_b.is_bolt = true;
+			var _b = instance_create_depth(_hx, _hy, depth, obj_hex_shot);
 			_b.vx = lengthdir_x(16, _ha);
 			_b.vy = lengthdir_y(16, _ha);
-			_b.bolt_dmg = hex_blast_dmg;
+			_b.dmg = hex_blast_dmg;
 			_b.boom_r = 40;
-			_b.bolt_size = 0.6;
+			_b.size = 0.6;
 			_b.mote_n = hex_blast_cost;
 		}
 	}
@@ -272,7 +278,8 @@ for (var _i = 0; _i < _n; _i++) {
 			_rad = 34;
 		} else if (hex_held != noone) {
 			_gx = hex_held.x; _gy = hex_held.y;
-			_rad = ((hex_kind == "rock") ? hex_held.r : 22) + 6;
+			if (hex_kind == "env") _gy -= hex_held.z;   // wrap it where it's drawn, lifted off the ground
+			_rad = ((hex_kind == "env") ? hex_held.r : 22) + 6;
 		} else if (hex_mode == "charge") {
 			// the ball: denser and bigger as it fills, pulsing harder as it overcharges
 			_rad = 4 + 14 * _knot;

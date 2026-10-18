@@ -152,6 +152,16 @@ if (!variable_global_exists("ps_sparks") || !part_system_exists(global.ps_sparks
 	part_type_life(global.pt_arcane, 14, 30);
 	part_type_blend(global.pt_arcane, true);
 
+	// dust: kicked up when something heavy lands or slams into an enemy (obj_env_parent)
+	global.pt_dust = part_type_create();
+	part_type_shape(global.pt_dust, pt_shape_pixel);
+	part_type_size(global.pt_dust, 2, 4, -0.04, 0);
+	part_type_color2(global.pt_dust, make_color_rgb(150, 140, 130), make_color_rgb(90, 80, 80));
+	part_type_alpha2(global.pt_dust, 0.8, 0);
+	part_type_speed(global.pt_dust, 0.5, 2, -0.06, 0);
+	part_type_direction(global.pt_dust, 0, 180, 0, 0);   // puffs out and up off the ground
+	part_type_life(global.pt_dust, 14, 26);
+
 }
 scr_items_init();
 

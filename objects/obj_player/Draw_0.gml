@@ -32,14 +32,11 @@ if (_wisp) {
 	_ws.eE += (_tE - _ws.eE) * 0.12;                                // eased, so a change of stance swells instead of snapping
 	_ws.eR += (_tR - _ws.eR) * 0.2;
 	if (!hex_active) hex_wisp_att(hex_hx, hex_hy, 15, 0.75, 0, 0, false, _ws.eR, _ws.eE);
-	else if (hex_held != noone) hex_wisp_att(hex_held.x, hex_held.y, ((hex_kind == "rock") ? hex_held.r : 22) + 8, 0.6, 0, 0, false, _ws.eR, _ws.eE);
+	else if (hex_held != noone) hex_wisp_att(hex_held.x, hex_held.y - ((hex_kind == "env") ? hex_held.z : 0), ((hex_kind == "env") ? hex_held.r : 22) + 8, 0.6, 0, 0, false, _ws.eR, _ws.eE);
 	else if (hex_mode == "charge") hex_wisp_att(hex_hx, hex_hy, 11 + 20 * _kn, 0.65 + 0.35 * _kn, 0, 0, false, _ws.eR, _ws.eE);
 	else hex_wisp_att(hex_hx, hex_hy, 20, 0.6, 0, 0, false, _ws.eR, _ws.eE);
-	with (obj_env_rock) {
-		if (!is_bolt) continue;
-		var _yo = 0;   // a lob rises and falls on its way (the same arc obj_env_rock draws)
-		if (is_lob) _yo = -sin(min(1, lob_t / lob_dur) * pi) * (30 + point_distance(lob_x0, lob_y0, lob_tx, lob_ty) * 0.25);
-		hex_wisp_att(x, y + _yo, 11 * bolt_size, 0.95, vx, vy, true, 5.5 * bolt_size, 0.9);   // a shot in flight is wild
+	with (obj_hex_shot) {
+		hex_wisp_att(x, y, 11 * size, 0.95, vx, vy, true, 5.5 * size, 0.9);   // a shot in flight is wild
 	}
 	if (_orb) hex_orb_draw();
 	else hex_wisp_draw(hex_motes, hex_active);

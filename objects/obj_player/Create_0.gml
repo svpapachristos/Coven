@@ -228,7 +228,7 @@ function player_attack() {
 hex_held = noone;  // the world object her curse is holding
 hex_reach = 4000;  // how far from her the curse can reach (4000 = the whole screen)
 hex_grab_r = 64;   // how close the cursor must be to grab something
-// a few rocks to play with
+// a few rocks to play with (obj_env_rock: the first environment object)
 repeat (6) {
 	var _a = random(360);
 	var _d = random_range(80, 220);
@@ -242,9 +242,8 @@ hex_hy = y;
 hex_hvx = 0;         // how it's moving (a throw inherits this)
 hex_hvy = 0;
 hex_speed = 9;       // how fast it travels to the cursor
-hex_kind = "";       // "rock" or "enemy": what it's holding
+hex_kind = "";       // "env" (an environment object: a rock...) or "enemy": what it's holding
 hex_charge = 0;      // frames spent balled up with nothing to hold
-hex_tear_time = 50;  // frames of charge before it tears a rock out of the ground
 hex_thrown = [];     // enemies currently flying through the air
 hex_px = x;          // her position last frame, so the ball and aura move with her
 hex_py = y;
@@ -302,9 +301,8 @@ hex_regen_t = 0;
 hex_ready_r = 40;     // how close to the curse a mote has to be to count as arrived
 hex_arrived = 0;      // how many motes have arrived right now
 hex_cost = 0;         // what the thing she's holding cost
-hex_cost_rock = 8;    // motes it takes to lift a rock
+hex_cost_lift = 8;    // motes it takes to lift an environment object, per unit of its weight (a rock is 1)
 hex_cost_enemy = 14;  // motes it takes to lift an enemy
-hex_bolt_min = 4;     // fewest motes the charged ball needs before it can be lobbed
 hex_mode = "";        // "grab" if E was pressed over something liftable, "charge" if over nothing
 hex_ball_dist = 30;   // how far in front of her hand the charging ball gathers
 hex_boom_dmg = 3;     // damage per mote in the lobbed ball (plus a base of 10)
@@ -355,10 +353,11 @@ hex_return = function(_k, _x, _y) {
 // throw whatever her curse is holding: the curse that lifted it lets go and flows back to her
 hex_throw = function() {
 	if (hex_held == noone || !instance_exists(hex_held)) { hex_held = noone; hex_kind = ""; return; }
-	if (hex_kind == "rock") {
+	if (hex_kind == "env") {
 		hex_held.grabbed = false;
 		hex_held.vx *= 1.6;
 		hex_held.vy *= 1.6;
+		hex_held.vz = 2;   // a little pop upward, so it arcs and lands instead of skating off
 	} else {
 		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
 	}

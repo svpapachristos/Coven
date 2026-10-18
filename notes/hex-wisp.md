@@ -19,12 +19,12 @@ The smoke looked like a nebula or a gravity well, not like Wanda's hand magic. T
 - **Pixel art:** four tones plus the hot tone, ordered and random dither, on the game's world pixel grid (the shader floors the room position).
 - **Energy:** each ball has `oE` (0 calm .. 1 wild) and `oR` (core radius, world pixels). The main ball's come from her stance in `obj_player` Draw, eased: at rest in her hand 0.12 (radius shrinks a little as her reserve is spent); stance up 0.35; grab 0.5; holding something 0.55; charging 0.45 to 1.0 with the radius growing 6.5 to 13; a shot in flight 0.9.
 - **Palette:** the new default is **Coven violet-blue** (smoke 14,0,86, glow 41,7,175, core 57,17,243, spark 222,190,255, hot 0.30). P cycles it with the older blue, midpoint and lilac.
-- **Only the orb look changes these:** the ground-light circle and the charge-heart circle are skipped (the orb has its own); the resting motes aren't drawn (they are inside the orb); the motes that are out in the world still draw as bright thread dots; `obj_env_rock` skips its two bolt circles whenever the wisp is on.
+- **Only the orb look changes these:** the ground-light circle and the charge-heart circle are skipped (the orb has its own); the resting motes aren't drawn (they are inside the orb); the motes that are out in the world still draw as bright thread dots; `obj_hex_shot` skips its two fallback circles whenever the wisp is on.
 - **Knobs:** the look is in `sh_hex_orb.fsh` (each part is commented). The numbers to start with: `reach` (clump sizes), `F` weights (how full the body is), the tone thresholds (`Fd >`), `hr` (heart size), `hz` (haze size), the glow `g` (0.55).
 - **Not done yet:** no wake behind a shot in flight (the smoke look has one); the orb doesn't react to her movement; the mid-energy look wants a pass; the dark haze reads as a shadow on bright ground at calm.
 
 ## The collapse (slice 1.1, smoke look)
-The goal look is a ball of wispy magic that is forever collapsing in on itself. Slice 1 let smoke drift away on a random current, so it read as a trail. Now anything that is *a ball of her magic* registers itself every frame with `hex_wisp_att(x, y, radius, strength)`: the ball in her hand, the charging orb (grows with the charge), what she is holding, and any shot in flight (`obj_env_rock` with `is_bolt`, which also leaves a short wake). Around each ball:
+The goal look is a ball of wispy magic that is forever collapsing in on itself. Slice 1 let smoke drift away on a random current, so it read as a trail. Now anything that is *a ball of her magic* registers itself every frame with `hex_wisp_att(x, y, radius, strength)`: the ball in her hand, the charging orb (grows with the charge), what she is holding, and any shot in flight (`obj_hex_shot`, which also leaves a short wake). Around each ball:
 - **Flow shader**: the random current is calmed and smoke is pulled in along a spiral, then eaten at the middle so it can't pile up.
 - **Draw shader**: three spiral arms that turn and slide inward, and a dense core, drawn per screen pixel so they stay smooth.
 Up to four balls count at once. Registering is done in `obj_player` Draw, right before `hex_wisp_draw`.
@@ -54,9 +54,9 @@ The target is a pixel-art rendition of Wanda's hand magic, adapted to the witch'
 `flow` (how strongly the wandering current moves things), `decay` (trail length), `cell` (size of the biggest swirl), and for the collapse: `pull` (how fast smoke falls in), `swirl` (how tightly it spirals), `eat` (what the middle swallows), `arms` (arm brightness, 0 = none), `ball` (core density), `spin` (how fast the arms turn), the three stamp sizes, how much smoke and core each mote stamps at rest vs in stance, `home_amt` (how strongly the return stream reads), `gain`, `bright`, `add`, `detail`. Everything about the look is in that one struct.
 
 ## How later effects join
-Anything that should be part of the same smoke stamps into the field with `hex_wisp_stamp` during `hex_wisp_draw`'s stamp pass (the orb in flight and the palm blast are next: they are `obj_env_rock` with `is_bolt`, drawn as two circles today). Keep the contract small: position, velocity, how much, and which channel.
+Anything that should be part of the same smoke stamps into the field with `hex_wisp_stamp` during `hex_wisp_draw`'s stamp pass (the orb in flight and the palm blast are next: they are `obj_hex_shot`, drawn as two circles today). Keep the contract small: position, velocity, how much, and which channel.
 
 ## Known limits of slice 1
 - Not run in GameMaker when written (slice 1.1 included); it was checked by running the exact shader text in a WebGL test rig and reading the code twice. First thing to do: press O and P in a run, and check the surfaces survive alt-tab.
-- Shots and the held thing collapse like the hand ball, but they are not made of motes (the motes inside a shot are hidden), and `obj_env_rock` still draws its own two circles on top of the wisp for now.
+- Shots and the held thing collapse like the hand ball, but they are not made of motes (the motes inside a shot are hidden), and `obj_hex_shot` draws its own two circles only when the wisp is off.
 - Mana is still a separate bar for the wand's alt (the brief says one reserve).
