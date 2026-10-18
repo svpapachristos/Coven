@@ -156,7 +156,8 @@ function hex_orb_draw() {
 		shader_set_uniform_f(_u.core, _pal.core[0] / 255, _pal.core[1] / 255, _pal.core[2] / 255);
 		shader_set_uniform_f(_u.spark, _pal.spark[0] / 255, _pal.spark[1] / 255, _pal.spark[2] / 255); shader_set_uniform_f(_u.hot, _pal.hot);
 		for (var _i = 0; _i < _n; _i++) {
-			var _b = _s.att[_i], _R = max(3, _b.oR), _box = ceil(_R * 22 / 2) * 2, _cx = floor(_b.x), _cy = floor(_b.y);
+			var _b = _s.att[_i], _R = max(3, _b.oR), _box = ceil(_R * 16 / 2) * 2, _cx = floor(_b.x), _cy = floor(_b.y);
+			// (the square reaches 8x the core radius each way: the widest the charged halo gets is about 7x)
 			shader_set_uniform_f(_u.center, _b.x, _b.y); shader_set_uniform_f(_u.box, _box, _box); shader_set_uniform_f(_u.R, _R);
 			shader_set_uniform_f(_u.energy, clamp(_b.oE, 0, 1)); shader_set_uniform_f(_u.seed, _i + 1);
 			draw_rectangle(_cx - _box / 2, _cy - _box / 2, _cx + _box / 2, _cy + _box / 2, false);

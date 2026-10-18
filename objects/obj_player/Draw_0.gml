@@ -92,6 +92,15 @@ gpu_set_blendmode(bm_normal);
 draw_set_alpha(1);
 draw_set_color(c_white);
 hex_wisp_label(x, bbox_top - 24); // the palette's name for a moment after O or P
+if (hex_hand_debug) {
+	// J: a crosshair on her off hand's point, and the sprite it belongs to
+	var _hp = hex_hand_pos();
+	draw_set_color(c_lime);
+	draw_line(_hp[0] - 4, _hp[1], _hp[0] + 4, _hp[1]);
+	draw_line(_hp[0], _hp[1] - 4, _hp[0], _hp[1] + 4);
+	draw_text(x - 60, bbox_bottom + 14, sprite_get_name(sprite_index));
+	draw_set_color(c_white);
+}
 
 // her curse energy, under her feet, only while it isn't full
 var _avail = hex_available();

@@ -35,13 +35,25 @@ if (!is_undefined(witch)) {
 //    Release to lob it in an arc to the cursor, where it explodes (more motes, bigger boom).
 //  - tap E: a quick hand blast from the curse in her palm (hex_blast_cost).
 var _ha = point_direction(x, y, mouse_x, mouse_y);
-// her off hand (the one not holding the wand) depends on how each sprite is drawn: look it up in hex_hand_side,
-// and fall back to "opposite the mouse" for any sprite not in the table
-var _f = hex_hand_side[$ sprite_get_name(sprite_index)];
-if (is_undefined(_f)) _f = (mouse_x >= x) ? 0.12 : 0.88;
-var _hx = lerp(bbox_left, bbox_right, _f);
-var _hy = lerp(bbox_top, bbox_bottom, 0.78); // 0 = top of her head, 1 = her feet
+// her off hand (hex_hand in Create). Her sprite and position for this frame aren't final yet (they're set near the
+// end of Step), so this is last frame's hand: fine for the motes. The ball itself snaps to the final hand at the end.
+var _hp = hex_hand_pos();
+var _hx = _hp[0], _hy = _hp[1];
 if (hex_held != noone && !instance_exists(hex_held)) hex_held = noone;
+// J: show the hand point and nudge it with the arrow keys (sprite pixels). Each nudge prints the line to paste into Create.
+if (keyboard_check_pressed(ord("J"))) hex_hand_debug = !hex_hand_debug;
+if (hex_hand_debug) {
+	var _nx = keyboard_check_pressed(vk_right) - keyboard_check_pressed(vk_left);
+	var _ny = keyboard_check_pressed(vk_down) - keyboard_check_pressed(vk_up);
+	if (_nx != 0 || _ny != 0) {
+		var _sn = sprite_get_name(sprite_index);
+		var _p = hex_hand[$ _sn];
+		if (is_undefined(_p)) _p = [hex_hand_default[0], hex_hand_default[1]];
+		_p[0] += _nx; _p[1] += _ny;
+		hex_hand[$ _sn] = _p;
+		show_debug_message("hex_hand[$ \"" + _sn + "\"] = [" + string(_p[0]) + ", " + string(_p[1]) + "];");
+	}
+}
 // max curse: an item can raise it through the "max_hex" stat; H adds 8 while testing
 if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
 hex_wisp_debug_keys(); // O = next look (hex orb / smoke wisp / old circles), P = next palette (scr_hex_wisp)
@@ -351,6 +363,14 @@ switch (state)
     default:
         state = "IDLE"; // Catch-all safety net
         break;
+}
+
+// her sprite and position are final for this frame now: put the ball exactly in her off hand, so it never trails a
+// frame behind a turn or a step
+if (!hex_active) {
+	var _hf = hex_hand_pos();
+	hex_hx = _hf[0];
+	hex_hy = _hf[1];
 }
 
 //Marks: corrupting our witch throughout a run

@@ -105,7 +105,10 @@ void main()
 	if (q >= 4.0) { col = mix(u_spark, vec3(1.0), u_hot); }
 	if (q < 1.0) {
 		vec2 p = (pc + 0.5) - u_box * 0.5;
-		float g = exp(-dot(p, p) / (u_R * u_R * 22.0)) * 0.55;
+		// the halo reaches about 4.8x the core radius at calm (about 30% of the area it used to cover) and blooms
+		// out to about 7x as she charges. (Was a fixed u_R * u_R * 22.0: a 9x reach that read as a big distracting disc.)
+		float ge = clamp(u_energy, 0.0, 1.0), gk = 6.0 + 8.0 * ge * ge;
+		float g = exp(-dot(p, p) / (u_R * u_R * gk)) * 0.55;
 		float gl = floor(g * 5.0 + bayer(pc) * 0.999) / 5.0;     // posterized into a few flat bands, dithered between them
 		gl_FragColor = vec4(mix(u_glow, u_spark, 0.35) * gl, 0.0);   // alpha 0: adds light instead of covering the ground
 	} else {

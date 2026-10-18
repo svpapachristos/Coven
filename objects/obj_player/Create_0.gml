@@ -250,27 +250,37 @@ hex_px = x;          // her position last frame, so the ball and aura move with 
 hex_py = y;
 beam_pose = false;   // true while she holds the beam-channeling pose
 
-// Where her off hand is in each sprite, across her width: 0 = her left edge on screen, 1 = her right edge.
-// Sprites missing here fall back to "opposite the mouse". If the orb lands in her wand hand on some
-// sprite, add that sprite's name with the other side (0.12 or 0.88).
-hex_hand_side = {};
-hex_hand_side[$ "spr_player_witch1_walk_left"]        = 0.12;
-hex_hand_side[$ "spr_player_witch1_walk_right"]       = 0.12;
-hex_hand_side[$ "spr_player_witch1_walk_down"]        = 0.12;
-hex_hand_side[$ "spr_player_witch1_idle_left"]        = 0.88;
-hex_hand_side[$ "spr_player_witch1_idle_right"]       = 0.12;
-hex_hand_side[$ "spr_player_witch1_idle_left_fire"]   = 0.88;
-hex_hand_side[$ "spr_player_witch1_walk_left_fire"]   = 0.88;
-hex_hand_side[$ "spr_player_witch1_idle_right_fire"]  = 0.12;
-hex_hand_side[$ "spr_player_witch1_walk_right_fire"]  = 0.12;
-// up and down: the wand is on her right side on screen, so her off hand is on the left
-hex_hand_side[$ "spr_player_witch1_idle_up"]           = 0.12;
-hex_hand_side[$ "spr_player_witch1_walk_up"]           = 0.12;
-hex_hand_side[$ "spr_player_witch1_idle_up_fire"]      = 0.12;
-hex_hand_side[$ "spr_player_witch1_walk_up_fire"]      = 0.12;
-hex_hand_side[$ "spr_player_witch1_idle_down"]         = 0.12;
-hex_hand_side[$ "spr_player_witch1_idle_down_fire"]    = 0.12;
-hex_hand_side[$ "spr_player_witch1_walk_down_fire"]    = 0.12;
+// Where her off hand (the one without the wand) is in each sprite, in that sprite's own pixels, measured from its
+// origin (the middle of the 64x64 frame): [right, down]. Her wand is always in the hand on the right of the image,
+// so the off hand is always on the left. Read from the art on Oct 18; fine-tune in game with J (see hex_hand_debug).
+// A sprite missing here uses hex_hand_default. A new witch only needs her own rows.
+hex_hand = {};
+hex_hand[$ "spr_player_witch1_idle_down"]       = [-18, 20];
+hex_hand[$ "spr_player_witch1_idle_down_fire"]  = [-22, 21];
+hex_hand[$ "spr_player_witch1_walk_down"]       = [-21, 22];
+hex_hand[$ "spr_player_witch1_walk_down_fire"]  = [-22, 21];
+hex_hand[$ "spr_player_witch1_idle_left"]       = [-22, 20];
+hex_hand[$ "spr_player_witch1_idle_left_fire"]  = [-22, 16];
+hex_hand[$ "spr_player_witch1_walk_left"]       = [-21, 20];
+hex_hand[$ "spr_player_witch1_walk_left_fire"]  = [-19, 18];
+hex_hand[$ "spr_player_witch1_idle_right"]      = [-17, 18];
+hex_hand[$ "spr_player_witch1_idle_right_fire"] = [-17, 16];
+hex_hand[$ "spr_player_witch1_walk_right"]      = [-22, 20];
+hex_hand[$ "spr_player_witch1_walk_right_fire"] = [-22, 21];
+hex_hand[$ "spr_player_witch1_idle_up"]         = [-22, 25];
+hex_hand[$ "spr_player_witch1_idle_up_fire"]    = [-22, 25];
+hex_hand[$ "spr_player_witch1_walk_up"]         = [-22, 24];
+hex_hand[$ "spr_player_witch1_walk_up_fire"]    = [-22, 25];
+hex_hand_default = [-20, 20];
+hex_hand_debug = false; // J toggles: a marker on the hand point, and the arrow keys nudge it for the current sprite
+
+// where her off hand is in the room right now, as [x, y]. Call it after her sprite and position are final
+// for the frame (the end of Step), or the ball trails a frame behind her turns.
+function hex_hand_pos() {
+	var _p = hex_hand[$ sprite_get_name(sprite_index)];
+	if (is_undefined(_p)) _p = hex_hand_default;
+	return [x + _p[0] * image_xscale, y + _p[1] * image_yscale];
+}
 // its body: motes that flock like starlings.
 // hex_budget is how much curse she holds. Up to hex_ball_max it gathers as a ball in her off hand;
 // anything beyond overflows into an aura that orbits her body. Raise hex_budget to see it.
