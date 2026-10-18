@@ -19,6 +19,7 @@ pick_target = function() {
 	var _lim = min(_n, 20);
 	for (var i = 0; i < _lim; i++) {
 		var _e = _list[| i];
+		if (_e.curse < 0) continue; //toads are already beaten: don't chase them
 		if (abs(angle_difference(direction, point_direction(x, y, _e.x, _e.y))) > 75) continue; //picks a target that is roughly infront of it
 		if (scr_array_has(volley, _e)) continue; //a sibling bolt already called this target
 		_pick = _e;

@@ -15,6 +15,7 @@ vy = 0;
 z = 0;                // how high it is off the ground (0 = resting on it). It's drawn this far up from its shadow
 vz = 0;               // how fast it's rising (+) or falling (-)
 grabbed = false;      // true while a witch's magic is holding it
+hex_gather = 0;       // 0..1: how much hex has gathered under it on its way to lifting it (it stirs and starts to rise)
 hit_cd = 0;           // frames before it can hit an enemy again
 
 // ---- tuning (shared by every child unless it changes them) ----
@@ -26,11 +27,12 @@ env_max_speed = 24;   // so a wild flick can't send it to orbit
 
 // it landed hard (_impact = how fast it was falling): dust, a little shake, and a short bounce
 env_land = function(_impact) {
-	var _n = round(3 + _impact * 1.5 * weight);
+	var _n = round(6 + _impact * 3 * weight);
 	repeat (_n) {
 		part_particles_create(global.ps_sparks, x + random_range(-r, r), y + random_range(-2, 4), global.pt_dust, 1);
 	}
-	global.shake = max(global.shake, min(4, _impact * 0.25 * weight));
+	if (_impact > 4) scr_burst_fx(x, y + r * 0.5, r * (1.5 + 0.2 * _impact), make_color_rgb(150, 140, 130), 10);   // a ring of dust splashing out
+	global.shake = max(global.shake, min(5, _impact * 0.35 * weight));
 }
 
 depth = -(y + r);

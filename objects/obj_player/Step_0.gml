@@ -59,13 +59,13 @@ if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
 hex_wisp_debug_keys(); // O = next look (hex orb / smoke wisp / old circles), P = next palette (scr_hex_wisp)
 var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
 while (array_length(hex_motes) < _want) {
-	array_push(hex_motes, { x: _hx, y: _hy, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: 1, st: 0, wait: 0 });
+	array_push(hex_motes, { x: _hx, y: _hy, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: 1, st: 0, wait: 0, lap: 0, t1x: _hx, t1y: _hy, t2x: _hx, t2y: _hy });
 }
 var _n = array_length(hex_motes);
 var _ox = hex_hx, _oy = hex_hy;
 
-if (keyboard_check(ord("E"))) {
-	// HEX STANCE: while E is held her curse pours out and swirls around her, ready. Her wand stands down and the
+if (keyboard_check(hex_key)) {
+	// HEX STANCE: while hex_key (space) is held her curse pours out and swirls around her, ready. Her wand stands down and the
 	// mouse casts with the curse instead: hold left click to coalesce an orb in front of her hand (release to fire it),
 	// hold right click to coalesce at the cursor and lift what's there (release to throw it).
 	var _bcx = (bbox_left + bbox_right) / 2, _bcy = (bbox_top + bbox_bottom) / 2;
@@ -83,7 +83,7 @@ if (keyboard_check(ord("E"))) {
 	hex_flow_acc += hex_flow;
 	while (hex_flow_acc >= 1) {
 		hex_flow_acc -= 1;
-		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 0) { hex_motes[_i].st = 1; break; }
+		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 0) { hex_motes[_i].st = 1; hex_mote_trail_reset(hex_motes[_i]); break; }
 	}
 
 	var _lmb = mouse_check_button(mb_left);
@@ -101,7 +101,7 @@ if (keyboard_check(ord("E"))) {
 		_tx = x + lengthdir_x(_d, _ha);
 		_ty = y + lengthdir_y(_d, _ha);
 	} else {
-		_tx = _bcx; _ty = _bcy;
+		_tx = _hx; _ty = _hy;            // stance up, nothing in it: the ball stays in her hand, her hex swirls around her
 	}
 	hex_hx = lerp(hex_hx, _tx, 0.7); // snappy: the curse keeps up with the cursor
 	hex_hy = lerp(hex_hy, _ty, 0.7);
@@ -133,6 +133,8 @@ if (keyboard_check(ord("E"))) {
 				_target = _e; _kind = "enemy"; _cost = hex_cost_enemy;
 			}
 		}
+		// as her hex gathers under it, the thing starts to stir and rise (obj_env_parent reads hex_gather)
+		if (_target != noone && _kind == "env") _target.hex_gather = max(_target.hex_gather, clamp(hex_arrived / max(1, _cost), 0, 1));
 		if (_target != noone && hex_arrived >= _cost) {
 			// enough of her curse has reached it: it lifts
 			hex_held = _target; hex_kind = _kind; hex_cost = _cost;
@@ -239,15 +241,9 @@ for (var _i = 0; _i < _n; _i++) {
 			_m.x += _m.vx; _m.y += _m.vy;
 			continue;
 		}
-		var _wa = point_direction(_m.x, _m.y, _hx, _hy) + 90;
-		var _wv = sin(_t * 8 + _m.ph) * 1.5;
-		_m.vx = (_m.vx + (_hx - _m.x) * 0.14 + lengthdir_x(_wv, _wa)) * 0.82;
-		_m.vy = (_m.vy + (_hy - _m.y) * 0.14 + lengthdir_y(_wv, _wa)) * 0.82;
-		var _rs = point_distance(0, 0, _m.vx, _m.vy);
-		if (_rs > 22) { _m.vx *= 22 / _rs; _m.vy *= 22 / _rs; }
-		_m.x += _m.vx;
-		_m.y += _m.vy;
-		if (point_distance(_m.x, _m.y, _hx, _hy) < 16) _m.st = 0;
+		hex_mote_trail(_m);
+		hex_flow_to(_m, _hx, _hy, hex_return_speed, _t);
+		if (point_distance(_m.x, _m.y, _hx, _hy) < 12) _m.st = 0;
 		continue;
 	}
 	var _mx, _my, _pull, _cap = 99;
@@ -269,9 +265,25 @@ for (var _i = 0; _i < _n; _i++) {
 		}
 		_home_i++;
 	} else {
+		// MOTES 2.0: out in the world, a mote is a bit of hex FLOWING. It travels at a steady pace (hex_flow_to) to
+		// where the curse is, like a river, never snapping. Once there it churns: swirling around the knot, wrapping
+		// and pooling under what she holds. While she holds something, every third mote is the tether: it streams
+		// back and forth between her palm and the held thing, so the binding between them is always visible.
+		hex_mote_trail(_m);
 		var _gx = hex_hx, _gy = hex_hy, _rad;
 		var _in_orb = (hex_mode == "charge" && _orank < hex_orb_n);
 		_orank++;
+		if (hex_held != noone && _i mod 3 == 0) {
+			var _hgx = hex_held.x, _hgy = hex_held.y - ((hex_kind == "env") ? hex_held.z : 0);
+			var _gox = (_m.lap == 0) ? _hgx : _hx, _goy = (_m.lap == 0) ? _hgy : _hy;
+			hex_flow_to(_m, _gox, _goy, hex_flow_speed * 0.8, _t);
+			if (point_distance(_m.x, _m.y, _gox, _goy) < 10) _m.lap = 1 - _m.lap;
+			continue;
+		}
+		if (hex_mode == "" && hex_held == noone) {
+			// stance up: her hex swirls around her body, ready
+			_gx = (bbox_left + bbox_right) / 2; _gy = (bbox_top + bbox_bottom) / 2;
+		}
 		if (hex_mode == "charge" && !_in_orb) {
 			// not in the orb (yet): keep swirling around her
 			_gx = (bbox_left + bbox_right) / 2; _gy = (bbox_top + bbox_bottom) / 2;
@@ -280,6 +292,7 @@ for (var _i = 0; _i < _n; _i++) {
 			_gx = hex_held.x; _gy = hex_held.y;
 			if (hex_kind == "env") _gy -= hex_held.z;   // wrap it where it's drawn, lifted off the ground
 			_rad = ((hex_kind == "env") ? hex_held.r : 22) + 6;
+			_gy += _rad * 0.35;   // most of it pools underneath, holding it up
 		} else if (hex_mode == "charge") {
 			// the ball: denser and bigger as it fills, pulsing harder as it overcharges
 			_rad = 4 + 14 * _knot;
@@ -288,15 +301,20 @@ for (var _i = 0; _i < _n; _i++) {
 		_rad *= 0.6 + 0.4 * sin(_t * _m.sp + _m.ph); // breathing
 		var _ang = _m.ph + _t * (120 + 500 * _knot) * (_m.sp / 3.5);
 		_mx = _gx + lengthdir_x(_rad, _ang);
-		_my = _gy + lengthdir_y(_rad, _ang);
+		_my = _gy + lengthdir_y(_rad * ((hex_held != noone) ? 0.45 : 1), _ang);   // under something held, the swirl flattens into a pool
+		if (point_distance(_m.x, _m.y, _gx, _gy) > _rad + 24) {
+			// not there yet: flow toward it at a steady pace
+			hex_flow_to(_m, _gx, _gy, hex_flow_speed, _t);
+			continue;
+		}
 		if (_i mod hex_trail == 0) {
 			// a few stragglers trail behind the clump, so the curse leaves a wake as it moves
 			_pull = 0.1;
 			_cap = 22;
 		} else {
-			// the clump: tight on the cursor or what it holds, so it keeps up with every flick
-			_pull = 0.35;
-			_cap = 60;
+			// the clump: churning around the curse or what it holds
+			_pull = 0.18;
+			_cap = 10 + 14 * _knot;   // churning where it arrived: lively but never snapping
 		}
 	}
 	// starling rule: don't crowd your neighbors (checks a few at random each frame)

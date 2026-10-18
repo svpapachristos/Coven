@@ -2,6 +2,7 @@ function scr_homing_target(_x, _y, _dir, _range = 700, _cone = 80) {
 	var _best = noone, _bd = _range, _n = instance_number(obj_enemy_parent);
 	for (var i = 0; i < _n; i++) {
 		var _e = instance_find(obj_enemy_parent, i);
+		if (_e.curse < 0) continue;   // toads are already beaten: never home in on them
 		var _d = point_distance(_x, _y, _e.x, _e.y);
 		if (_d >= _bd) continue;
 		if (abs(angle_difference(_dir, point_direction(_x, _y, _e.x, _e.y))) > _cone) continue;

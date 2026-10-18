@@ -60,3 +60,18 @@ Anything that should be part of the same smoke stamps into the field with `hex_w
 - Not run in GameMaker when written (slice 1.1 included); it was checked by running the exact shader text in a WebGL test rig and reading the code twice. First thing to do: press O and P in a run, and check the surfaces survive alt-tab.
 - Shots and the held thing collapse like the hand ball, but they are not made of motes (the motes inside a shot are hidden), and `obj_hex_shot` draws its own two circles only when the wisp is off.
 - Mana is still a separate bar for the wand's alt (the brief says one reserve).
+
+## Round 12 look + Motes 2.0 (Oct 18, 2026)
+The full lookdev history (rounds 8-12, the five ingredients, Sophia's notes) is in the Coven project doc `claude/hex-hand-orb-lookdev.md`.
+
+**sh_hex_orb is now the round 11/12 hybrid**, drawn in 2-pixel steps (`HEX_ORB_PX` in scr_hex_wisp) and about 50% bigger (sizes in obj_player Draw):
+core (a 2x2 cluster warbling hot white / lilac / blue, fixed size), strands (1 magic pixel thick, orbiting, far side dimmer, sparkles),
+shade (drifting dark patches on the underside, never an outline), body (ghostly shifting gas), veil (see-through haze with holes),
+and the **overflow** (flame-like licks straining outward) only on a ball that is holding something (`hex_wisp_att(..., _oF = 1)`).
+No light ring. The charged orb's real look is still open ("round 13").
+
+**Motes 2.0** (obj_player Step, helpers in Create): motes out in the world no longer spring to their target. `hex_flow_to` steers each
+one at a steady pace (`hex_flow_speed` 7, `hex_return_speed` 9, `hex_flow_turn` 0.18) with a gentle weave, so the hex flows like a river.
+Once there they churn (soft pull, low speed cap). Held things: the swirl flattens into a pool underneath. While holding, every third
+mote is the **tether**, streaming palm to object and back (the binding). Before the lift, `hex_gather` on the env object makes it
+tremble and rise a little as hex arrives. Motes draw as a puff with a fading 2-segment wisp behind it (`t1x/t1y/t2x/t2y`).

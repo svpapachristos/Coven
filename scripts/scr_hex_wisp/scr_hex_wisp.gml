@@ -21,6 +21,7 @@
 // ionized hex energy. Three looks, cycled with O: 0 = hex orb, 1 = smoke wisp, 2 = original circles. P = next palette.
 
 #macro HEX_WISP_DIV 4   // world pixels per field pixel. 4 = a 640 x 360 field for the 2560 x 1440 view. Smaller = finer smoke, slower.
+#macro HEX_ORB_PX 2      // the hex orb is drawn in steps of this many world pixels (her sprite art is 4; 2 = twice as fine)
 
 // ---- palettes: five numbers each, 0 to 255 per channel ----
 //   smoke = the faint outer cloud, glow = the body, core = the bright heart, spark = the tiny thread dots and the tint of energy
@@ -59,7 +60,9 @@ function hex_wisp_state() {
 			pal: 0,              // which palette
 			pals: [_coven, _blue, _mid, _lilac],
 			eE: 0.12,
-			eR: 6,
+			eR: 9,
+			opx: HEX_ORB_PX,     // live tuning (K): the orb's pixel size, 2 / 3 / 4
+			oscale: 1,           // live tuning (L): the orb's size, 1 / 1.5 / 2
 			uo: undefined,
 			flash: 0,            // frames left to show the palette name above her
 			a: -1, b: -1,        // the two fields
@@ -106,6 +109,9 @@ function hex_wisp_debug_keys() {
 	var _s = hex_wisp_state();
 	if (keyboard_check_pressed(ord("O"))) { _s.mode = (_s.mode + 1) mod 3; _s.on = (_s.mode != 2); _s.flash = 120; }
 	if (keyboard_check_pressed(ord("P"))) { _s.pal = (_s.pal + 1) mod array_length(_s.pals); if (_s.mode == 2) _s.mode = 0; _s.on = true; _s.flash = 120; }
+	// live tuning while we pick the hex orb's look in game: K = pixel size (2, 3, 4), L = size (1x, 1.5x, 2x)
+	if (keyboard_check_pressed(ord("K"))) { _s.opx = (_s.opx >= 4) ? 2 : _s.opx + 1; _s.flash = 120; }
+	if (keyboard_check_pressed(ord("L"))) { _s.oscale = (_s.oscale >= 2) ? 1 : _s.oscale + 0.5; _s.flash = 120; }
 	if (_s.flash > 0) _s.flash--;
 }
 
@@ -116,6 +122,7 @@ function hex_wisp_label(_x, _y) {
 	var _p = _s.pals[_s.pal];
 	var _t = "old circles";
 	if (_s.mode != 2) _t = ((_s.mode == 0) ? "hex orb: " : "smoke wisp: ") + _p.name + "   core " + string(floor(_p.core[0] + 0.5)) + ", " + string(floor(_p.core[1] + 0.5)) + ", " + string(floor(_p.core[2] + 0.5));
+	if (_s.mode == 0) _t += "   pixels " + string(_s.opx) + "   size " + string(_s.oscale) + "x";
 	var _ha = draw_get_halign(), _va = draw_get_valign();
 	draw_set_halign(fa_center);
 	draw_set_valign(fa_bottom);
@@ -133,10 +140,10 @@ function hex_wisp_label(_x, _y) {
 // register a ball of her magic for this frame. _x, _y in the room, _r its radius in world pixels (the arms reach about 4 radii out),
 // _s how strong 0 to 1. _vx, _vy and _wake: a ball in flight that leaves a short trail (its speed in world pixels a frame).
 // _oR and _oE are for the hex orb. At most eight balls count. Call before hex_wisp_draw or hex_orb_draw each frame.
-function hex_wisp_att(_x, _y, _r, _s, _vx = 0, _vy = 0, _wake = false, _oR = 6, _oE = 0.3) {
+function hex_wisp_att(_x, _y, _r, _s, _vx = 0, _vy = 0, _wake = false, _oR = 6, _oE = 0.3, _oF = 0, _oS = 1) {
 	var _l = hex_wisp_state().att;
 	if (array_length(_l) >= 8) return;
-	array_push(_l, { x: _x, y: _y, r: _r, s: _s, vx: _vx, vy: _vy, wake: _wake, oR: _oR, oE: _oE });
+	array_push(_l, { x: _x, y: _y, r: _r, s: _s, vx: _vx, vy: _vy, wake: _wake, oR: _oR, oE: _oE, oF: _oF, oS: _oS });   // oF: the orb's overflow (0..1, for holding something)
 }
 
 function hex_orb_draw() {
@@ -145,7 +152,9 @@ function hex_orb_draw() {
 		center: shader_get_uniform(sh_hex_orb, "u_center"), box: shader_get_uniform(sh_hex_orb, "u_box"), R: shader_get_uniform(sh_hex_orb, "u_R"),
 		energy: shader_get_uniform(sh_hex_orb, "u_energy"), time: shader_get_uniform(sh_hex_orb, "u_time"), seed: shader_get_uniform(sh_hex_orb, "u_seed"),
 		smoke: shader_get_uniform(sh_hex_orb, "u_smoke"), glow: shader_get_uniform(sh_hex_orb, "u_glow"), core: shader_get_uniform(sh_hex_orb, "u_core"),
-		spark: shader_get_uniform(sh_hex_orb, "u_spark"), hot: shader_get_uniform(sh_hex_orb, "u_hot")
+		spark: shader_get_uniform(sh_hex_orb, "u_spark"), hot: shader_get_uniform(sh_hex_orb, "u_hot"),
+		px: shader_get_uniform(sh_hex_orb, "u_px"), veil: shader_get_uniform(sh_hex_orb, "u_veil"), over: shader_get_uniform(sh_hex_orb, "u_over"),
+		strand: shader_get_uniform(sh_hex_orb, "u_strand")
 	};
 	var _u = _s.uo, _n = array_length(_s.att);
 	if (_n > 0) {
@@ -155,11 +164,15 @@ function hex_orb_draw() {
 		shader_set_uniform_f(_u.glow, _pal.glow[0] / 255, _pal.glow[1] / 255, _pal.glow[2] / 255);
 		shader_set_uniform_f(_u.core, _pal.core[0] / 255, _pal.core[1] / 255, _pal.core[2] / 255);
 		shader_set_uniform_f(_u.spark, _pal.spark[0] / 255, _pal.spark[1] / 255, _pal.spark[2] / 255); shader_set_uniform_f(_u.hot, _pal.hot);
+		shader_set_uniform_f(_u.px, _s.opx);         // the magic is drawn in steps this many world pixels big (K cycles it)
+		shader_set_uniform_f(_u.veil, 1);
 		for (var _i = 0; _i < _n; _i++) {
-			var _b = _s.att[_i], _R = max(3, _b.oR), _box = ceil(_R * 16 / 2) * 2, _cx = floor(_b.x), _cy = floor(_b.y);
+			var _b = _s.att[_i], _R = max(3, _b.oR) * _s.oscale, _box = ceil(_R * 16 / 2) * 2, _cx = floor(_b.x), _cy = floor(_b.y);
 			// (the square reaches 8x the core radius each way: the widest the charged halo gets is about 7x)
 			shader_set_uniform_f(_u.center, _b.x, _b.y); shader_set_uniform_f(_u.box, _box, _box); shader_set_uniform_f(_u.R, _R);
 			shader_set_uniform_f(_u.energy, clamp(_b.oE, 0, 1)); shader_set_uniform_f(_u.seed, _i + 1);
+			shader_set_uniform_f(_u.over, clamp(_b.oF, 0, 1));
+			shader_set_uniform_f(_u.strand, _b.oS);
 			draw_rectangle(_cx - _box / 2, _cy - _box / 2, _cx + _box / 2, _cy + _box / 2, false);
 		}
 		shader_reset(); gpu_pop_state();

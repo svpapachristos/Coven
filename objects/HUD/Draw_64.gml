@@ -45,7 +45,7 @@ if (_inf) scr_draw_infinity(236, 45, 10, _mana_col);
 if (!is_undefined(_p.witch)) {
 	var _cd_max = max(1, game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", _p.witch.ability.cooldown));
 	scr_draw_bar(16, 60, 200, 8, 1 - _p.ability_cd / _cd_max, c_lime,
-		_p.witch.ability.name + ((_p.ability_cd <= 0) ? " [E]" : ""));
+		_p.witch.ability.name + ((_p.ability_cd <= 0) ? " [Space]" : ""));
 
 	var _ready = (_p.ultimate_charge >= _p.ultimate_charge_max);
 	var _ult_col = _ready ? merge_color(c_fuchsia, c_white, 0.5 + 0.5 * sin(current_time / 120)) : c_purple;

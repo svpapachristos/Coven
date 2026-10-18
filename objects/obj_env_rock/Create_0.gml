@@ -4,4 +4,4 @@ event_inherited();
 material = "stone";
 r = 10;
 weight = 1;
-if (irandom(2) == 0) sprite_index = spr_env_mossystone;   // about one in three is mossy
+if (irandom(2) == 0) sprite_index = spr_env_witchmossystone;   // about one in three has witch moss (violet)

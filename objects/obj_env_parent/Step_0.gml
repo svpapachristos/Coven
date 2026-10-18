@@ -8,6 +8,10 @@ y += vy;
 if (grabbed) {
 	z = lerp(z, env_hold_z, 0.2);
 	vz = 0;
+} else if (hex_gather > 0.02 && z <= 4 && vz <= 0) {
+	// hex is gathering under it: it stirs and starts to rise a little, before the lift takes hold
+	z = lerp(z, 4 * hex_gather, 0.15);
+	vz = 0;
 } else if (z > 0 || vz > 0) {
 	vz -= env_gravity;
 	z += vz;
@@ -17,6 +21,8 @@ if (grabbed) {
 		vz = (vz < -4) ? -vz * 0.3 : 0;   // a hard landing bounces a little; a soft one just settles
 	}
 }
+
+hex_gather *= 0.85;   // the witch tops this up every frame she's gathering; otherwise it settles back down
 
 // sliding: it keeps most of its speed in the air and drags to a stop on the ground. While held, the witch steers it
 if (!grabbed) {

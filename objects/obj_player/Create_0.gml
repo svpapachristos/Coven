@@ -288,7 +288,7 @@ hex_ball_max = 32;
 hex_motes = [];
 for (var _i = 0; _i < hex_budget; _i++) {
 	var _ball = min(hex_budget, hex_ball_max);
-	array_push(hex_motes, { x: x, y: y, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: (_i < _ball) ? _i / max(1, _ball - 1) : 1, st: 0, wait: 0 });
+	array_push(hex_motes, { x: x, y: y, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: (_i < _ball) ? _i / max(1, _ball - 1) : 1, st: 0, wait: 0, lap: 0, t1x: x, t1y: y, t2x: x, t2y: y });
 }
 
 // ---- Hex energy: the motes ARE her curse. Each mote is one unit of it. ----
@@ -299,6 +299,9 @@ hex_flow_acc = 0;
 hex_regen = 12;       // frames to regrow one spent mote
 hex_regen_t = 0;
 hex_ready_r = 40;     // how close to the curse a mote has to be to count as arrived
+hex_flow_speed = 7;   // MOTES 2.0: how fast her hex flows out to where it's going (pixels a frame). Lower = it takes longer to reach
+hex_return_speed = 9; // ...and back home to her hand
+hex_flow_turn = 0.18; // how quickly a flowing mote can change direction (lower = wider, lazier curves)
 hex_arrived = 0;      // how many motes have arrived right now
 hex_cost = 0;         // what the thing she's holding cost
 hex_cost_lift = 8;    // motes it takes to lift an environment object, per unit of its weight (a rock is 1)
@@ -309,7 +312,8 @@ hex_boom_dmg = 3;     // damage per mote in the lobbed ball (plus a base of 10)
 hex_boom_r = 4;       // blast radius per mote (plus a base of 40)
 hex_blast_cost = 4;   // a tap of E: a quick hand blast
 hex_blast_dmg = 10;
-hex_tap = 0;          // frames E has been held this press (short = a tap)
+hex_key = vk_space;   // hold for her hex stance, tap for a palm blast (was E; space frees a finger for WASD)
+hex_tap = 0;          // frames the stance key has been held this press (short = a tap)
 cam_hex_settle = 0;   // frames left that the camera stays settled on her for the curse
 cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
 hex_trail = 5;        // every Nth mote out in the world lags behind as a trail (lower = more trail)
@@ -357,13 +361,36 @@ hex_throw = function() {
 		hex_held.grabbed = false;
 		hex_held.vx *= 1.6;
 		hex_held.vy *= 1.6;
-		hex_held.vz = 2;   // a little pop upward, so it arcs and lands instead of skating off
+		hex_held.vz = min(7, 3 + 0.15 * point_distance(0, 0, hex_held.vx, hex_held.vy));   // pops upward (harder throws arc higher), so it lobs and lands instead of skating off
 	} else {
 		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
 	}
 	hex_spend(hex_cost, 3);
 	hex_held = noone;
 	hex_kind = "";
+}
+// MOTES 2.0: move a mote toward (_gx, _gy) like a bit of flowing hex: it steers (turns smoothly, never snaps),
+// travels at a steady _speed (pixels a frame, each mote a little different), and weaves gently side to side so a
+// stream of them reads as drifting puffs and wisps instead of a straight line
+hex_flow_to = function(_m, _gx, _gy, _speed, _t) {
+	var _d = point_distance(_m.x, _m.y, _gx, _gy);
+	var _s = min(_speed * (0.85 + 0.06 * _m.sp), _d);             // slows into its target instead of overshooting
+	var _a = point_direction(_m.x, _m.y, _gx, _gy);
+	var _wv = sin(_t * 6 + _m.ph) * min(1.8, _d * 0.05);           // the weave fades as it arrives
+	var _dx = lengthdir_x(_s, _a) + lengthdir_x(_wv, _a + 90);
+	var _dy = lengthdir_y(_s, _a) + lengthdir_y(_wv, _a + 90);
+	_m.vx = lerp(_m.vx, _dx, hex_flow_turn);
+	_m.vy = lerp(_m.vy, _dy, hex_flow_turn);
+	_m.x += _m.vx;
+	_m.y += _m.vy;
+}
+// remember where a mote was the last two frames, so Draw can trail a wisp behind it
+hex_mote_trail = function(_m) {
+	_m.t2x = _m.t1x; _m.t2y = _m.t1y;
+	_m.t1x = _m.x;   _m.t1y = _m.y;
+}
+hex_mote_trail_reset = function(_m) {
+	_m.t1x = _m.x; _m.t1y = _m.y; _m.t2x = _m.x; _m.t2y = _m.y;
 }
 // how much curse she has that isn't spent
 hex_available = function() {

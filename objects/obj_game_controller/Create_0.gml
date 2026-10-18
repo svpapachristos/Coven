@@ -18,7 +18,7 @@ scr_elements_init();
 
 //darken and mute the ground so witch enemies and spells stand out
 var _layer = layer_get_id("Background");
-if (layer_exists(_layer)) layer_background_blend(layer_background_get_id(_layer), make_color_rgb(115, 110, 155));
+if (layer_exists(_layer)) layer_background_blend(layer_background_get_id(_layer), make_color_rgb(185, 180, 210));   // (was 115, 110, 155: lower = darker. 255, 255, 255 = no filter at all)
 
 
 // System boundaries: each witch system owns its own run state.
