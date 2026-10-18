@@ -1,5 +1,6 @@
 // A curse bolt draws as a glowing knot of her magic.
 if (is_bolt) {
+	if (hex_wisp_state().on) exit;   // with the Hex wisp on (scr_hex_wisp), obj_player draws a shot as a ball of her magic; the circles below are the wisp-off look
 	var _yo = 0;
 	if (is_lob) {
 		// arc: it rises and falls on the way there, with its light pooled on the ground below

@@ -11,7 +11,7 @@ Everything long-term about Coven lives in this folder (Documents\GitHub\Coven\no
 | **terrarium-cycle.md** | The forever loop's design: every flow of matter, the aeon loop, the supermassive as the garden's heart, the Stargazer station and the pet-universe canon. |
 | **living-universe-spine.md** | The big-picture roadmap (section 13): garden → Arcane Wand → the Hex → the game's spine. |
 | **the-hex.md** | What every part of the Hexweaver's sigil means, and the Coven script (our witches' alphabet) with its inscription. |
-| **hex-wisp.md** | The Hex wisp: her motes drawn as living smoke by a shader. How it works, the O / P keys, the three palettes (lilac, midpoint, blue) with RGB values, every knob, and how later effects join it. |
+| **hex-wisp.md** | How the Hex is drawn: the hex orb (default; a small crackling cloud of hex energy per ball of her magic, from the Wanda north star) and the older smoke wisp. The O / P keys, the palettes with RGB values, the energy dial, every knob, and what isn't done yet. |
 | **stardust-step1-draft.md** | The running build log: what was built when, in order. Long; search it rather than reading it. |
 
 ## Older (kept for history; the inventory supersedes them)

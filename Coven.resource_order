@@ -110,6 +110,7 @@
     {"name":"scr_trig_soul_lantern","order":2,"path":"scripts/scr_trig_soul_lantern/scr_trig_soul_lantern.yy",},
     {"name":"scr_trig_tower","order":3,"path":"scripts/scr_trig_tower/scr_trig_tower.yy",},
     {"name":"scr_try_drop","order":1,"path":"scripts/scr_try_drop/scr_try_drop.yy",},
+    {"name":"sh_hex_orb","order":3,"path":"shaders/sh_hex_orb/sh_hex_orb.yy",},
     {"name":"sh_hex_wisp_draw","order":1,"path":"shaders/sh_hex_wisp_draw/sh_hex_wisp_draw.yy",},
     {"name":"sh_hex_wisp_flow","order":2,"path":"shaders/sh_hex_wisp_flow/sh_hex_wisp_flow.yy",},
     {"name":"pixil_frame_16","order":1,"path":"sprites/pixil_frame_16/pixil_frame_16.yy",},

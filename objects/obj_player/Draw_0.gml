@@ -10,29 +10,42 @@ if (_stage > 0) {
 }
 draw_self();
 
-// The living curse. With the shader on (O toggles it), the smoke and glow are the wisp (scr_hex_wisp): light carried along a
-// swirling current, in the palette P cycles. Either way the bright threads and the light on the ground are drawn here as added
-// light. With the shader off it's the original soft circles, kept so the two can be compared.
+// The living curse. O cycles three looks (scr_hex_wisp): the hex orb (default: a small crackling cloud of hex energy per ball of her
+// magic), the smoke wisp (light carried along a swirling current), and the original soft circles, kept so they can be compared.
+// P cycles the palette. The bright threads (the motes that are out in the world) are drawn here as added light in every look.
 var _ws = hex_wisp_state();
 var _wisp = _ws.on;
 var _wp = hex_wisp_pal();
+var _orb = (_ws.mode == 0);   // the hex orb look (otherwise the smoke wisp)
 if (_wisp) {
-	// the balls of her magic that the wisp collapses into: where her curse is (in her hand, the charging orb, what she holds), and any shot in flight
+	// the balls of her magic: where her curse is (in her hand, the charging orb, what she holds), and any shot in flight.
+	// for the orb each one also carries a core radius (world pixels) and an energy (0 calm .. 1 wild); her stance sets the main ball's
 	var _kn = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0;
-	if (!hex_active) hex_wisp_att(hex_hx, hex_hy, 15, 0.75);
-	else if (hex_held != noone) hex_wisp_att(hex_held.x, hex_held.y, ((hex_kind == "rock") ? hex_held.r : 22) + 8, 0.6);
-	else if (hex_mode == "charge") hex_wisp_att(hex_hx, hex_hy, 11 + 20 * _kn, 0.65 + 0.35 * _kn);
-	else hex_wisp_att(hex_hx, hex_hy, 20, 0.6);
+	var _af = hex_available() / array_length(hex_motes);          // how full her reserve is: a spent reserve is a smaller ball
+	var _tR = 6 * (0.65 + 0.35 * _af), _tE = 0.12;                  // at rest in her hand: small and calm
+	if (hex_active) {
+		if (hex_held != noone) { _tR = 8; _tE = 0.55; }
+		else if (hex_mode == "charge") { _tR = 6.5 + 6.5 * _kn; _tE = 0.45 + 0.55 * _kn; }
+		else if (hex_mode == "grab") { _tR = 7; _tE = 0.5; }
+		else { _tR = 6.5; _tE = 0.35; }                             // stance up, nothing in it yet
+	}
+	_ws.eE += (_tE - _ws.eE) * 0.12;                                // eased, so a change of stance swells instead of snapping
+	_ws.eR += (_tR - _ws.eR) * 0.2;
+	if (!hex_active) hex_wisp_att(hex_hx, hex_hy, 15, 0.75, 0, 0, false, _ws.eR, _ws.eE);
+	else if (hex_held != noone) hex_wisp_att(hex_held.x, hex_held.y, ((hex_kind == "rock") ? hex_held.r : 22) + 8, 0.6, 0, 0, false, _ws.eR, _ws.eE);
+	else if (hex_mode == "charge") hex_wisp_att(hex_hx, hex_hy, 11 + 20 * _kn, 0.65 + 0.35 * _kn, 0, 0, false, _ws.eR, _ws.eE);
+	else hex_wisp_att(hex_hx, hex_hy, 20, 0.6, 0, 0, false, _ws.eR, _ws.eE);
 	with (obj_env_rock) {
 		if (!is_bolt) continue;
 		var _yo = 0;   // a lob rises and falls on its way (the same arc obj_env_rock draws)
 		if (is_lob) _yo = -sin(min(1, lob_t / lob_dur) * pi) * (30 + point_distance(lob_x0, lob_y0, lob_tx, lob_ty) * 0.25);
-		hex_wisp_att(x, y + _yo, 11 * bolt_size, 0.95, vx, vy, true);
+		hex_wisp_att(x, y + _yo, 11 * bolt_size, 0.95, vx, vy, true, 5.5 * bolt_size, 0.9);   // a shot in flight is wild
 	}
-	hex_wisp_draw(hex_motes, hex_active);
+	if (_orb) hex_orb_draw();
+	else hex_wisp_draw(hex_motes, hex_active);
 }
 gpu_set_blendmode(bm_add);
-if (hex_active) {
+if (hex_active && !_orb) {   // (the orb has its own glow and heart)
 	var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0; // how full the charging orb is
 	// her magic lights the ground under it
 	draw_set_color(_wisp ? hex_wisp_col(_wp.glow, 0.64) : make_color_rgb(70, 40, 140));
@@ -58,6 +71,7 @@ var _ca = hex_active ? 0.85 : 0.55;   // core
 for (var _i = 0; _i < array_length(hex_motes); _i++) {
 	var _m = hex_motes[_i];
 	if (_m.st == 2 || _m.st == 4) continue; // spent curse, or curse inside a shot, isn't drawn here
+	if (_orb && _m.st == 0) continue;       // at rest they are inside the orb
 	var _dim = (_m.st == 3) ? 0.6 : 1;  // curse flowing home is a little fainter
 	if (!_wisp) {
 		// smoke: wide, faint, overlapping so neighbors merge into one cloud

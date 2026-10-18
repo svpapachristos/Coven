@@ -163,6 +163,7 @@
     {"id":{"name":"scr_trig_tower","path":"scripts/scr_trig_tower/scr_trig_tower.yy",},},
     {"id":{"name":"scr_try_drop","path":"scripts/scr_try_drop/scr_try_drop.yy",},},
     {"id":{"name":"scr_witch_spells","path":"scripts/scr_witch_spells/scr_witch_spells.yy",},},
+    {"id":{"name":"sh_hex_orb","path":"shaders/sh_hex_orb/sh_hex_orb.yy",},},
     {"id":{"name":"sh_hex_wisp_draw","path":"shaders/sh_hex_wisp_draw/sh_hex_wisp_draw.yy",},},
     {"id":{"name":"sh_hex_wisp_flow","path":"shaders/sh_hex_wisp_flow/sh_hex_wisp_flow.yy",},},
     {"id":{"name":"pixil_frame_15","path":"sprites/pixil_frame_15/pixil_frame_15.yy",},},

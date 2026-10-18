@@ -44,7 +44,7 @@ var _hy = lerp(bbox_top, bbox_bottom, 0.78); // 0 = top of her head, 1 = her fee
 if (hex_held != noone && !instance_exists(hex_held)) hex_held = noone;
 // max curse: an item can raise it through the "max_hex" stat; H adds 8 while testing
 if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
-hex_wisp_debug_keys(); // O = wisp shader on/off, P = next palette (scr_hex_wisp)
+hex_wisp_debug_keys(); // O = next look (hex orb / smoke wisp / old circles), P = next palette (scr_hex_wisp)
 var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
 while (array_length(hex_motes) < _want) {
 	array_push(hex_motes, { x: _hx, y: _hy, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: 1, st: 0, wait: 0 });
