@@ -13,7 +13,9 @@ Everything long-term about Coven lives in this folder (Documents\GitHub\Coven\no
 | **the-hex.md** | What every part of the Hexweaver's sigil means, and the Coven script (our witches' alphabet) with its inscription. |
 | **hex-visual-bible.md** | THE RULES for how the hex looks: the hex is light, not paint; what makes Wanda's chaos magic work; how the hex looks for each use (idle, stance, charge, motes, telekinesis, blast); the to-do list. Read before touching anything that draws her magic. |
 | **hex-wisp.md** | How the Hex is drawn: the hex orb (default; a small crackling cloud of hex energy per ball of her magic, from the Wanda north star) and the older smoke wisp. The O / P keys, the palettes with RGB values, the energy dial, every knob, and what isn't done yet. |
+| **hex-foundation-plan.md** | **START HERE FOR ANY HEX WORK.** The work structure (Oct 19): the rules, the three layers (core: amount, parcels, anchors / moves / look: ingredients and recipes), the knot spec, the step order with checkboxes, and the parking lot. |
 | **hex-system-audit.md** | THE HEX FRONT TO BACK (Oct 19): how her hex flows (plumbing, every move, what draws each state), what's broken in code, what's dead weight, and the order to fix it. Read before changing how the hex reaches, lifts or throws. |
+| m21-reference/ | The reverted m21 pass (multi-lift + slam), as plain text for reference only. See the plan's Reference section for what to borrow and what not to. |
 | **stardust-step1-draft.md** | The running build log: what was built when, in order. Long; search it rather than reading it. |
 
 ## Older (kept for history; the inventory supersedes them)

@@ -1,0 +1,361 @@
+if (scr_freeze_if_paused()) exit; // freeze on game pause
+var _old_max_hp = max_hp;
+max_hp = scr_stat("max_health", base_max_hp);
+if (max_hp > _old_max_hp) hp += max_hp - _old_max_hp;
+
+var _old_max_mana = max_mana;
+max_mana = scr_stat("max_mana", base_max_mana);
+if (max_mana > _old_max_mana) mana += max_mana - _old_max_mana;
+mana = min(mana, max_mana);
+
+beam_heat = max(0, beam_heat - 0.01);
+
+
+if (!is_undefined(witch)) {
+	if (ability_cd > 0) ability_cd--;
+	// OLD E (toad curse), parked while we test the living curse. Uncomment to restore.
+	//if (keyboard_check(ord("E")) && ability_cd <= 0) {
+	//	witch.ability.fn(id);
+	//	ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
+	//	scr_fire_event("cast", { kind: "ability" });
+	//}
+	if (keyboard_check_pressed(ord("Q")) && ultimate_charge >= ultimate_charge_max) {
+		witch.ultimate.fn(id);
+		ultimate_charge = 0;
+		scr_fire_event("cast", { kind: "ultimate" });
+	}
+}
+	
+	
+// ---- SPACE: her living hex ----
+// Her hex is one amount (see Create, "HER HEX") that flows out of her hand as a river and gathers where she reaches.
+//  - right click: reach. Enough hex reaches a rock (hex_cost_lift x its weight) or an enemy (hex_cost_enemy): it lifts.
+//    Let go of right click to throw it. Over open ground it just gathers (hex_reach_cap).
+//  - left click: an orb coalesces in front of her hand and grows. Release to fire it (more hex, bigger boom).
+//  - tap space: a quick hand blast (hex_blast_cost).
+// Whatever she lets go of drifts home to her hand, bit by bit.
+var _ha = point_direction(x, y, mouse_x, mouse_y);
+// her off hand (hex_hand in Create). Her sprite and position for this frame aren't final yet (they're set near the
+// end of Step), so this is last frame's hand: fine for the hex logic. The ball itself snaps to the final hand at the end.
+var _hp = hex_hand_pos();
+var _hx = _hp[0], _hy = _hp[1];
+// holds whose thing is gone (killed, destroyed) drop out
+for (var _i = array_length(hex_holds) - 1; _i >= 0; _i--) if (!instance_exists(hex_holds[_i].inst)) array_delete(hex_holds, _i, 1);
+hex_sync_held();
+// J: show the hand point and nudge it with the arrow keys (sprite pixels). Each nudge prints the line to paste into Create.
+if (keyboard_check_pressed(ord("J"))) hex_hand_debug = !hex_hand_debug;
+if (hex_hand_debug) {
+	var _nx = keyboard_check_pressed(vk_right) - keyboard_check_pressed(vk_left);
+	var _ny = keyboard_check_pressed(vk_down) - keyboard_check_pressed(vk_up);
+	if (_nx != 0 || _ny != 0) {
+		var _sn = sprite_get_name(sprite_index);
+		var _p = hex_hand[$ _sn];
+		if (is_undefined(_p)) _p = [hex_hand_default[0], hex_hand_default[1]];
+		_p[0] += _nx; _p[1] += _ny;
+		hex_hand[$ _sn] = _p;
+		show_debug_message("hex_hand[$ \"" + _sn + "\"] = [" + string(_p[0]) + ", " + string(_p[1]) + "];");
+	}
+}
+// max curse: an item can raise it through the "max_hex" stat; H adds 8 while testing
+if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
+hex_wisp_debug_keys(); // O = next look (hex orb / smoke wisp / old circles), P = next palette (scr_hex_wisp)
+var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
+if (_want > hex_max) hex_hand_amt += _want - hex_max;   // more max hex arrives straight in her hand
+hex_max = _want;
+var _ox = hex_hx, _oy = hex_hy;
+// how much of her hex is flowing out, and how much has gathered at the target (the parcels carry it)
+hex_out = 0; hex_at = 0; hex_tally = [];
+for (var _i = 0; _i < array_length(hex_par); _i++) {
+	var _q = hex_par[_i];
+	if (_q.st != 2 && _q.tg != noone && !instance_exists(_q.tg)) { _q.st = 2; _q.wait = irandom(hex_home_spread); }   // what it was going for is gone: home
+	if (_q.st == 2) continue;
+	if (_q.st == 0) hex_out += _q.amt; else hex_at += _q.amt;
+	hex_tally_add(_q.tg, (_q.st == 1) ? _q.amt : 0, (_q.st == 0) ? _q.amt : 0);   // per thing: gathered on it, and on its way to it
+}
+
+if (keyboard_check(hex_key)) {
+	// HEX STANCE: while hex_key (space) is held her hex is ready in her palm. Her wand stands down and the mouse casts with
+	// the hex instead: hold left click to coalesce an orb in front of her hand (release to fire it), hold right click to
+	// reach out at the cursor and lift what's there (release to throw it).
+	var _bcx = (bbox_left + bbox_right) / 2, _bcy = (bbox_top + bbox_bottom) / 2;
+	if (!hex_active) {
+		hex_active = true;
+		hex_tap = 0;
+		hex_mode = "";
+		hex_charge = 0;
+		hex_hx = _bcx; hex_hy = _bcy;
+		_ox = _bcx; _oy = _bcy;
+	}
+	hex_tap++;
+
+	var _lmb = mouse_check_button(mb_left);
+	var _rmb = mouse_check_button(mb_right);
+	if (hex_mode == "" && mouse_check_button_pressed(mb_left)) { hex_mode = "charge"; hex_charge = 0; }
+	if (hex_mode == "" && mouse_check_button_pressed(mb_right)) hex_mode = "grab";
+
+	// where the hex gathers: an orb in front of her hand, or the cursor (within her reach)
+	var _tx = _hx, _ty = _hy;
+	if (hex_mode == "charge") {
+		_tx = _hx + lengthdir_x(hex_ball_dist, _ha);
+		_ty = _hy + lengthdir_y(hex_ball_dist, _ha);
+	} else if (hex_mode == "grab") {
+		var _d = min(point_distance(x, y, mouse_x, mouse_y), hex_reach);
+		_tx = x + lengthdir_x(_d, _ha);
+		_ty = y + lengthdir_y(_d, _ha);
+	}
+	if (hex_mode == "charge") { hex_hx = _tx; hex_hy = _ty; }   // the charge sits right in front of her hand, never trailing
+	else { hex_hx = lerp(hex_hx, _tx, 0.7); hex_hy = lerp(hex_hy, _ty, 0.7); }   // snappy: the reach keeps up with the cursor
+
+	if (hex_mode == "grab") {
+		// AUTO-AIM: the liftable thing nearest the cursor that she isn't already holding (measured to its edge), sticking
+		// with the one she's pouring into unless the cursor has clearly moved on
+		var _sx = hex_hx, _sy = hex_hy, _best = noone, _bd = infinity;
+		with (obj_env_parent) {
+			if (!other.hex_liftable(id)) continue;
+			var _dd = point_distance(_sx, _sy, x, y) - r;
+			if (_dd < _bd) { _bd = _dd; _best = id; }
+		}
+		with (obj_enemy_parent) {
+			if (!other.hex_liftable(id)) continue;
+			var _dd = point_distance(_sx, _sy, x, y) - 10;
+			if (_dd < _bd) { _bd = _dd; _best = id; }
+		}
+		if (hex_liftable(hex_tgt) && hex_tgt != _best) {
+			var _td = point_distance(_sx, _sy, hex_tgt.x, hex_tgt.y) - ((hex_kind_of(hex_tgt) == "env") ? hex_tgt.r : 10);
+			if (_td <= hex_grab_r * 1.5 && _td < _bd + 24) { _best = hex_tgt; _bd = _td; }   // stick with it
+		}
+		if (_bd > hex_grab_r) _best = noone;
+		hex_tgt = _best;
+		hex_tgt_kind = (hex_tgt != noone) ? hex_kind_of(hex_tgt) : "";
+		// the knot: where her hex gathers over open ground (on a target, it gathers on the target itself)
+		if (hex_tgt != noone) { hex_gx = hex_tgt.x; hex_gy = hex_tgt.y - ((hex_tgt_kind == "env") ? hex_tgt.z : 0); }
+		else if (hex_at <= 0.01 && hex_out <= 0.01) { hex_gx = hex_hx; hex_gy = hex_hy; }
+		else { hex_gx = lerp(hex_gx, hex_hx, 0.15); hex_gy = lerp(hex_gy, hex_hy, 0.15); }
+		// WHERE THE NEXT HEX GOES: the target until it's paid for; with nothing new to lift, it overflows into what she's
+		// holding (up to 1.75x its cost: a stronger hold); with nothing at all, a little reaches out to the knot, looking
+		var _dest = noone, _room = 0;
+		if (hex_tgt != noone) { _dest = hex_tgt; _room = hex_cost_of(hex_tgt) - hex_at_on(hex_tgt) - hex_out_to(hex_tgt); hex_need = hex_cost_of(hex_tgt); }
+		else if (array_length(hex_holds) > 0) {
+			var _lo = infinity;
+			for (var _i = 0; _i < array_length(hex_holds); _i++) {
+				var _h = hex_holds[_i], _f = (hex_at_on(_h.inst) + hex_out_to(_h.inst)) / max(1, _h.cost);
+				if (_f < _lo) { _lo = _f; _dest = _h.inst; _room = _h.cost * 1.75 - hex_at_on(_h.inst) - hex_out_to(_h.inst); }
+			}
+			hex_need = hex_cost;
+		} else { _room = hex_reach_cap - hex_at_on(noone) - hex_out_to(noone); hex_need = hex_reach_cap; }
+		hex_pour_acc = min(hex_pour_acc + hex_pour_n, hex_pour_n);
+		while (hex_pour_acc >= 1 && _room > 0.001 && hex_hand_amt >= HEX_PARCEL - 0.001) {
+			hex_pour_acc -= 1; _room -= HEX_PARCEL;
+			hex_hand_amt -= HEX_PARCEL; hex_out += HEX_PARCEL;
+			var _gx = (_dest != noone) ? _dest.x : hex_gx, _gy = (_dest != noone) ? _dest.y : hex_gy;
+			hex_par_emit(_hx, _hy, _gx, _gy, _dest);
+		}
+		// LIFTS: anything with enough of her hex gathered on it lifts (her parcels may have caught several things)
+		for (var _i = 0; _i < array_length(hex_tally); _i++) {
+			var _o = hex_tally[_i].inst;
+			if (_o == noone || !hex_liftable(_o)) continue;
+			var _c = hex_cost_of(_o);
+			if (hex_kind_of(_o) == "env") _o.hex_gather = max(_o.hex_gather, clamp(hex_tally[_i].at / max(1, _c), 0, 1));   // it stirs as hex gathers under it
+			if (hex_tally[_i].at >= _c - 0.001) hex_lift(_o);
+		}
+		// what she holds follows the cursor, keeping its place in the group (heavier things follow more sluggishly).
+		// Held enemies are pinned in End Step, after they've tried to move
+		for (var _i = 0; _i < array_length(hex_holds); _i++) {
+			var _h = hex_holds[_i];
+			if (_h.kind != "env" || !instance_exists(_h.inst)) continue;
+			var _wk = 0.5 / max(0.25, _h.inst.weight);
+			_h.inst.vx = lerp(_h.inst.vx, (hex_hx + _h.ox - _h.inst.x) * _wk, 0.7);
+			_h.inst.vy = lerp(_h.inst.vy, (hex_hy + _h.oy - _h.inst.y) * _wk, 0.7);
+		}
+		// THE SLAM: left click while holding drives it all into the ground
+		if (mouse_check_button_pressed(mb_left) && array_length(hex_holds) > 0) hex_slam();
+	}
+	if (hex_mode == "charge") {
+		// the orb draws hex straight out of her palm, up to a full charge (or as much as she has)
+		hex_charge++;
+		var _c = max(0, min(hex_charge_rate, hex_hand_amt, hex_charge_cap - hex_orb_amt));
+		hex_hand_amt -= _c; hex_orb_amt += _c;
+	}
+	hex_orb_n = floor(hex_orb_amt);
+
+	// letting go of a mouse button finishes that spell
+	if (hex_mode == "charge" && !_lmb) {
+		if (hex_orb_amt >= 2) {
+			// fire the orb forward: it flies until it hits something or leaves the screen. All the hex in it adds to the
+			// boom, and it flows home to her afterward
+			var _c = hex_orb_amt;
+			var _b = instance_create_depth(hex_hx, hex_hy, depth, obj_hex_shot);
+			_b.vx = lengthdir_x(15, _ha);
+			_b.vy = lengthdir_y(15, _ha);
+			_b.dmg = round(10 + hex_boom_dmg * _c);
+			_b.boom_r = 40 + hex_boom_r * _c;
+			_b.size = 0.6 + _c / 16;
+			// the bang as it's loosed: a little of the charge blasts off around her hand (and drifts home), and a jolt
+			var _bang = min(2, _c * 0.2);
+			_b.hex_amt = _c - _bang;
+			hex_home_add(hex_hx, hex_hy, _bang, 5);
+			global.shake = max(global.shake, 1 + _c / 10);
+		} else hex_hand_amt += hex_orb_amt;   // too small to fire: it melts back into her palm
+		hex_orb_amt = 0;
+		hex_mode = ""; hex_charge = 0; hex_orb_n = 0;
+	}
+	if (hex_mode == "grab" && !_rmb) {
+		hex_throw();
+		hex_let_go();
+		hex_mode = ""; hex_tgt = noone;
+	}
+} else if (hex_active) {
+	// letting go of space: anything held is thrown, a quick tap is a palm blast, and the rest of her hex flows home
+	if (array_length(hex_holds) > 0) hex_throw();
+	else if (hex_tap <= 10) {
+		if (hex_hand_amt >= hex_blast_cost) {
+			hex_hand_amt -= hex_blast_cost;
+			var _b = instance_create_depth(_hx, _hy, depth, obj_hex_shot);
+			_b.vx = lengthdir_x(16, _ha);
+			_b.vy = lengthdir_y(16, _ha);
+			_b.dmg = hex_blast_dmg;
+			_b.boom_r = 40;
+			_b.size = 0.6;
+			_b.hex_amt = hex_blast_cost;
+		}
+	}
+	hex_let_go();
+	hex_hand_amt += hex_orb_amt; hex_orb_amt = 0;   // an orb she never fired melts back into her palm
+	hex_tgt = noone; hex_active = false; hex_charge = 0; hex_orb_n = 0; hex_mode = "";
+}
+if (!hex_active) {
+	hex_hx = _hx;
+	hex_hy = _hy;
+}
+hex_hvx = hex_hx - _ox;
+hex_hvy = hex_hy - _oy;
+
+// HER HEX OUT IN THE WORLD: every parcel moves on its own
+//   st 0 flowing out: steers toward the target at its own pace, pushed around by drifting currents (so the river braids)
+//   st 1 gathered: churns around the knot, or around what she holds (pooling a little underneath it)
+//   st 2 going home: waits its own moment, loosens and drifts, then is drawn back to her palm, faster as it nears
+var _t = current_time / 1000;
+for (var _i = array_length(hex_par) - 1; _i >= 0; _i--) {
+	var _q = hex_par[_i];
+	if (_q.st == 2) {
+		if (_q.wait > 0) {
+			_q.wait--;
+			_q.vx *= 0.86; _q.vy *= 0.86; _q.vy -= 0.02;   // loosening, drifting up a touch (a burst pops out ~30px, not across the screen)
+		} else {
+			var _dg = point_distance(_q.x, _q.y, _hx, _hy);
+			if (_dg < 14) { hex_hand_amt += _q.amt; array_delete(hex_par, _i, 1); continue; }   // home: back in her hand (wide enough to land while she's moving)
+			var _dr = (hex_vn(_q.x * 0.03 + _t * 0.7 + 9, _q.y * 0.03 + _q.ph) - 0.5) * hex_par_curl * min(1, _dg / 60);
+			var _a = arctan2(_hy - _q.y, _hx - _q.x) + _dr;
+			var _s = min(hex_return_speed * (_q.s / hex_flow_speed) * (1 + 1.5 * max(0, 1 - _dg / 80)), _dg * 0.5 + 1);
+			_q.vx += (cos(_a) * _s - _q.vx) * hex_par_turn;
+			_q.vy += (sin(_a) * _s - _q.vy) * hex_par_turn;
+		}
+	} else {
+		// what it's going for: its own thing (lifted or not), or the knot at the cursor
+		var _gtx = hex_gx, _gty = hex_gy, _grad = 8, _held = false;
+		if (_q.tg != noone) {
+			var _tk = hex_kind_of(_q.tg);
+			_gtx = _q.tg.x; _gty = _q.tg.y - ((_tk == "env") ? _q.tg.z : 0);
+			_grad = ((_tk == "env") ? _q.tg.r : 14) + 4;
+			_held = hex_is_held(_q.tg);
+		}
+		var _arr = _grad + 4;
+		var _dg = point_distance(_q.x, _q.y, _gtx, _gty);
+		if (_q.st == 0) {
+			var _dr = (hex_vn(_q.x * 0.025 + _t * 0.6, _q.y * 0.025 + _q.ph) - 0.5) * hex_par_curl;
+			var _a = arctan2(_gty - _q.y, _gtx - _q.x) + _dr;
+			var _s = min(_q.s, _dg * 0.25 + 1);
+			_q.vx += (cos(_a) * _s - _q.vx) * hex_par_turn;
+			_q.vy += (sin(_a) * _s - _q.vy) * hex_par_turn;
+			if (_dg < _arr) _q.st = 1;
+			// it smacks into something liftable on its way: it catches that instead (so a sweep catches several things)
+			if (hex_mode == "grab") {
+				var _hit = collision_circle(_q.x, _q.y, 6, obj_enemy_parent, false, true);
+				if (_hit == noone) _hit = collision_circle(_q.x, _q.y, 4, obj_env_parent, false, true);
+				if (_hit != noone && _hit != _q.tg && hex_liftable(_hit)) { _q.tg = _hit; _q.st = 1; }
+			}
+		} else {
+			var _r0 = _grad + 4 * sin(_q.ph + _t * 2);
+			var _gy2 = _gty + (_held ? _grad * 0.25 : 0);   // under something held, it pools a little lower
+			var _d2 = max(point_distance(_q.x, _q.y, _gtx, _gy2), 0.01);
+			var _ta = arctan2(_gy2 - _q.y, _gtx - _q.x) + 1.9;
+			var _pl = (_d2 - _r0) * 0.08;
+			_q.vx += (cos(_ta) * 1.3 + (_gtx - _q.x) / _d2 * _pl - _q.vx) * 0.15;
+			_q.vy += (sin(_ta) * 1.3 + (_gy2 - _q.y) / _d2 * _pl - _q.vy) * 0.15;
+		}
+	}
+	_q.x += _q.vx;
+	_q.y += _q.vy;
+}
+
+//getting the player to lock in 4 directionals
+facing_dir_4 = round(point_direction(x, y, mouse_x, mouse_y) / 90) mod 4; //gives us a clean 0 = East, 1 = North, 2 = West, 3 = South
+
+//Function that makes the player look in the caridnal direction closest to mouse position
+update_facing_sprite();
+
+//Our IFrames i think
+if (iframes > 0) iframes--;
+image_alpha = (iframes > 0 && (iframes div 4) mod 2 == 0) ? 0.4 : 1;
+
+//Mana Regen, paused briefly after casting
+if (alt_regen_delay > 0 ) {
+	alt_regen_delay--;
+} else { 
+	mana = min(max_mana, mana + scr_stat("mana_regen", mana_regen) / game_get_speed(gamespeed_fps));
+}
+
+//Channel alt fire while holding m2
+var _cost = scr_stat("alt_drain", alt_drain) * alt_pulse_max / game_get_speed(gamespeed_fps); 
+if (mouse_check_button(mb_right) && mana >= _cost && !hex_active) { // (in her curse stance, right click belongs to the curse)
+	if (alt_pulse > 0) {
+		alt_pulse--;
+	} else {
+		alt_pulse = alt_pulse_max;
+		if (alt_fire(id)) { //gives false if no enemys to latch onto
+			mana -= _cost;
+			alt_regen_delay = game_get_speed(gamespeed_fps) * 0.75;
+			alt_pulse_count++;
+			scr_fire_event("cast", { kind: "alt" });
+		}
+	}
+} else {
+	alt_pulse = max(alt_pulse - 1, 0);	//cooldown runs regardless of keyhold to prevent tap firing to bypass the CD
+}
+if (scr_stat("infinite_mana", 0) > 0) mana = max_mana;
+
+
+//Determine the players current state
+switch (state) 
+{
+    case "IDLE":
+        player_idle();
+        break;
+        
+    case "WALK":
+		player_walk();
+        break;
+        
+    case "ATTACK":
+		player_attack();
+		break;
+	
+    default:
+        state = "IDLE"; // Catch-all safety net
+        break;
+}
+
+// her sprite and position are final for this frame now: put the ball exactly in her off hand, so it never trails a
+// frame behind a turn or a step
+if (!hex_active) {
+	var _hf = hex_hand_pos();
+	hex_hx = _hf[0];
+	hex_hy = _hf[1];
+}
+
+//Marks: corrupting our witch throughout a run
+var _stage = scr_corruption_stage();
+image_blend = merge_color(c_white, make_color_rgb(190, 130, 255), 0.18 * _stage);
+if (_stage >= 1 && irandom(max(2, 6 - _stage * 2)) == 0) 
+	part_particles_create(global.ps_sparks, x + random_range(-10, 10), y + random_range(-14, 10), global.pt_aura, 1);
+depth = -bbox_bottom; // no one will stand on each other anymoreas

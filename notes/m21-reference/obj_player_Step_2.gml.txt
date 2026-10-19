@@ -1,0 +1,74 @@
+var cam = view_camera[0];
+var cam_w = camera_get_view_width(cam);
+var cam_h = camera_get_view_height(cam);
+
+//Only update the look-ahead while playing, so we arent drifting around during pause
+if (global.game_state == "PLAYING") {
+	var _tx = 0, _ty = 0;
+	// during a real hold of her curse (not a tap) the camera settles, so the world under the cursor holds still while
+	// she steers. it lingers a moment after she lets go, so tapping E never makes the camera flick back and forth
+	if (hex_active && hex_tap > 10) cam_hex_settle = cam_hex_linger;
+	else cam_hex_settle = max(0, cam_hex_settle - 1);
+	if (cam_hex_settle <= 0) {
+		var _mx = (mouse_x - camera_get_view_x(cam)) - cam_w / 2;
+		var _my = (mouse_y - camera_get_view_y(cam)) - cam_h / 2;
+		_tx = clamp(_mx * cam_look_strength, -cam_look_max, cam_look_max);
+		_ty = clamp(_my * cam_look_strength, -cam_look_max, cam_look_max);
+	}
+	var _smooth = cam_look_smooth;
+	
+	cam_offset_x = lerp(cam_offset_x, _tx, _smooth);
+	cam_offset_y = lerp(cam_offset_y, _ty, _smooth);
+}
+
+var target_x = x - cam_w / 2 + cam_offset_x;
+var target_y = y - cam_h / 2 + cam_offset_y;
+
+
+// blend between the room-clamped spot and the free spot, so it glides instead of snapping
+var _cx = clamp(target_x, 0, room_width - cam_w);
+var _cy = clamp(target_y, 0, room_height - cam_h);
+
+// screen shake as a rumble: the camera rides a few overlapping waves instead of jumping to a new random spot every frame
+// (the random jumps read as the whole world teleporting, measured in Sophia's merger clips). big moments still hit hard
+var _sh = global.shake * global.settings.screen_shake;
+var _st = current_time / 1000;
+var _sx = sin(_st * 29.3) * 0.55 + sin(_st * 17.9 + 1.7) * 0.3 + sin(_st * 47.1 + 4.1) * 0.15;
+var _sy = sin(_st * 25.7 + 0.6) * 0.55 + sin(_st * 13.3 + 2.9) * 0.3 + sin(_st * 41.9 + 5.3) * 0.15;
+camera_set_view_pos(cam, _cx + _sx * _sh, _cy + _sy * _sh);
+global.shake = max(0, global.shake * 0.93 - 0.15);                      // eases out instead of dropping in a straight line
+	
+
+// ---- her hex: pin every enemy she holds near the cursor, after they have tried to move ----
+for (var _i = 0; _i < array_length(hex_holds); _i++) {
+	var _h = hex_holds[_i];
+	if (_h.kind != "enemy" || !instance_exists(_h.inst)) continue;
+	_h.inst.x = lerp(_h.inst.x, hex_hx + _h.ox, 0.85);   // each keeps its place in the group around the cursor
+	_h.inst.y = lerp(_h.inst.y, hex_hy + _h.oy, 0.85);
+}
+// thrown enemies fly, slam into the horde, then land hard
+if (global.game_state == "PLAYING") {
+	for (var _i = array_length(hex_thrown) - 1; _i >= 0; _i--) {
+		var _th = hex_thrown[_i];
+		if (!instance_exists(_th.inst)) { array_delete(hex_thrown, _i, 1); continue; }
+		_th.inst.x += _th.vx;
+		_th.inst.y += _th.vy;
+		_th.vx *= 0.93;
+		_th.vy *= 0.93;
+		var _s = point_distance(0, 0, _th.vx, _th.vy);
+		var _l = ds_list_create();
+		collision_circle_list(_th.inst.x, _th.inst.y, 16, obj_enemy_parent, false, true, _l, false);
+		for (var _j = 0; _j < ds_list_size(_l); _j++) {
+			var _o = _l[| _j];
+			if (_o == _th.inst || array_contains(_th.hit, _o)) continue;
+			array_push(_th.hit, _o);
+			scr_damage_enemy(_o, round(4 + _s * 1.5), make_color_rgb(150, 110, 255));
+			if (instance_exists(_o)) { _o.x += _th.vx * 0.6; _o.y += _th.vy * 0.6; }
+		}
+		ds_list_destroy(_l);
+		if (_s < 1.5) {
+			if (instance_exists(_th.inst)) scr_damage_enemy(_th.inst, 8, make_color_rgb(150, 110, 255));
+			array_delete(hex_thrown, _i, 1);
+		}
+	}
+}
