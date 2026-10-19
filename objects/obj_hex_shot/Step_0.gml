@@ -37,9 +37,9 @@ if (x < _vx0 - 32 || y < _vy0 - 32 || x > _vx0 + camera_get_view_width(_cam) + 3
 if (life <= 0) _end = true;
 
 if (_end) {
-	// the motes inside it scatter out and flow home to her
-	var _n = mote_n, _ex = x, _ey = y;
-	if (_n > 0 && instance_exists(obj_player)) with (obj_player) hex_return(_n, _ex, _ey);
+	// the hex inside it flows home to her as a river from here
+	var _n = hex_amt, _ex = x, _ey = y;
+	if (_n > 0 && instance_exists(obj_player)) with (obj_player) hex_home_add(_ex, _ey, _n);
 	instance_destroy();
 	exit;
 }

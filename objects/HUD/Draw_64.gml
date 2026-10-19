@@ -46,7 +46,7 @@ if (!is_undefined(_p.witch)) {
 	if (_p.witch.name == "Hexweaver") {
 		// her hex: how much of it is in her hand right now (out in the world or spent, it comes back), in her hex violet.
 		// A placeholder: this may move off the bars entirely as the hex itself shows how much she has
-		var _hn = array_length(_p.hex_motes), _ha = _p.hex_available();
+		var _hn = _p.hex_max, _ha = _p.hex_available();
 		scr_draw_bar(16, 60, 200, 8, _ha / max(1, _hn), hex_wisp_col(hex_wisp_pal().core),
 			_p.witch.ability.name + " [Space]   " + string(_ha) + " / " + string(_hn));
 	} else {

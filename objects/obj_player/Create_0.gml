@@ -271,6 +271,19 @@ hex_hand[$ "spr_player_witch1_idle_up_fire"]    = [-22, 25];
 hex_hand[$ "spr_player_witch1_walk_up"]         = [-22, 24];
 hex_hand[$ "spr_player_witch1_walk_up_fire"]    = [-22, 25];
 hex_hand_default = [-20, 20];
+// the two orbs that grow in and dissolve out instead of popping (eased in obj_player Draw)
+hex_gR = 0;           // the knot gathering where her reaching hex arrives (0..1)
+hex_gx = x; hex_gy = y;
+hex_wR = 0;           // the wrap around what she holds (0..1); it rides along with it and dissolves after she lets go
+hex_hand_f = 0;       // her palm: 0 = the orb (resting) .. 1 = channeling (an erratic pocket of hex), eased between
+hex_hand_e = 0.8;     // how hard she's channeling (how erratic her palm is), eased
+hex_rv_state = 0;     // THE RIVER: 0 none, 1 reaching out, 2 draining into what she holds, 3 flowing home
+hex_rv_lo = 0;        // the stretch of the path (0 = her palm, 1 = the target) the river covers right now
+hex_rv_hi = 0;
+hex_rv_tx = x;        // where it's flowing to
+hex_rv_ty = y;
+hex_wobj = noone;
+hex_wkind = "";
 hex_hand_debug = false; // J toggles: a marker on the hand point, and the arrow keys nudge it for the current sprite
 
 // where her off hand is in the room right now, as [x, y]. Call it after her sprite and position are final
@@ -280,84 +293,68 @@ function hex_hand_pos() {
 	if (is_undefined(_p)) _p = hex_hand_default;
 	return [x + _p[0] * image_xscale, y + _p[1] * image_yscale];
 }
-// its body: motes that flock like starlings.
-// hex_budget is how much curse she holds. Up to hex_ball_max it gathers as a ball in her off hand;
-// anything beyond overflows into an aura that orbits her body. Raise hex_budget to see it.
-hex_budget = 32;
-hex_ball_max = 32;
-hex_motes = [];
-for (var _i = 0; _i < hex_budget; _i++) {
-	var _ball = min(hex_budget, hex_ball_max);
-	array_push(hex_motes, { x: x, y: y, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: (_i < _ball) ? _i / max(1, _ball - 1) : 1, st: 0, wait: 0, lap: 0, t1x: x, t1y: y, t2x: x, t2y: y });
-}
+// ---- HER HEX: one amount, always somewhere ----
+// Her hex is a single quantity (hex_max units) that moves between a few places. Every visual reads these numbers, so
+// what you see is always where her hex actually is: nothing pops in, nothing vanishes.
+//   hex_hand_amt  in her hand (what she can use right now; the HUD shows this)
+//   hex_out       flowing out to her target in the river
+//   hex_at        gathered at the target (the forming knot, or the surround around what she holds)
+//   hex_orb_amt   in the orb she's charging
+//   hex_home      rivers flowing home (from a knot she let go, a thing she threw, a shot that burst)
+//   (and whatever rides inside obj_hex_shot instances, as their hex_amt)
+// Step moves it along: hand -> river -> target when she reaches, target -> home rivers -> hand when she lets go.
+hex_budget = 32;      // her max hex (raised by the "max_hex" stat; H adds 8 while testing)
+hex_max = hex_budget;
+hex_hand_amt = hex_budget;
+hex_out = 0;
+hex_at = 0;
+hex_need = 0;         // how much the current reach wants at its target (a lift's cost, or hex_reach_cap over open ground)
+hex_reach_cap = 14;   // how much gathers when she reaches into open ground
+hex_pour = 1;         // how much hex the river carries per frame (out of her hand, and into the target)
+hex_orb_amt = 0;
+hex_home = [];        // rivers going home: { x, y (where it started), lo, hi (the stretch of the path it covers), amt }
 
-// ---- Hex energy: the motes ARE her curse. Each mote is one unit of it. ----
-// mote states: st 0 = home (in her hand, or her aura), 1 = out in the world, 2 = spent (regrowing),
-//              3 = flowing back to her, 4 = inside a shot she fired (they come back when it bursts or leaves the screen)
-hex_flow = 2;         // motes she pours out per frame while E is held
-hex_flow_acc = 0;
-hex_regen = 12;       // frames to regrow one spent mote
-hex_regen_t = 0;
-hex_ready_r = 40;     // how close to the curse a mote has to be to count as arrived
-hex_flow_speed = 7;   // MOTES 2.0: how fast her hex flows out to where it's going (pixels a frame). Lower = it takes longer to reach
-hex_return_speed = 9; // ...and back home to her hand
-hex_flow_turn = 0.18; // how quickly a flowing mote can change direction (lower = wider, lazier curves)
-hex_arrived = 0;      // how many motes have arrived right now
+hex_flow_speed = 10; // how fast her hex flows out to where it's going (pixels a frame). Lower = it takes longer to reach
+// (Sophia's target: somewhere between waterbending (too slow) and airbending (much too fast); was 7)
+hex_return_speed = 11; // ...and back home to her hand (was 9)
 hex_cost = 0;         // what the thing she's holding cost
-hex_cost_lift = 8;    // motes it takes to lift an environment object, per unit of its weight (a rock is 1)
-hex_cost_enemy = 14;  // motes it takes to lift an enemy
-hex_mode = "";        // "grab" if E was pressed over something liftable, "charge" if over nothing
+hex_cost_lift = 8;    // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
+hex_cost_enemy = 14;  // hex it takes to lift an enemy
+hex_mode = "";        // "grab" (right click: reach out and lift) or "charge" (left click: an orb in front of her hand)
 hex_ball_dist = 30;   // how far in front of her hand the charging ball gathers
-hex_boom_dmg = 3;     // damage per mote in the lobbed ball (plus a base of 10)
-hex_boom_r = 4;       // blast radius per mote (plus a base of 40)
-hex_blast_cost = 4;   // a tap of E: a quick hand blast
+hex_boom_dmg = 10;     // damage per unit of hex in the charged orb (plus a base of 10)
+hex_boom_r = 5;       // blast radius per unit of hex (plus a base of 40)
+hex_blast_cost = 4;   // a tap of Space Bar: a quick hand blast
 hex_blast_dmg = 10;
 hex_key = vk_space;   // hold for her hex stance, tap for a palm blast (was E; space frees a finger for WASD)
 hex_tap = 0;          // frames the stance key has been held this press (short = a tap)
-cam_hex_settle = 0;   // frames left that the camera stays settled on her for the curse
+cam_hex_settle = 0;   // frames left that the camera stays settled on her for the hex
 cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
-hex_trail = 5;        // every Nth mote out in the world lags behind as a trail (lower = more trail)
-hex_charge_cap = 24;  // motes in a fully charged orb (the most one shot can hold)
-hex_charge_rate = 0.5; // motes added to a charging orb per frame (0.5 = full in about 0.8s)
-hex_orb_n = 0;        // motes in the orb charging right now
-hex_bonus = 0;        // extra max curse (debug: press H in a run for +8)
-hex_return_gap = 2;   // frames between each mote setting off home (lower = it all comes back faster)
+hex_charge_cap = 24;  // the most hex one charged orb can hold
+hex_charge_rate = 0.5; // hex added to a charging orb per frame (0.5 = full in about 0.8s)
+hex_orb_n = 0;        // (whole units in the charging orb, for sizing it)
+hex_bonus = 0;        // extra max hex (debug: press H in a run for +8)
 
-// spend _k motes of curse, the ones already out in the world first. returns how many it spent
-// _to is what they become: 3 = they flow back from where they are, 4 = they ride inside a shot
-hex_spend = function(_k, _to = 2) {
-	var _s = 0;
-	for (var _p = 1; _p >= 0; _p--) {
-		for (var _i = 0; _i < array_length(hex_motes) && _s < _k; _i++) {
-			if (hex_motes[_i].st == _p) {
-				hex_motes[_i].st = _to;
-				hex_motes[_i].wait = _s * hex_return_gap; // flowing home: they leave one after another
-				_s++;
-			}
-		}
-	}
-	return _s;
+// how much hex she has in hand right now (whole units)
+hex_available = function() {
+	return floor(hex_hand_amt + 0.001);
 }
-// a shot burst or left the screen at _x,_y: its _k motes scatter out of it and flow back home to her
-hex_return = function(_k, _x, _y) {
-	var _r = 0;
-	for (var _i = 0; _i < array_length(hex_motes) && _r < _k; _i++) {
-		var _m = hex_motes[_i];
-		if (_m.st == 4) {
-			_m.st = 3;
-			_m.x = _x + random_range(-10, 10);
-			_m.y = _y + random_range(-10, 10);
-			_m.vx = random_range(-3, 3);
-			_m.vy = random_range(-3, 3);
-			_m.wait = _r * hex_return_gap; // one after another, so they pour home as a single stream
-			_r++;
-		}
-	}
+// send _a hex home from (_x, _y): it becomes a river flowing back along a path into her palm
+hex_home_add = function(_x, _y, _a) {
+	if (_a <= 0.001) return;
+	array_push(hex_home, { x: _x, y: _y, lo: 1, hi: 1, amt: _a });
 }
-// throw whatever her curse is holding: the curse that lifted it lets go and flows back to her
+// let go of a reach: whatever gathered at the target flows home from there (the outgoing river turns back on its own, in Step)
+hex_let_go = function() {
+	hex_home_add(hex_gx, hex_gy, hex_at);
+	hex_at = 0;
+}
+// throw whatever her hex is holding: the hex that held it flows home from where she let go
 hex_throw = function() {
 	if (hex_held == noone || !instance_exists(hex_held)) { hex_held = noone; hex_kind = ""; return; }
+	var _ey = hex_held.y;
 	if (hex_kind == "env") {
+		_ey -= hex_held.z;
 		hex_held.grabbed = false;
 		hex_held.vx *= 1.6;
 		hex_held.vy *= 1.6;
@@ -365,36 +362,33 @@ hex_throw = function() {
 	} else {
 		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
 	}
-	hex_spend(hex_cost, 3);
+	hex_home_add(hex_held.x, _ey, hex_at);
+	hex_at = 0;
 	hex_held = noone;
 	hex_kind = "";
 }
-// MOTES 2.0: move a mote toward (_gx, _gy) like a bit of flowing hex: it steers (turns smoothly, never snaps),
-// travels at a steady _speed (pixels a frame, each mote a little different), and weaves gently side to side so a
-// stream of them reads as drifting puffs and wisps instead of a straight line
-hex_flow_to = function(_m, _gx, _gy, _speed, _t) {
-	var _d = point_distance(_m.x, _m.y, _gx, _gy);
-	var _s = min(_speed * (0.85 + 0.06 * _m.sp), _d);             // slows into its target instead of overshooting
-	var _a = point_direction(_m.x, _m.y, _gx, _gy);
-	var _wv = sin(_t * 6 + _m.ph) * min(1.8, _d * 0.05);           // the weave fades as it arrives
-	var _dx = lengthdir_x(_s, _a) + lengthdir_x(_wv, _a + 90);
-	var _dy = lengthdir_y(_s, _a) + lengthdir_y(_wv, _a + 90);
-	_m.vx = lerp(_m.vx, _dx, hex_flow_turn);
-	_m.vy = lerp(_m.vy, _dy, hex_flow_turn);
-	_m.x += _m.vx;
-	_m.y += _m.vy;
+// where a river's path bends: it arcs gently from her palm (_ax, _ay) to (_bx, _by), bowing upward. A river's path is a
+// quadratic bezier through this point: (1-f)^2 * palm + 2(1-f)f * bend + f^2 * end, with f from 0 (her palm) to 1 (the end)
+function hex_river_bend(_ax, _ay, _bx, _by) {
+	var _l = point_distance(_ax, _ay, _bx, _by);
+	var _pa = point_direction(_ax, _ay, _bx, _by) + ((_bx >= _ax) ? 90 : -90);   // the side that bows upward
+	return [(_ax + _bx) / 2 + lengthdir_x(_l * 0.16, _pa), (_ay + _by) / 2 + lengthdir_y(_l * 0.16, _pa)];
 }
-// remember where a mote was the last two frames, so Draw can trail a wisp behind it
-hex_mote_trail = function(_m) {
-	_m.t2x = _m.t1x; _m.t2y = _m.t1y;
-	_m.t1x = _m.x;   _m.t1y = _m.y;
-}
-hex_mote_trail_reset = function(_m) {
-	_m.t1x = _m.x; _m.t1y = _m.y; _m.t2x = _m.x; _m.t2y = _m.y;
-}
-// how much curse she has that isn't spent
-hex_available = function() {
-	var _c = 0;
-	for (var _i = 0; _i < array_length(hex_motes); _i++) if (hex_motes[_i].st <= 1) _c++;
-	return _c;
+// move one river along its path (0 = her palm, 1 = the far end) flowing HOME: the front heads in first, the back follows
+// once the stream is long enough (or the front is home). What reaches her palm returns to her hand. Returns true when
+// it's all home
+function hex_home_flow(_r, _hx, _hy) {
+	var _rl = max(16, point_distance(_hx, _hy, _r.x, _r.y) * 1.1);   // about how long the path is
+	var _dr = hex_return_speed / _rl;
+	_r.lo = max(0, _r.lo - _dr);
+	if (_r.lo <= 0 || (_r.hi - _r.lo) * _rl > 70) {
+		if (_r.lo <= 0) {
+			var _d = _r.amt * min(1, _dr / max(_r.hi, _dr));   // the share of what's left that reaches her this frame
+			_r.amt -= _d;
+			hex_hand_amt += _d;
+		}
+		_r.hi = max(_r.lo, _r.hi - _dr);
+	}
+	if (_r.hi <= 0.001) { hex_hand_amt += _r.amt; _r.amt = 0; return true; }
+	return false;
 }

@@ -40,7 +40,7 @@ an evenly colored line reads as thread, not a strand of light. Lit the same way 
 | **Idle orb in her hand** (her habit: she IS hex, it's like breathing) | Wanda's chaos ball: a small soft orb of light, white-hot heart, embers, faint wisps and veils of light | Built (sh_hex_orb, light model) |
 | **Stance** (Space) | The orb wakes: more strands, more movement; her hex swirls around her body | Built; needs to read more distinct from idle |
 | **Charging** (hold left click) | Same family as the idle orb, gathering power. Its real look is still open | Placeholder (softer strands) |
-| **Reaching / moving** (motes) | Puffs and wisps of light drifting through space, flowing like a river, never snapping (Skyrim illusion spells) | Motes 2.0 built; puffs still drawn simply |
+| **Reaching / moving** (motes) | Puffs and wisps of light drifting through space, flowing like a river, never snapping (Skyrim illusion spells) | Built: drawn as one stream of hex light (`hex_flow_draw`, the orb shader in flow mode). **No white-hot core in motion** (that only exists where hex is concentrated: her orbs); blue and lilac with sparkles |
 | **Telekinesis** (lift, hold, throw) | Flame-like licks of overflow straining against the object; hex pooling underneath; a tether stream palm to object | Overflow + pool + tether built |
 | **Blast / explosion** | Tendrils and strands of light lashing outward in the burst | Not built |
 
@@ -48,7 +48,6 @@ an evenly colored line reads as thread, not a strand of light. Lit the same way 
 - Charged orb: its own look (not flame licks, not yarn).
 - Stance: clearly different from idle (a cast pose sprite would help most: an art ask).
 - Light spilling onto her hand and sprite near the orb.
-- Mote puffs drawn as light (the same ramp) instead of flat squares.
 - Blast: tendrils lashing out on impact.
 - Recolor her drawn hex (curse visuals) to the violet-blue palette.
 - Fewer bars, more world: let the hex itself show how much she has (the hand orb already shrinks as her reserve empties),

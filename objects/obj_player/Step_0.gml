@@ -27,16 +27,16 @@ if (!is_undefined(witch)) {
 }
 	
 	
-// ---- E: the living curse ----
-// Her curse energy IS the motes: each one is a unit of curse. Hold E and they pour out of her hand one by one toward
-// the cursor; when enough have arrived, they act. Spent motes regrow in her hand over time.
-//  - enough motes reach a rock or other environment object (hex_cost_lift x its weight) or an enemy (hex_cost_enemy): it's lifted. Release E to throw it.
-//  - pressed over nothing: the motes pour into a ball in front of her hand that grows and overcharges.
-//    Release to lob it in an arc to the cursor, where it explodes (more motes, bigger boom).
-//  - tap E: a quick hand blast from the curse in her palm (hex_blast_cost).
+// ---- SPACE: her living hex ----
+// Her hex is one amount (see Create, "HER HEX") that flows out of her hand as a river and gathers where she reaches.
+//  - right click: reach. Enough hex reaches a rock (hex_cost_lift x its weight) or an enemy (hex_cost_enemy): it lifts.
+//    Let go of right click to throw it. Over open ground it just gathers (hex_reach_cap).
+//  - left click: an orb coalesces in front of her hand and grows. Release to fire it (more hex, bigger boom).
+//  - tap space: a quick hand blast (hex_blast_cost).
+// Whatever she lets go of flows home to her hand as a river.
 var _ha = point_direction(x, y, mouse_x, mouse_y);
 // her off hand (hex_hand in Create). Her sprite and position for this frame aren't final yet (they're set near the
-// end of Step), so this is last frame's hand: fine for the motes. The ball itself snaps to the final hand at the end.
+// end of Step), so this is last frame's hand: fine for the hex logic. The ball itself snaps to the final hand at the end.
 var _hp = hex_hand_pos();
 var _hx = _hp[0], _hy = _hp[1];
 if (hex_held != noone && !instance_exists(hex_held)) hex_held = noone;
@@ -58,16 +58,14 @@ if (hex_hand_debug) {
 if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
 hex_wisp_debug_keys(); // O = next look (hex orb / smoke wisp / old circles), P = next palette (scr_hex_wisp)
 var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
-while (array_length(hex_motes) < _want) {
-	array_push(hex_motes, { x: _hx, y: _hy, vx: 0, vy: 0, ph: random(360), sp: random_range(2, 5), k: 1, st: 0, wait: 0, lap: 0, t1x: _hx, t1y: _hy, t2x: _hx, t2y: _hy });
-}
-var _n = array_length(hex_motes);
+if (_want > hex_max) hex_hand_amt += _want - hex_max;   // more max hex arrives straight in her hand
+hex_max = _want;
 var _ox = hex_hx, _oy = hex_hy;
 
 if (keyboard_check(hex_key)) {
-	// HEX STANCE: while hex_key (space) is held her curse pours out and swirls around her, ready. Her wand stands down and the
-	// mouse casts with the curse instead: hold left click to coalesce an orb in front of her hand (release to fire it),
-	// hold right click to coalesce at the cursor and lift what's there (release to throw it).
+	// HEX STANCE: while hex_key (space) is held her hex is ready in her palm. Her wand stands down and the mouse casts with
+	// the hex instead: hold left click to coalesce an orb in front of her hand (release to fire it), hold right click to
+	// reach out at the cursor and lift what's there (release to throw it).
 	var _bcx = (bbox_left + bbox_right) / 2, _bcy = (bbox_top + bbox_bottom) / 2;
 	if (!hex_active) {
 		hex_active = true;
@@ -79,20 +77,13 @@ if (keyboard_check(hex_key)) {
 	}
 	hex_tap++;
 
-	// pour motes out of her hand
-	hex_flow_acc += hex_flow;
-	while (hex_flow_acc >= 1) {
-		hex_flow_acc -= 1;
-		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 0) { hex_motes[_i].st = 1; hex_mote_trail_reset(hex_motes[_i]); break; }
-	}
-
 	var _lmb = mouse_check_button(mb_left);
 	var _rmb = mouse_check_button(mb_right);
 	if (hex_mode == "" && mouse_check_button_pressed(mb_left)) { hex_mode = "charge"; hex_charge = 0; }
 	if (hex_mode == "" && mouse_check_button_pressed(mb_right)) hex_mode = "grab";
 
-	// where the curse gathers: an orb in front of her hand, the cursor (within her reach), or swirling around her
-	var _tx, _ty;
+	// where the hex gathers: an orb in front of her hand, or the cursor (within her reach)
+	var _tx = _hx, _ty = _hy;
 	if (hex_mode == "charge") {
 		_tx = _hx + lengthdir_x(hex_ball_dist, _ha);
 		_ty = _hy + lengthdir_y(hex_ball_dist, _ha);
@@ -100,103 +91,103 @@ if (keyboard_check(hex_key)) {
 		var _d = min(point_distance(x, y, mouse_x, mouse_y), hex_reach);
 		_tx = x + lengthdir_x(_d, _ha);
 		_ty = y + lengthdir_y(_d, _ha);
-	} else {
-		_tx = _hx; _ty = _hy;            // stance up, nothing in it: the ball stays in her hand, her hex swirls around her
 	}
-	hex_hx = lerp(hex_hx, _tx, 0.7); // snappy: the curse keeps up with the cursor
+	hex_hx = lerp(hex_hx, _tx, 0.7); // snappy: the reach keeps up with the cursor
 	hex_hy = lerp(hex_hy, _ty, 0.7);
 
-	// how many have arrived where they're going
-	var _ax = (hex_held != noone) ? hex_held.x : hex_hx;
-	var _ay = (hex_held != noone) ? hex_held.y : hex_hy;
-	hex_arrived = 0;
-	for (var _i = 0; _i < _n; _i++) {
-		var _m = hex_motes[_i];
-		if (_m.st == 1 && point_distance(_m.x, _m.y, _ax, _ay) < hex_ready_r) hex_arrived++;
-	}
-
-	if (hex_held == noone && hex_mode == "grab") {
-		// is there something here to lift?
-		var _target = noone, _kind = "", _cost = 0;
-		// the nearest environment object her magic can lift (measured to its edge, so big things are easier to catch)
-		var _r = noone, _rd = infinity, _sx = hex_hx, _sy = hex_hy;
-		with (obj_env_parent) {
-			if (!liftable || !movable || grabbed) continue;
-			var _d = point_distance(_sx, _sy, x, y) - r;
-			if (_d < _rd) { _rd = _d; _r = id; }
-		}
-		if (_r != noone && _rd <= hex_grab_r) {
-			_target = _r; _kind = "env"; _cost = round(hex_cost_lift * _r.weight);
-		} else {
-			var _e = instance_nearest(hex_hx, hex_hy, obj_enemy_parent);
-			if (_e != noone && !_e.is_boss && _e.curse >= 0 && point_distance(hex_hx, hex_hy, _e.x, _e.y) <= hex_grab_r) {
-				_target = _e; _kind = "enemy"; _cost = hex_cost_enemy;
+	if (hex_mode == "grab") {
+		// the knot: where her hex gathers. It follows the cursor gently (a new reach starts right at the cursor)
+		if (hex_at <= 0.01 && hex_out <= 0.01) { hex_gx = hex_hx; hex_gy = hex_hy; }
+		else { hex_gx = lerp(hex_gx, hex_hx, 0.15); hex_gy = lerp(hex_gy, hex_hy, 0.15); }
+		if (hex_held == noone) {
+			// is there something here to lift? the nearest environment object (measured to its edge), or an enemy
+			var _target = noone, _kind = "", _cost = 0;
+			var _r = noone, _rd = infinity, _sx = hex_hx, _sy = hex_hy;
+			with (obj_env_parent) {
+				if (!liftable || !movable || grabbed) continue;
+				var _dd = point_distance(_sx, _sy, x, y) - r;
+				if (_dd < _rd) { _rd = _dd; _r = id; }
 			}
-		}
-		// as her hex gathers under it, the thing starts to stir and rise (obj_env_parent reads hex_gather)
-		if (_target != noone && _kind == "env") _target.hex_gather = max(_target.hex_gather, clamp(hex_arrived / max(1, _cost), 0, 1));
-		if (_target != noone && hex_arrived >= _cost) {
-			// enough of her curse has reached it: it lifts
-			hex_held = _target; hex_kind = _kind; hex_cost = _cost;
-			if (_kind == "env") _target.grabbed = true;
-		}
+			if (_r != noone && _rd <= hex_grab_r) {
+				_target = _r; _kind = "env"; _cost = round(hex_cost_lift * _r.weight);
+			} else {
+				var _e = instance_nearest(hex_hx, hex_hy, obj_enemy_parent);
+				if (_e != noone && !_e.is_boss && _e.curse >= 0 && point_distance(hex_hx, hex_hy, _e.x, _e.y) <= hex_grab_r) {
+					_target = _e; _kind = "enemy"; _cost = hex_cost_enemy;
+				}
+			}
+			hex_need = (_target != noone) ? _cost : hex_reach_cap;
+			// as her hex gathers under it, the thing starts to stir and rise (obj_env_parent reads hex_gather)
+			if (_target != noone && _kind == "env") _target.hex_gather = max(_target.hex_gather, clamp(hex_at / max(1, _cost), 0, 1));
+			if (_target != noone && hex_at >= _cost - 0.001) {
+				// enough of her hex has reached it: it lifts
+				hex_held = _target; hex_kind = _kind; hex_cost = _cost;
+				if (_kind == "env") _target.grabbed = true;
+			}
+		} else hex_need = hex_cost;
+		// her hand feeds the river until there's enough out for the job (never more: the rest of her hex stays with her)
+		var _p = min(hex_pour, hex_hand_amt, max(0, hex_need - hex_out - hex_at));
+		hex_hand_amt -= _p; hex_out += _p;
+		// once the river's front has reached the target, it delivers what it carries
+		if (hex_rv_hi >= 1) { var _dl = min(hex_out, hex_pour); hex_out -= _dl; hex_at += _dl; }
+		// more gathered than the job needs (she moved from open ground onto a light rock): the extra flows home
+		if (hex_at > hex_need + 0.5) { hex_home_add(hex_gx, hex_gy, hex_at - hex_need); hex_at = hex_need; }
 	}
 	if (hex_mode == "charge") {
-		// the orb builds up a mote at a time, up to a full charge (or as much curse as she has out)
+		// the orb draws hex straight out of her palm, up to a full charge (or as much as she has)
 		hex_charge++;
-		var _out = 0;
-		for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 1) _out++;
-		hex_orb_n = min(floor(hex_charge * hex_charge_rate), hex_charge_cap, _out);
-	} else hex_orb_n = 0;
+		var _c = max(0, min(hex_charge_rate, hex_hand_amt, hex_charge_cap - hex_orb_amt));
+		hex_hand_amt -= _c; hex_orb_amt += _c;
+	}
+	hex_orb_n = floor(hex_orb_amt);
 	if (hex_held != noone && hex_kind == "env") {
-		// steer what she holds toward the curse; heavier things follow more sluggishly
+		// steer what she holds toward the cursor; heavier things follow more sluggishly
 		var _wk = 0.5 / max(0.25, hex_held.weight);
 		hex_held.vx = lerp(hex_held.vx, (hex_hx - hex_held.x) * _wk, 0.7);
 		hex_held.vy = lerp(hex_held.vy, (hex_hy - hex_held.y) * _wk, 0.7);
 	}
-	// a held enemy is pinned to the curse in End Step, after it has tried to move
+	// a held enemy is pinned to the cursor in End Step, after it has tried to move
 
-	// letting go of a mouse button finishes that spell; the curse stays out around her for the next one
+	// letting go of a mouse button finishes that spell
 	if (hex_mode == "charge" && !_lmb) {
-		if (hex_orb_n >= 2) {
-			// fire the orb forward: it flies until it hits something or leaves the screen.
-			// every mote in it adds to the boom, and they all find their way back to her afterward
-			var _c = hex_orb_n;
+		if (hex_orb_amt >= 2) {
+			// fire the orb forward: it flies until it hits something or leaves the screen. All the hex in it adds to the
+			// boom, and it flows home to her afterward
+			var _c = hex_orb_amt;
 			var _b = instance_create_depth(hex_hx, hex_hy, depth, obj_hex_shot);
 			_b.vx = lengthdir_x(15, _ha);
 			_b.vy = lengthdir_y(15, _ha);
 			_b.dmg = round(10 + hex_boom_dmg * _c);
 			_b.boom_r = 40 + hex_boom_r * _c;
 			_b.size = 0.6 + _c / 16;
-			_b.mote_n = hex_spend(_c, 4);
-		}
+			_b.hex_amt = _c;
+		} else hex_hand_amt += hex_orb_amt;   // too small to fire: it melts back into her palm
+		hex_orb_amt = 0;
 		hex_mode = ""; hex_charge = 0; hex_orb_n = 0;
 	}
 	if (hex_mode == "grab" && !_rmb) {
 		hex_throw();
+		hex_let_go();
 		hex_mode = "";
 	}
 } else if (hex_active) {
-	// letting go of E: anything held is thrown, a quick tap is a palm blast, and the rest of her curse flows home
+	// letting go of space: anything held is thrown, a quick tap is a palm blast, and the rest of her hex flows home
 	if (hex_held != noone) hex_throw();
 	else if (hex_tap <= 10) {
-		if (hex_available() >= hex_blast_cost) {
-			hex_spend(hex_blast_cost, 4);
+		if (hex_hand_amt >= hex_blast_cost) {
+			hex_hand_amt -= hex_blast_cost;
 			var _b = instance_create_depth(_hx, _hy, depth, obj_hex_shot);
 			_b.vx = lengthdir_x(16, _ha);
 			_b.vy = lengthdir_y(16, _ha);
 			_b.dmg = hex_blast_dmg;
 			_b.boom_r = 40;
 			_b.size = 0.6;
-			_b.mote_n = hex_blast_cost;
+			_b.hex_amt = hex_blast_cost;
 		}
 	}
-	// recall: everything still out streams home one after another
-	var _g = 0;
-	for (var _i = 0; _i < _n; _i++) {
-		if (hex_motes[_i].st == 1) { hex_motes[_i].st = 3; hex_motes[_i].wait = _g * hex_return_gap; _g++; }
-	}
-	hex_held = noone; hex_kind = ""; hex_active = false; hex_charge = 0; hex_arrived = 0; hex_mode = "";
+	hex_let_go();
+	hex_hand_amt += hex_orb_amt; hex_orb_amt = 0;   // an orb she never fired melts back into her palm
+	hex_held = noone; hex_kind = ""; hex_active = false; hex_charge = 0; hex_orb_n = 0; hex_mode = "";
 }
 if (!hex_active) {
 	hex_hx = _hx;
@@ -205,132 +196,32 @@ if (!hex_active) {
 hex_hvx = hex_hx - _ox;
 hex_hvy = hex_hy - _oy;
 
-// spent curse regrows in her hand, one mote at a time
-var _spent = noone;
-for (var _i = 0; _i < _n; _i++) if (hex_motes[_i].st == 2) { _spent = hex_motes[_i]; break; }
-if (_spent != noone) {
-	hex_regen_t++;
-	if (hex_regen_t >= hex_regen) {
-		hex_regen_t = 0;
-		_spent.st = 0;
-		_spent.x = _hx; _spent.y = _hy;
-		_spent.vx = 0; _spent.vy = 0;
-	}
-} else hex_regen_t = 0;
+// THE RIVER OUT: the stretch of the path from her palm (0) to the target (1) that her outgoing hex covers right now
+//   1 reaching: the front runs out to the knot     2 holding: it drains into what she lifted     3 she let go: it turns back
+var _rs = 0;
+if (hex_active && hex_mode == "grab") _rs = (hex_held == noone) ? 1 : 2;
+else if (hex_rv_hi > 0.001) _rs = 3;
+if (_rs == 1) { hex_rv_tx = hex_gx; hex_rv_ty = hex_gy; }
+if (_rs == 2 && instance_exists(hex_held)) { hex_rv_tx = hex_held.x; hex_rv_ty = hex_held.y - ((hex_kind == "env") ? hex_held.z : 0); }
+var _rl = max(16, point_distance(_hx, _hy, hex_rv_tx, hex_rv_ty) * 1.1);   // about how long the path is
+var _dv = hex_flow_speed / _rl;
+if (_rs == 1) { hex_rv_lo = max(0, hex_rv_lo - _dv); hex_rv_hi = min(1, hex_rv_hi + _dv); }
+else if (_rs == 2) {
+	hex_rv_hi = min(1, hex_rv_hi + _dv);
+	if (hex_rv_hi >= 1) hex_rv_lo = min(hex_rv_hi, hex_rv_lo + _dv * 0.8);
+	if (hex_rv_lo >= hex_rv_hi) { hex_at += hex_out; hex_out = 0; }   // fully drained in
+}
+else if (_rs == 3) {
+	// what was still in the river flows back into her palm along it
+	var _ro = { x: hex_rv_tx, y: hex_rv_ty, lo: hex_rv_lo, hi: hex_rv_hi, amt: hex_out };
+	if (hex_home_flow(_ro, _hx, _hy)) { _ro.hi = 0; _ro.lo = 0; }
+	hex_rv_lo = _ro.lo; hex_rv_hi = _ro.hi; hex_out = _ro.amt;
+}
+hex_rv_state = _rs;
 
-// Its body: starling motes. At home they curl in her hand (and past hex_ball_max, orbit her as an aura).
-// Out in the world they stream to the curse, swirl around it, wrap what it holds, and crush into a knot as it charges.
-var _t = current_time / 1000;
-// how far she moved, so the motes in her hand and aura travel with her instead of trailing
-var _pdx = x - hex_px, _pdy = y - hex_py;
-hex_px = x; hex_py = y;
-var _cx = (bbox_left + bbox_right) / 2;
-var _cy = (bbox_top + bbox_bottom) / 2;
-var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0; // how full the charging orb is
-var _home_i = 0;
-var _orank = 0; // which out-mote this is, so only the first hex_orb_n of them join the orb
-for (var _i = 0; _i < _n; _i++) {
-	var _m = hex_motes[_i];
-	if (_m.st == 2 || _m.st == 4) continue; // spent, or riding inside a shot: not here
-	if (_m.st == 3) {
-		// flowing home: each mote waits its turn where the curse let go, then races back to her hand at full speed,
-		// weaving slightly as it goes, so together they pour home as one living tendril
-		if (_m.wait > 0) {
-			_m.wait--;
-			_m.vx *= 0.85; _m.vy *= 0.85;
-			_m.x += _m.vx; _m.y += _m.vy;
-			continue;
-		}
-		hex_mote_trail(_m);
-		hex_flow_to(_m, _hx, _hy, hex_return_speed, _t);
-		if (point_distance(_m.x, _m.y, _hx, _hy) < 12) _m.st = 0;
-		continue;
-	}
-	var _mx, _my, _pull, _cap = 99;
-	if (_m.st == 0) {
-		_m.x += _pdx; _m.y += _pdy;
-		if (_home_i >= hex_ball_max) {
-			// overflow: an aura orbiting her body, always under her control
-			var _rad = 38 + 6 * sin(_t * 0.9 + _m.ph);
-			var _ang = _m.ph + _t * 40 * (_m.sp / 3.5);
-			_mx = _cx + lengthdir_x(_rad, _ang);
-			_my = _cy + lengthdir_y(_rad * 0.75, _ang);
-			_pull = 0.06;
-		} else {
-			// a smoky ball of energy cupped in her off hand
-			var _rad = 5 + 4 * sin(_t * 1.3 + _m.ph);
-			_mx = _hx + lengthdir_x(_rad, _m.ph + _t * 90 * _m.sp);
-			_my = _hy + lengthdir_y(_rad, _m.ph + _t * 90 * _m.sp);
-			_pull = 0.12;
-		}
-		_home_i++;
-	} else {
-		// MOTES 2.0: out in the world, a mote is a bit of hex FLOWING. It travels at a steady pace (hex_flow_to) to
-		// where the curse is, like a river, never snapping. Once there it churns: swirling around the knot, wrapping
-		// and pooling under what she holds. While she holds something, every third mote is the tether: it streams
-		// back and forth between her palm and the held thing, so the binding between them is always visible.
-		hex_mote_trail(_m);
-		var _gx = hex_hx, _gy = hex_hy, _rad;
-		var _in_orb = (hex_mode == "charge" && _orank < hex_orb_n);
-		_orank++;
-		if (hex_held != noone && _i mod 3 == 0) {
-			var _hgx = hex_held.x, _hgy = hex_held.y - ((hex_kind == "env") ? hex_held.z : 0);
-			var _gox = (_m.lap == 0) ? _hgx : _hx, _goy = (_m.lap == 0) ? _hgy : _hy;
-			hex_flow_to(_m, _gox, _goy, hex_flow_speed * 0.8, _t);
-			if (point_distance(_m.x, _m.y, _gox, _goy) < 10) _m.lap = 1 - _m.lap;
-			continue;
-		}
-		if (hex_mode == "" && hex_held == noone) {
-			// stance up: her hex swirls around her body, ready
-			_gx = (bbox_left + bbox_right) / 2; _gy = (bbox_top + bbox_bottom) / 2;
-		}
-		if (hex_mode == "charge" && !_in_orb) {
-			// not in the orb (yet): keep swirling around her
-			_gx = (bbox_left + bbox_right) / 2; _gy = (bbox_top + bbox_bottom) / 2;
-			_rad = 34;
-		} else if (hex_held != noone) {
-			_gx = hex_held.x; _gy = hex_held.y;
-			if (hex_kind == "env") _gy -= hex_held.z;   // wrap it where it's drawn, lifted off the ground
-			_rad = ((hex_kind == "env") ? hex_held.r : 22) + 6;
-			_gy += _rad * 0.35;   // most of it pools underneath, holding it up
-		} else if (hex_mode == "charge") {
-			// the ball: denser and bigger as it fills, pulsing harder as it overcharges
-			_rad = 4 + 14 * _knot;
-			_rad *= 1 + 0.25 * _knot * sin(hex_charge * 0.5);
-		} else _rad = (hex_mode == "") ? 34 : 18; // in her stance, swirling around her
-		_rad *= 0.6 + 0.4 * sin(_t * _m.sp + _m.ph); // breathing
-		var _ang = _m.ph + _t * (120 + 500 * _knot) * (_m.sp / 3.5);
-		_mx = _gx + lengthdir_x(_rad, _ang);
-		_my = _gy + lengthdir_y(_rad * ((hex_held != noone) ? 0.45 : 1), _ang);   // under something held, the swirl flattens into a pool
-		if (point_distance(_m.x, _m.y, _gx, _gy) > _rad + 24) {
-			// not there yet: flow toward it at a steady pace
-			hex_flow_to(_m, _gx, _gy, hex_flow_speed, _t);
-			continue;
-		}
-		if (_i mod hex_trail == 0) {
-			// a few stragglers trail behind the clump, so the curse leaves a wake as it moves
-			_pull = 0.1;
-			_cap = 22;
-		} else {
-			// the clump: churning around the curse or what it holds
-			_pull = 0.18;
-			_cap = 10 + 14 * _knot;   // churning where it arrived: lively but never snapping
-		}
-	}
-	// starling rule: don't crowd your neighbors (checks a few at random each frame)
-	repeat (3) {
-		var _o = hex_motes[irandom(_n - 1)];
-		if (_o.st == 2 || _o.st == 4) continue;
-		var _dx = _m.x - _o.x, _dy = _m.y - _o.y;
-		var _dd = _dx * _dx + _dy * _dy;
-		if (_dd > 0 && _dd < 16) { _m.vx += _dx * 0.08; _m.vy += _dy * 0.08; }
-	}
-	_m.vx = (_m.vx + (_mx - _m.x) * _pull + random_range(-0.3, 0.3)) * 0.82;
-	_m.vy = (_m.vy + (_my - _m.y) * _pull + random_range(-0.3, 0.3)) * 0.82;
-	var _ms = point_distance(0, 0, _m.vx, _m.vy);
-	if (_ms > _cap) { _m.vx *= _cap / _ms; _m.vy *= _cap / _ms; }
-	_m.x += _m.vx;
-	_m.y += _m.vy;
+// THE RIVERS HOME: from a knot she let go, something she threw, a shot that burst. Each flows back into her palm
+for (var _i = array_length(hex_home) - 1; _i >= 0; _i--) {
+	if (hex_home_flow(hex_home[_i], _hx, _hy)) array_delete(hex_home, _i, 1);
 }
 
 //getting the player to lock in 4 directionals
