@@ -193,29 +193,76 @@ function hex_orb_draw() {
 	_s.att = [];
 }
 
-// THE RIVER: a stream of her hex along a path from her palm (_ax, _ay) to (_bx, _by), bending through (_cx, _cy) (a
-// quadratic bezier). Only the stretch _lo.._hi of it is there (0 = her palm, 1 = the far end). _amt is how much hex it's
-// carrying (more = a wider, brighter river); _dir 1 = flowing out from her, -1 = flowing home to her. Drawn with the hex
-// shader's river mode (u_mode 3): a dark body of hex smoke with bright strands of light running through it, like Wanda's
-// hex pouring out of her. Draw it BEFORE hex_orb_draw.
-function hex_river_draw(_ax, _ay, _bx, _by, _cx, _cy, _lo, _hi, _amt, _dir) {
-	if (_hi - _lo <= 0.001) return;
-	var _s = hex_wisp_state(), _pal = _s.pals[_s.pal], _u = hex_orb_uniforms();
-	var _w = 2.5 + 4 * sqrt(clamp(_amt, 0, 24) / 14);                  // half-width of the smoke body, in world pixels
-	var _fx = floor(_ax), _fy = floor(_ay);
-	var _pad = _w * 2 + 12;
-	var _x0 = min(_ax, _bx, _cx) - _pad, _y0 = min(_ay, _by, _cy) - _pad, _x1 = max(_ax, _bx, _cx) + _pad, _y1 = max(_ay, _by, _cy) + _pad;
-	gpu_push_state(); gpu_set_blendenable(true); gpu_set_blendmode_ext(bm_one, bm_inv_src_alpha); draw_set_alpha(1); shader_set(sh_hex_orb);
-	shader_set_uniform_f(_u.mode, 3);
-	shader_set_uniform_f(_u.rv, _bx - _fx, _by - _fy, _cx - _fx, _cy - _fy);
-	shader_set_uniform_f(_u.rv2, _lo, _hi, _w, _dir);
-	shader_set_uniform_f(_u.time, current_time / 1000); shader_set_uniform_f(_u.seed, 5);
-	shader_set_uniform_f(_u.center, _fx, _fy); shader_set_uniform_f(_u.px, _s.opx);
+// smooth value noise, 0..1 (the drifting currents that push her parcels around)
+function hex_hash(_x, _y) {
+	var _s = sin(_x * 127.1 + _y * 311.7) * 43758.5453;
+	return _s - floor(_s);
+}
+function hex_vn(_x, _y) {
+	var _ix = floor(_x), _iy = floor(_y), _fx = _x - _ix, _fy = _y - _iy;
+	var _ux = _fx * _fx * (3 - 2 * _fx), _uy = _fy * _fy * (3 - 2 * _fy);
+	var _a = hex_hash(_ix, _iy), _b = hex_hash(_ix + 1, _iy), _c = hex_hash(_ix, _iy + 1), _d = hex_hash(_ix + 1, _iy + 1);
+	return lerp(lerp(_a, _b, _ux), lerp(_c, _d, _ux), _uy);
+}
+
+// THE HEX FIELD: her hex out in the world, drawn as ONE body. Every parcel (obj_player's hex_par) splats a soft blob of
+// density into a surface, one surface pixel per hex pixel (so it's on the magic's grid for free): red = the smoke body,
+// green = light currents (about a third of the parcels carry those). Where parcels overlap, it thickens and brightens. Then
+// the hex shader (u_mode 4) draws the surface as hex: a dark smoke body, light where currents bunch up, sparkles.
+// A hundred parcels cost about the same as one draw. Call it BEFORE hex_orb_draw.
+function hex_field_draw(_par) {
+	var _n = array_length(_par);
+	if (_n == 0) return;
+	var _s = hex_wisp_state(), _pal = _s.pals[_s.pal], _u = hex_orb_uniforms(), _px = _s.opx;
+	// the soft blob, made once: a white dot fading to nothing (black adds nothing)
+	if (!variable_struct_exists(_s, "blob") || !sprite_exists(_s.blob)) {
+		var _bs = surface_create(32, 32);
+		surface_set_target(_bs); draw_clear_alpha(c_black, 0);
+		for (var _k = 0; _k < 6; _k++) { gpu_set_blendmode(bm_add); draw_set_alpha(0.25); draw_circle_colour(16, 16, 15 - _k * 2.4, c_white, c_black, false); }
+		gpu_set_blendmode(bm_normal); draw_set_alpha(1);
+		surface_reset_target();
+		_s.blob = sprite_create_from_surface(_bs, 0, 0, 32, 32, false, false, 16, 16);
+		surface_free(_bs);
+	}
+	// the field covers the camera's view, on the magic's grid
+	var _cam = view_camera[0];
+	var _ox = floor(camera_get_view_x(_cam) / _px) * _px - _px, _oy = floor(camera_get_view_y(_cam) / _px) * _px - _px;
+	var _fw = ceil(camera_get_view_width(_cam) / _px) + 3, _fh = ceil(camera_get_view_height(_cam) / _px) + 3;
+	if (!variable_struct_exists(_s, "field") || !surface_exists(_s.field) || surface_get_width(_s.field) != _fw || surface_get_height(_s.field) != _fh) {
+		if (variable_struct_exists(_s, "field") && surface_exists(_s.field)) surface_free(_s.field);
+		_s.field = surface_create(_fw, _fh);
+	}
+	surface_set_target(_s.field);
+	draw_clear_alpha(c_black, 0);
+	gpu_set_blendmode(bm_add);
+	var _body = 3.6, _tail = 1.6;                     // the smoke body's softness and how long a moving parcel streaks (world pixels)
+	for (var _i = 0; _i < _n; _i++) {
+		var _q = _par[_i];
+		var _sx = (_q.x - _ox) / _px, _sy = (_q.y - _oy) / _px;
+		var _sp = point_distance(0, 0, _q.vx, _q.vy), _dir = point_direction(0, 0, _q.vx, _q.vy);
+		// a soft blob stretched back along the way it's moving (each blob's radius is 2.5 of its softness)
+		var _sc = (_body * 2.5 / _px) / 16, _st = 1 + _sp * _tail / _body;
+		var _bx = _sx - lengthdir_x((_st - 1) * _body / _px * 0.5, _dir), _by = _sy - lengthdir_y((_st - 1) * _body / _px * 0.5, _dir);
+		draw_sprite_ext(_s.blob, 0, _bx, _by, _sc * _st, _sc, _dir, c_red, 0.45 / 4);   // the field stores density / 4, so it doesn't clip
+		if (_q.hot) {
+			var _hw = (_q.st == 1) ? 0.35 : 1;           // currents in a knot stay dim (the orb is the knot's bright part)
+			var _hs = max(1.1 / _px, 0.7) * 2.5 / 16;
+			draw_sprite_ext(_s.blob, 0, _bx, _by, _hs * _st, _hs, _dir, c_lime, 0.45 / 4 * _hw * 1.6);
+		}
+	}
+	gpu_set_blendmode(bm_normal);
+	surface_reset_target();
+	// draw it as one body of hex
+	gpu_push_state(); gpu_set_blendenable(true); gpu_set_blendmode_ext(bm_one, bm_inv_src_alpha); shader_set(sh_hex_orb);
+	shader_set_uniform_f(_u.mode, 4);
+	var _tx = surface_get_texture(_s.field);
+	shader_set_uniform_f(_u.box, 1 / texture_get_texel_width(_tx), 1 / texture_get_texel_height(_tx));
+	shader_set_uniform_f(_u.time, current_time / 1000); shader_set_uniform_f(_u.seed, 3); shader_set_uniform_f(_u.px, _px);
 	shader_set_uniform_f(_u.smoke, _pal.smoke[0] / 255, _pal.smoke[1] / 255, _pal.smoke[2] / 255);
 	shader_set_uniform_f(_u.glow, _pal.glow[0] / 255, _pal.glow[1] / 255, _pal.glow[2] / 255);
 	shader_set_uniform_f(_u.core, _pal.core[0] / 255, _pal.core[1] / 255, _pal.core[2] / 255);
 	shader_set_uniform_f(_u.spark, _pal.spark[0] / 255, _pal.spark[1] / 255, _pal.spark[2] / 255); shader_set_uniform_f(_u.hot, _pal.hot);
-	draw_rectangle(_x0, _y0, _x1, _y1, false);
+	draw_surface_ext(_s.field, _ox, _oy, _px, _px, 0, c_white, 1);
 	shader_reset(); gpu_pop_state();
 }
 

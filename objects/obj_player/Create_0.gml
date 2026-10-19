@@ -277,11 +277,6 @@ hex_gx = x; hex_gy = y;
 hex_wR = 0;           // the wrap around what she holds (0..1); it rides along with it and dissolves after she lets go
 hex_hand_f = 0;       // her palm: 0 = the orb (resting) .. 1 = channeling (an erratic pocket of hex), eased between
 hex_hand_e = 0.8;     // how hard she's channeling (how erratic her palm is), eased
-hex_rv_state = 0;     // THE RIVER: 0 none, 1 reaching out, 2 draining into what she holds, 3 flowing home
-hex_rv_lo = 0;        // the stretch of the path (0 = her palm, 1 = the target) the river covers right now
-hex_rv_hi = 0;
-hex_rv_tx = x;        // where it's flowing to
-hex_rv_ty = y;
 hex_wobj = noone;
 hex_wkind = "";
 hex_hand_debug = false; // J toggles: a marker on the hand point, and the arrow keys nudge it for the current sprite
@@ -297,12 +292,14 @@ function hex_hand_pos() {
 // Her hex is a single quantity (hex_max units) that moves between a few places. Every visual reads these numbers, so
 // what you see is always where her hex actually is: nothing pops in, nothing vanishes.
 //   hex_hand_amt  in her hand (what she can use right now; the HUD shows this)
-//   hex_out       flowing out to her target in the river
-//   hex_at        gathered at the target (the forming knot, or the surround around what she holds)
+//   hex_par       out in the world: PARCELS, small bits of hex (HEX_PARCEL each) that each move on their own.
+//                 st 0 = flowing out, 1 = gathered at the target (churning in the knot, or around what she holds),
+//                 2 = going home. hex_out and hex_at are just the sums of the st 0 and st 1 parcels, counted each Step.
 //   hex_orb_amt   in the orb she's charging
-//   hex_home      rivers flowing home (from a knot she let go, a thing she threw, a shot that burst)
 //   (and whatever rides inside obj_hex_shot instances, as their hex_amt)
-// Step moves it along: hand -> river -> target when she reaches, target -> home rivers -> hand when she lets go.
+// Step moves it along: hand -> parcels out -> gathered when she reaches; gathered -> parcels home -> hand when she lets go.
+// Because every parcel finds its own way, the river braids and wanders on its own, and going home it disperses and drifts
+// back bit by bit, instead of one shape stretching out and retracting.
 hex_budget = 32;      // her max hex (raised by the "max_hex" stat; H adds 8 while testing)
 hex_max = hex_budget;
 hex_hand_amt = hex_budget;
@@ -310,13 +307,19 @@ hex_out = 0;
 hex_at = 0;
 hex_need = 0;         // how much the current reach wants at its target (a lift's cost, or hex_reach_cap over open ground)
 hex_reach_cap = 14;   // how much gathers when she reaches into open ground
-hex_pour = 1;         // how much hex the river carries per frame (out of her hand, and into the target)
 hex_orb_amt = 0;
-hex_home = [];        // rivers going home: { x, y (where it started), lo, hi (the stretch of the path it covers), amt }
+hex_par = [];         // her hex out in the world, as parcels: { x, y, vx, vy, s (its own pace), ph (its own phase), st, wait, hot, amt }
+#macro HEX_PARCEL 0.25   // how much hex one parcel carries (4 parcels per unit)
+hex_pour_n = 2;       // parcels her hand lets out per frame while reaching (2 = half a unit a frame)
+hex_pour_acc = 0;
+hex_par_turn = 0.12;  // how quickly a parcel can change direction (lower = wider, lazier curves)
+hex_par_curl = 0.9;   // how much the drifting currents push parcels around (higher = a wilder, wider river)
+hex_par_fan = 0.5;    // how widely parcels leave her palm (radians)
+hex_home_spread = 45; // frames over which the gathered parcels decide, one by one, to head home (higher = a slower, longer drift back)
 
-hex_flow_speed = 10; // how fast her hex flows out to where it's going (pixels a frame). Lower = it takes longer to reach
-// (Sophia's target: somewhere between waterbending (too slow) and airbending (much too fast); was 7)
-hex_return_speed = 11; // ...and back home to her hand (was 9)
+hex_flow_speed = 6;   // how fast a parcel flows out to where it's going (pixels a frame, each parcel a little different)
+// (was 10 for the old motes; the parcel river looked right at 6 in the prototype)
+hex_return_speed = 7; // ...and back home to her hand, speeding up as it nears her palm (was 11 for the old motes)
 hex_cost = 0;         // what the thing she's holding cost
 hex_cost_lift = 8;    // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
 hex_cost_enemy = 14;  // hex it takes to lift an enemy
@@ -339,56 +342,46 @@ hex_bonus = 0;        // extra max hex (debug: press H in a run for +8)
 hex_available = function() {
 	return floor(hex_hand_amt + 0.001);
 }
-// send _a hex home from (_x, _y): it becomes a river flowing back along a path into her palm
+// let out one parcel of hex from her palm (_x, _y), heading toward (_tx, _ty)
+hex_par_emit = function(_x, _y, _tx, _ty) {
+	var _a = arctan2(_ty - _y, _tx - _x) + random_range(-0.5, 0.5) * hex_par_fan * 2;
+	var _s = hex_flow_speed * random_range(0.75, 1.25);
+	array_push(hex_par, { x: _x + random_range(-1.5, 1.5), y: _y + random_range(-1.5, 1.5), vx: cos(_a) * _s, vy: sin(_a) * _s, s: _s, ph: random(6.28), st: 0, wait: 0, hot: (random(1) < 0.35), amt: HEX_PARCEL });
+}
+// send _a hex home from (_x, _y): it breaks into parcels that each head home on their own time (a shot that burst)
 hex_home_add = function(_x, _y, _a) {
-	if (_a <= 0.001) return;
-	array_push(hex_home, { x: _x, y: _y, lo: 1, hi: 1, amt: _a });
+	while (_a > 0.001) {
+		var _k = min(HEX_PARCEL, _a);
+		var _ang = random(6.28);
+		array_push(hex_par, { x: _x + random_range(-6, 6), y: _y + random_range(-6, 6), vx: cos(_ang) * 2, vy: sin(_ang) * 2, s: hex_flow_speed * random_range(0.75, 1.25), ph: random(6.28), st: 2, wait: irandom(hex_home_spread), hot: (random(1) < 0.35), amt: _k });
+		_a -= _k;
+	}
 }
-// let go of a reach: whatever gathered at the target flows home from there (the outgoing river turns back on its own, in Step)
-hex_let_go = function() {
-	hex_home_add(hex_gx, hex_gy, hex_at);
-	hex_at = 0;
+// everything out in the world (flowing out, or gathered) heads home, each parcel deciding on its own when.
+// _vx, _vy: a push they all get first (what she threw was moving)
+hex_let_go = function(_vx = 0, _vy = 0) {
+	for (var _i = 0; _i < array_length(hex_par); _i++) {
+		var _q = hex_par[_i];
+		if (_q.st == 2) continue;
+		_q.st = 2;
+		_q.wait = irandom(hex_home_spread);
+		_q.vx += _vx + random_range(-0.4, 0.4);
+		_q.vy += _vy + random_range(-0.4, 0.4);
+	}
 }
-// throw whatever her hex is holding: the hex that held it flows home from where she let go
+// throw whatever her hex is holding: the hex that held it lets go and drifts home from where it was
 hex_throw = function() {
 	if (hex_held == noone || !instance_exists(hex_held)) { hex_held = noone; hex_kind = ""; return; }
-	var _ey = hex_held.y;
 	if (hex_kind == "env") {
-		_ey -= hex_held.z;
 		hex_held.grabbed = false;
 		hex_held.vx *= 1.6;
 		hex_held.vy *= 1.6;
 		hex_held.vz = min(7, 3 + 0.15 * point_distance(0, 0, hex_held.vx, hex_held.vy));   // pops upward (harder throws arc higher), so it lobs and lands instead of skating off
+		hex_let_go(hex_held.vx * 0.5, hex_held.vy * 0.5);
 	} else {
 		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
+		hex_let_go(hex_hvx * 0.8, hex_hvy * 0.8);
 	}
-	hex_home_add(hex_held.x, _ey, hex_at);
-	hex_at = 0;
 	hex_held = noone;
 	hex_kind = "";
-}
-// where a river's path bends: it arcs gently from her palm (_ax, _ay) to (_bx, _by), bowing upward. A river's path is a
-// quadratic bezier through this point: (1-f)^2 * palm + 2(1-f)f * bend + f^2 * end, with f from 0 (her palm) to 1 (the end)
-function hex_river_bend(_ax, _ay, _bx, _by) {
-	var _l = point_distance(_ax, _ay, _bx, _by);
-	var _pa = point_direction(_ax, _ay, _bx, _by) + ((_bx >= _ax) ? 90 : -90);   // the side that bows upward
-	return [(_ax + _bx) / 2 + lengthdir_x(_l * 0.16, _pa), (_ay + _by) / 2 + lengthdir_y(_l * 0.16, _pa)];
-}
-// move one river along its path (0 = her palm, 1 = the far end) flowing HOME: the front heads in first, the back follows
-// once the stream is long enough (or the front is home). What reaches her palm returns to her hand. Returns true when
-// it's all home
-function hex_home_flow(_r, _hx, _hy) {
-	var _rl = max(16, point_distance(_hx, _hy, _r.x, _r.y) * 1.1);   // about how long the path is
-	var _dr = hex_return_speed / _rl;
-	_r.lo = max(0, _r.lo - _dr);
-	if (_r.lo <= 0 || (_r.hi - _r.lo) * _rl > 70) {
-		if (_r.lo <= 0) {
-			var _d = _r.amt * min(1, _dr / max(_r.hi, _dr));   // the share of what's left that reaches her this frame
-			_r.amt -= _d;
-			hex_hand_amt += _d;
-		}
-		_r.hi = max(_r.lo, _r.hi - _dr);
-	}
-	if (_r.hi <= 0.001) { hex_hand_amt += _r.amt; _r.amt = 0; return true; }
-	return false;
 }

@@ -33,7 +33,7 @@ if (!is_undefined(witch)) {
 //    Let go of right click to throw it. Over open ground it just gathers (hex_reach_cap).
 //  - left click: an orb coalesces in front of her hand and grows. Release to fire it (more hex, bigger boom).
 //  - tap space: a quick hand blast (hex_blast_cost).
-// Whatever she lets go of flows home to her hand as a river.
+// Whatever she lets go of drifts home to her hand, bit by bit.
 var _ha = point_direction(x, y, mouse_x, mouse_y);
 // her off hand (hex_hand in Create). Her sprite and position for this frame aren't final yet (they're set near the
 // end of Step), so this is last frame's hand: fine for the hex logic. The ball itself snaps to the final hand at the end.
@@ -61,6 +61,12 @@ var _want = round(scr_stat("max_hex", hex_budget)) + hex_bonus;
 if (_want > hex_max) hex_hand_amt += _want - hex_max;   // more max hex arrives straight in her hand
 hex_max = _want;
 var _ox = hex_hx, _oy = hex_hy;
+// how much of her hex is flowing out, and how much has gathered at the target (the parcels carry it)
+hex_out = 0; hex_at = 0;
+for (var _i = 0; _i < array_length(hex_par); _i++) {
+	var _q = hex_par[_i];
+	if (_q.st == 0) hex_out += _q.amt; else if (_q.st == 1) hex_at += _q.amt;
+}
 
 if (keyboard_check(hex_key)) {
 	// HEX STANCE: while hex_key (space) is held her hex is ready in her palm. Her wand stands down and the mouse casts with
@@ -125,13 +131,21 @@ if (keyboard_check(hex_key)) {
 				if (_kind == "env") _target.grabbed = true;
 			}
 		} else hex_need = hex_cost;
-		// her hand feeds the river until there's enough out for the job (never more: the rest of her hex stays with her)
-		var _p = min(hex_pour, hex_hand_amt, max(0, hex_need - hex_out - hex_at));
-		hex_hand_amt -= _p; hex_out += _p;
-		// once the river's front has reached the target, it delivers what it carries
-		if (hex_rv_hi >= 1) { var _dl = min(hex_out, hex_pour); hex_out -= _dl; hex_at += _dl; }
-		// more gathered than the job needs (she moved from open ground onto a light rock): the extra flows home
-		if (hex_at > hex_need + 0.5) { hex_home_add(hex_gx, hex_gy, hex_at - hex_need); hex_at = hex_need; }
+		// her hand lets hex out as a steady trickle of parcels until there's enough out for the job (never more: the rest
+		// of her hex stays with her)
+		hex_pour_acc = min(hex_pour_acc + hex_pour_n, hex_pour_n);
+		while (hex_pour_acc >= 1 && hex_out + hex_at < hex_need - 0.001 && hex_hand_amt >= HEX_PARCEL - 0.001) {
+			hex_pour_acc -= 1;
+			hex_hand_amt -= HEX_PARCEL; hex_out += HEX_PARCEL;
+			hex_par_emit(_hx, _hy, hex_gx, hex_gy);
+		}
+		// more gathered than the job needs (she moved from open ground onto a light rock): the extra heads home
+		if (hex_at > hex_need + 0.5) {
+			for (var _i = 0; _i < array_length(hex_par) && hex_at > hex_need; _i++) {
+				var _q = hex_par[_i];
+				if (_q.st == 1) { _q.st = 2; _q.wait = irandom(hex_home_spread div 2); hex_at -= _q.amt; }
+			}
+		}
 	}
 	if (hex_mode == "charge") {
 		// the orb draws hex straight out of her palm, up to a full charge (or as much as she has)
@@ -196,32 +210,53 @@ if (!hex_active) {
 hex_hvx = hex_hx - _ox;
 hex_hvy = hex_hy - _oy;
 
-// THE RIVER OUT: the stretch of the path from her palm (0) to the target (1) that her outgoing hex covers right now
-//   1 reaching: the front runs out to the knot     2 holding: it drains into what she lifted     3 she let go: it turns back
-var _rs = 0;
-if (hex_active && hex_mode == "grab") _rs = (hex_held == noone) ? 1 : 2;
-else if (hex_rv_hi > 0.001) _rs = 3;
-if (_rs == 1) { hex_rv_tx = hex_gx; hex_rv_ty = hex_gy; }
-if (_rs == 2 && instance_exists(hex_held)) { hex_rv_tx = hex_held.x; hex_rv_ty = hex_held.y - ((hex_kind == "env") ? hex_held.z : 0); }
-var _rl = max(16, point_distance(_hx, _hy, hex_rv_tx, hex_rv_ty) * 1.1);   // about how long the path is
-var _dv = hex_flow_speed / _rl;
-if (_rs == 1) { hex_rv_lo = max(0, hex_rv_lo - _dv); hex_rv_hi = min(1, hex_rv_hi + _dv); }
-else if (_rs == 2) {
-	hex_rv_hi = min(1, hex_rv_hi + _dv);
-	if (hex_rv_hi >= 1) hex_rv_lo = min(hex_rv_hi, hex_rv_lo + _dv * 0.8);
-	if (hex_rv_lo >= hex_rv_hi) { hex_at += hex_out; hex_out = 0; }   // fully drained in
+// HER HEX OUT IN THE WORLD: every parcel moves on its own
+//   st 0 flowing out: steers toward the target at its own pace, pushed around by drifting currents (so the river braids)
+//   st 1 gathered: churns around the knot, or around what she holds (pooling a little underneath it)
+//   st 2 going home: waits its own moment, loosens and drifts, then is drawn back to her palm, faster as it nears
+var _t = current_time / 1000;
+var _gtx = hex_gx, _gty = hex_gy, _grad = 8, _arr = 10;
+if (hex_held != noone && instance_exists(hex_held)) {
+	_gtx = hex_held.x; _gty = hex_held.y - ((hex_kind == "env") ? hex_held.z : 0);
+	_grad = ((hex_kind == "env") ? hex_held.r : 14) + 4;
+	_arr = _grad + 4;
 }
-else if (_rs == 3) {
-	// what was still in the river flows back into her palm along it
-	var _ro = { x: hex_rv_tx, y: hex_rv_ty, lo: hex_rv_lo, hi: hex_rv_hi, amt: hex_out };
-	if (hex_home_flow(_ro, _hx, _hy)) { _ro.hi = 0; _ro.lo = 0; }
-	hex_rv_lo = _ro.lo; hex_rv_hi = _ro.hi; hex_out = _ro.amt;
-}
-hex_rv_state = _rs;
-
-// THE RIVERS HOME: from a knot she let go, something she threw, a shot that burst. Each flows back into her palm
-for (var _i = array_length(hex_home) - 1; _i >= 0; _i--) {
-	if (hex_home_flow(hex_home[_i], _hx, _hy)) array_delete(hex_home, _i, 1);
+for (var _i = array_length(hex_par) - 1; _i >= 0; _i--) {
+	var _q = hex_par[_i];
+	if (_q.st == 2) {
+		if (_q.wait > 0) {
+			_q.wait--;
+			_q.vx *= 0.93; _q.vy *= 0.93; _q.vy -= 0.02;   // loosening, drifting up a touch
+		} else {
+			var _dg = point_distance(_q.x, _q.y, _hx, _hy);
+			if (_dg < 6) { hex_hand_amt += _q.amt; array_delete(hex_par, _i, 1); continue; }   // home: back in her hand
+			var _dr = (hex_vn(_q.x * 0.03 + _t * 0.7 + 9, _q.y * 0.03 + _q.ph) - 0.5) * hex_par_curl * min(1, _dg / 60);
+			var _a = arctan2(_hy - _q.y, _hx - _q.x) + _dr;
+			var _s = min(hex_return_speed * (_q.s / hex_flow_speed) * (1 + 1.5 * max(0, 1 - _dg / 80)), _dg * 0.5 + 1);
+			_q.vx += (cos(_a) * _s - _q.vx) * hex_par_turn;
+			_q.vy += (sin(_a) * _s - _q.vy) * hex_par_turn;
+		}
+	} else {
+		var _dg = point_distance(_q.x, _q.y, _gtx, _gty);
+		if (_q.st == 0) {
+			var _dr = (hex_vn(_q.x * 0.025 + _t * 0.6, _q.y * 0.025 + _q.ph) - 0.5) * hex_par_curl;
+			var _a = arctan2(_gty - _q.y, _gtx - _q.x) + _dr;
+			var _s = min(_q.s, _dg * 0.25 + 1);
+			_q.vx += (cos(_a) * _s - _q.vx) * hex_par_turn;
+			_q.vy += (sin(_a) * _s - _q.vy) * hex_par_turn;
+			if (_dg < _arr) _q.st = 1;
+		} else {
+			var _r0 = _grad + 4 * sin(_q.ph + _t * 2);
+			var _gy2 = _gty + ((hex_held != noone) ? _grad * 0.25 : 0);   // under something held, it pools a little lower
+			var _d2 = max(point_distance(_q.x, _q.y, _gtx, _gy2), 0.01);
+			var _ta = arctan2(_gy2 - _q.y, _gtx - _q.x) + 1.9;
+			var _pl = (_d2 - _r0) * 0.08;
+			_q.vx += (cos(_ta) * 1.3 + (_gtx - _q.x) / _d2 * _pl - _q.vx) * 0.15;
+			_q.vy += (sin(_ta) * 1.3 + (_gy2 - _q.y) / _d2 * _pl - _q.vy) * 0.15;
+		}
+	}
+	_q.x += _q.vx;
+	_q.y += _q.vy;
 }
 
 //getting the player to lock in 4 directionals

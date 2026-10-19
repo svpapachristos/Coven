@@ -44,14 +44,14 @@ if (_wisp) {
 	var _hf = hex_hand_f;
 	if (hex_mode == "charge") hex_wisp_att(hex_hx, hex_hy, 11 + 20 * _kn, 0.65 + 0.35 * _kn, 0, 0, false, _ws.eR, _ws.eE, 0, 0.6);   // softer strands while charging (the charged orb's own look is still on the bible's to-do list)
 	else hex_wisp_att(_hp[0], _hp[1], 15, 0.75, 0, 0, false, lerp(_ws.eR, 4, _hf), lerp(_ws.eE, hex_hand_e, _hf), 0.9 * _hf, lerp(1, 0.3, _hf), 0, 0, 1, lerp(1, 0.5, _hf));   // (veil 0.5: just enough to read the core)
-	// the gathering knot at the river's mouth: as big as the hex that has actually arrived there (hex_at, moved by Step),
+	// the gathering knot where her hex arrives: as big as the hex that has actually gathered there (hex_at, counted in Step),
 	// eased so it grows in and dissolves instead of popping
 	var _gT = (hex_active && hex_mode == "grab" && hex_held == noone) ? clamp(hex_at / max(1, min(hex_need, hex_reach_cap)), 0, 1) : 0;
 	hex_gR += (_gT - hex_gR) * 0.12;
 	// it coalesces: first a faint knot of mist, and only once most of it has gathered does its white-hot heart kindle
 	if (hex_gR > 0.04) hex_wisp_att(hex_gx, hex_gy, 15, 0.6, 0, 0, false, 2 + 9 * hex_gR, 0.25 + 0.35 * hex_gR, 0, 1, 0, 0, clamp((hex_gR - 0.45) / 0.55, 0, 1));
 	// THE SURROUND: her hex around what she holds, never over it (clear in the middle), with licks of overflow straining at
-	// its edge. Grows in as the river drains into it; after she lets go it rides along with the thrown thing and dissolves
+	// its edge. Grows in as her hex gathers around it; after she lets go it rides along with the thrown thing and dissolves
 	if (hex_active && hex_held != noone) { hex_wobj = hex_held; hex_wkind = hex_kind; }
 	var _wT = (hex_active && hex_held != noone) ? clamp(hex_at / max(1, hex_cost), 0, 1) : 0;   // as much as has drained into it
 	hex_wR += (_wT - hex_wR) * ((_wT > hex_wR) ? 0.1 : 0.05);
@@ -63,16 +63,8 @@ if (_wisp) {
 		hex_wisp_att(x, y, 11 * size, 0.95, vx, vy, true, max(6, 7 * size), 0.9);   // a shot in flight is wild
 	}
 	if (_orb) {
-		// THE RIVERS (drawn under the orbs): the one flowing out (or turning back), and every one flowing home.
-		// How wide and bright each is comes from how much hex it's carrying
-		if ((hex_rv_hi - hex_rv_lo) > 0.002) {
-			var _c2 = hex_river_bend(_hp[0], _hp[1], hex_rv_tx, hex_rv_ty);
-			hex_river_draw(_hp[0], _hp[1], hex_rv_tx, hex_rv_ty, _c2[0], _c2[1], hex_rv_lo, hex_rv_hi, hex_out + ((hex_rv_state == 2) ? hex_cost * 0.5 : 0), (hex_rv_state == 3) ? -1 : 1);
-		}
-		for (var _i = 0; _i < array_length(hex_home); _i++) {
-			var _h = hex_home[_i], _c3 = hex_river_bend(_hp[0], _hp[1], _h.x, _h.y);
-			hex_river_draw(_hp[0], _hp[1], _h.x, _h.y, _c3[0], _c3[1], _h.lo, _h.hi, _h.amt, -1);
-		}
+		// HER HEX OUT IN THE WORLD (drawn under the orbs): every parcel, as one body of hex (scr_hex_wisp, hex_field_draw)
+		hex_field_draw(hex_par);
 		hex_orb_draw();
 	}
 	else hex_wisp_draw([], hex_active);   // (the old smoke-wisp look drew motes; with her hex as one amount it has nothing to draw)

@@ -13,6 +13,7 @@
 // The parts (Sophia's names): CORE/SPARK white-hot and lilac; BODY hex blue (the mist hugging the core, with dust);
 // GLOW blue-violet (where light overlaps and builds up); SMOKE/EDGE dark violet (the only non-light part: rim and patches).
 varying vec2 v_world;     // this pixel's position in the room, from the vertex shader
+varying vec2 v_tex;       // texture coordinate (u_mode 4: the hex field surface)
 uniform vec2  u_center;   // where the ball is in the room (world pixels)
 uniform vec2  u_box;      // the square being drawn around it, in world pixels
 uniform float u_R;        // the ball's size (world pixels)
@@ -24,7 +25,7 @@ uniform float u_veil;     // how thick the veil is (1 = normal)
 uniform float u_over;     // 0..1: the overflow, for when the hex is holding something
 uniform float u_strand;   // how strong the strands are (1 = full; the charging orb uses less until it gets its own look)
 uniform float u_hollow;   // orb: 0 = solid; otherwise the radius of something held inside it (no core, and the hex wraps around it instead of covering it)
-uniform float u_mode;     // 0 = an orb (a ball of her magic); 1 = the old mote FLOW (unused now); 2 = HEX FLAME (parked); 3 = THE RIVER
+uniform float u_mode;     // 0 = an orb (a ball of her magic); 1 = the old mote FLOW (unused); 2 = HEX FLAME (parked); 3 = the curve river (parked); 4 = THE HEX FIELD
 uniform vec4  u_rv;       // river: the far end (xy) and the bend point (zw), from u_center (her palm)
 uniform vec4  u_rv2;      // river: lo, hi (the stretch of the path that is there), half-width, dir (1 out, -1 home)
 uniform float u_heart;    // orb: how formed its white-hot heart is (0 = still coalescing, no heart yet .. 1 = full)
@@ -323,13 +324,39 @@ vec4 river(vec2 p, vec2 pc)
 	if (I < 0.3 && e > 0.12 && e < 0.24 && vn(vec2(along * 0.2 + t * dir, s * 0.3)) > 0.55) { col = u_smoke * 0.5; a = 0.5; }
 	return vec4(col, a);
 }
+// THE HEX FIELD (u_mode 4): her hex out in the world as one body. The surface being drawn holds density splatted by every
+// parcel (hex_field_draw): r = the smoke body, g = light currents, stored / 4. One surface pixel = one hex pixel; u_box is
+// the surface texture's size in texels. A dark smoke body where it's thick (it gives the hex weight on bright ground), light
+// where the currents bunch up, a few sparkles. In motion it tops out at lilac.
+vec4 field(vec2 pc)
+{
+	vec2 uv = (floor(v_tex * u_box) + 0.5) / u_box;
+	vec4 d = texture2D(gm_BaseTexture, uv) * 4.0;
+	vec2 p = (pc + 0.5) * u_px;
+	float t = u_time;
+	float gas = vn(p * 0.18 + vec2(t * 0.9, -t * 0.7)) * 0.6 + vn(p * 0.45 - t * 1.3) * 0.4;
+	float body = d.r * (0.6 + 0.6 * gas);
+	float I = d.g * (0.7 + 0.5 * gas) + max(body - 0.9, 0.0) * 0.5;
+	I = min(I, 1.05);
+	if (body > 0.5 && h2(pc + floor(t * 8.0) * 7.7) > 0.98) I = max(I, 1.05);   // sparkles
+	I = floor(I * 7.0 + 0.5) / 7.0;
+	float bq = floor(clamp(body, 0.0, 1.0) * 4.0 + 0.5) / 4.0;
+	float ab = 0.55 * bq;
+	float al = clamp(I * 0.6, 0.0, 0.6);
+	vec3 col = mix(u_smoke, u_glow, 0.3 * bq) * ab * (1.0 - al) + ramp(I) * (al + 0.45 * I);
+	float a = ab + al * (1.0 - ab);
+	float e = body + (h2(pc + 3.0) - 0.5) * 0.06;
+	if (I < 0.3 && e > 0.1 && e < 0.2 && vn(p * 0.25 + vec2(t, -t)) > 0.55) { col = u_smoke * 0.5; a = 0.5; }   // a broken dark edge
+	return vec4(col, a);
+}
 void main()
 {
 	vec2 rel = v_world - floor(u_center);
 	vec2 pc = floor(rel / u_px);                     // which magic pixel this is
 	vec2 p = (pc + 0.5) * u_px;                      // its middle, in world pixels from the center
 	vec4 o;
-	if (u_mode > 2.5) o = river(p, pc);
+	if (u_mode > 3.5) o = field(floor(v_world / u_px));
+	else if (u_mode > 2.5) o = river(p, pc);
 	else if (u_mode > 1.5) o = flame(p, pc);
 	else if (u_mode > 0.5) o = flow(p, pc);
 	else o = orb(p, pc);
