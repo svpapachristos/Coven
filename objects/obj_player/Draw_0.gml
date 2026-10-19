@@ -17,7 +17,7 @@ var _ws = hex_wisp_state();
 var _wisp = _ws.on;
 var _wp = hex_wisp_pal();
 var _orb = (_ws.mode == 0);   // the hex orb look (otherwise the smoke wisp)
-if (_wisp) {
+if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	// the balls of her magic: where her curse is (in her hand, the charging orb, what she holds), and any shot in flight.
 	// for the orb each one also carries a core radius (world pixels) and an energy (0 calm .. 1 wild); her stance sets the main ball's
 	var _kn = (hex_mode == "charge") ? clamp(hex_orb_amt / hex_charge_cap, 0, 1) : 0;
@@ -87,7 +87,7 @@ if (hex_active && !_orb) {   // (the orb has its own glow and heart)
 		draw_circle(hex_hx, hex_hy, (2 + 9 * _knot) * (1 + 0.2 * sin(hex_charge * 0.5)), false);
 	}
 }
-if (!hex_active && !_wisp) {
+if (!hex_active && !_wisp && hex_on) {
 	// the ball's soft glow in her hand (the wisp draws its own)
 	draw_set_color(make_color_rgb(80, 45, 160));
 	draw_set_alpha(0.14 + 0.04 * sin(current_time / 150));

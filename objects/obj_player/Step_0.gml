@@ -11,14 +11,26 @@ mana = min(mana, max_mana);
 beam_heat = max(0, beam_heat - 0.01);
 
 
+// is the hex hers? (only witches tagged "hexweaver")
+hex_on = (!is_undefined(witch) && array_contains(witch.tags, "hexweaver"));
+if (hex_on && !hex_rocks_done) {
+	// a few rocks to play with (obj_env_rock: the first environment object)
+	hex_rocks_done = true;
+	repeat (6) {
+		var _a = random(360);
+		var _d = random_range(80, 220);
+		instance_create_depth(x + lengthdir_x(_d, _a), y + lengthdir_y(_d, _a), depth, obj_env_rock);
+	}
+}
+
 if (!is_undefined(witch)) {
 	if (ability_cd > 0) ability_cd--;
-	// OLD E (toad curse), parked while we test the living curse. Uncomment to restore.
-	//if (keyboard_check(ord("E")) && ability_cd <= 0) {
-	//	witch.ability.fn(id);
-	//	ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
-	//	scr_fire_event("cast", { kind: "ability" });
-	//}
+	// E: every witch's own ability. The Hexweaver's is parked (her old toad-curse wave) while her hex lives on Space
+	if (!hex_on && keyboard_check(ord("E")) && ability_cd <= 0) {
+		witch.ability.fn(id);
+		ability_cd = game_get_speed(gamespeed_fps) * scr_stat("ability_cooldown", witch.ability.cooldown);
+		scr_fire_event("cast", { kind: "ability" });
+	}
 	if (keyboard_check_pressed(ord("Q")) && ultimate_charge >= ultimate_charge_max) {
 		witch.ultimate.fn(id);
 		ultimate_charge = 0;
@@ -68,7 +80,7 @@ for (var _i = 0; _i < array_length(hex_par); _i++) {
 	if (_q.st == 0) hex_out += _q.amt; else if (_q.st == 1) hex_at += _q.amt;
 }
 
-if (keyboard_check(hex_key)) {
+if (hex_on && keyboard_check(hex_key)) {
 	// HEX STANCE: while hex_key (space) is held her hex is ready in her palm. Her wand stands down and the mouse casts with
 	// the hex instead: hold left click to coalesce an orb in front of her hand (release to fire it), hold right click to
 	// reach out at the cursor and lift what's there (release to throw it).

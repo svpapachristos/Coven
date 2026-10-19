@@ -229,12 +229,10 @@ function player_attack() {
 hex_held = noone;  // the world object her curse is holding
 hex_reach = 4000;  // how far from her the curse can reach (4000 = the whole screen)
 hex_grab_r = 80;   // how close the cursor must be to something for her hex to go for it (was 64)
-// a few rocks to play with (obj_env_rock: the first environment object)
-repeat (6) {
-	var _a = random(360);
-	var _d = random_range(80, 220);
-	instance_create_depth(x + lengthdir_x(_d, _a), y + lengthdir_y(_d, _a), depth, obj_env_rock);
-}
+// her hex belongs to witches tagged "hexweaver" (set every Step from her witch, which is chosen after Create and can
+// change in the hideout). Every other witch keeps her own E and never sees the hex
+hex_on = false;
+hex_rocks_done = false; // a few rocks to play with (obj_env_rock), spawned the first time the hex is hers
 
 // The living curse itself: a thing with a position that leaves her hand, travels, grabs and throws.
 hex_active = false;  // true while E is held and the curse is out in the world
