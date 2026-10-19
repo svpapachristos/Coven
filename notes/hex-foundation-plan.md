@@ -102,11 +102,16 @@ Another witch can reuse the core and swap the look (e.g. the Elementalist's natu
 ## The order (check off as we go)
 Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Step 4 if there's energy.
 
-- [ ] **1. Keepers commit.** Re-apply from m21: grab range 80, reach amount 6, the sand fix (solid blob + texture filter,
+- [x] **1. Keepers commit.** Re-apply from m21: grab range 80, reach amount 6, the sand fix (solid blob + texture filter,
       streak cap, brighter current dots), facing where she casts. **Not** the charge snap flash or light spill (they mishmashed).
       *Done when:* plays like m20 with those four differences. *Clip:* reach + lift a rock.
 - [ ] **2. The hex is the Hexweaver's.** Gate the Space stance and the test rocks to her; every other witch gets her E back.
       *Done when:* Necromancer's E raises the fallen again; Hexweaver unchanged. *Clip:* none needed (quick check).
+- [ ] **2b. Parcels catch up to her (bug, found in the step 1 clip).** Going home, a parcel's top speed near her hand is capped
+      at about half its distance + 1 px/frame, but she walks 7.5 px/frame: within ~13px it can never close the gap, so
+      stragglers trail behind until she stops (the HUD bar never refills). Fix: add her own movement to that cap, and land
+      within ~14px instead of 6. Own commit, before step 3, so the anchor rebuild copies correct behavior.
+      *Clip:* reach, let go, and keep walking: the bar fills back to full.
 - [ ] **3. Anchors (the foundation).** Move the plumbing into `scr_hex_core` and rebuild today's behavior on anchors.
       **No visible change.** *Done when:* every move in the audit's section 3 plays exactly as before. *Clip:* reach, lift,
       throw, charge, fire.

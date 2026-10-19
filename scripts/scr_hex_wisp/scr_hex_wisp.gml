@@ -220,6 +220,11 @@ function hex_field_draw(_par) {
 		surface_set_target(_bs); draw_clear_alpha(c_black, 0);
 		for (var _k = 0; _k < 6; _k++) { gpu_set_blendmode(bm_add); draw_set_alpha(0.25); draw_circle_colour(16, 16, 15 - _k * 2.4, c_white, c_black, false); }
 		gpu_set_blendmode(bm_normal); draw_set_alpha(1);
+		// make it fully solid: additive drawing multiplies by alpha, so a faint alpha made every parcel paint at about a third
+		// of its strength (the "sand"). Its color carries the soft falloff; black adds nothing
+		gpu_set_colorwriteenable(false, false, false, true);
+		draw_rectangle_colour(0, 0, 32, 32, c_white, c_white, c_white, c_white, false);
+		gpu_set_colorwriteenable(true, true, true, true);
 		surface_reset_target();
 		_s.blob = sprite_create_from_surface(_bs, 0, 0, 32, 32, false, false, 16, 16);
 		surface_free(_bs);
@@ -235,21 +240,24 @@ function hex_field_draw(_par) {
 	surface_set_target(_s.field);
 	draw_clear_alpha(c_black, 0);
 	gpu_set_blendmode(bm_add);
+	var _tf = gpu_get_texfilter();
+	gpu_set_texfilter(true);                          // the blob is shrunk to a few pixels: smooth it, or it aliases into sandy specks and the light vanishes
 	var _body = 3.6, _tail = 1.6;                     // the smoke body's softness and how long a moving parcel streaks (world pixels)
 	for (var _i = 0; _i < _n; _i++) {
 		var _q = _par[_i];
 		var _sx = (_q.x - _ox) / _px, _sy = (_q.y - _oy) / _px;
 		var _sp = point_distance(0, 0, _q.vx, _q.vy), _dir = point_direction(0, 0, _q.vx, _q.vy);
 		// a soft blob stretched back along the way it's moving (each blob's radius is 2.5 of its softness)
-		var _sc = (_body * 2.5 / _px) / 16, _st = 1 + _sp * _tail / _body;
+		var _sc = (_body * 2.5 / _px) / 16, _st = 1 + min(_sp, 8) * _tail / _body;   // (streak length capped: fast parcels were long bright lines)
 		var _bx = _sx - lengthdir_x((_st - 1) * _body / _px * 0.5, _dir), _by = _sy - lengthdir_y((_st - 1) * _body / _px * 0.5, _dir);
 		draw_sprite_ext(_s.blob, 0, _bx, _by, _sc * _st, _sc, _dir, c_red, 0.45 / 4);   // the field stores density / 4, so it doesn't clip
 		if (_q.hot) {
 			var _hw = (_q.st == 1) ? 0.35 : 1;           // currents in a knot stay dim (the orb is the knot's bright part)
-			var _hs = max(1.1 / _px, 0.7) * 2.5 / 16;
+			var _hs = max(1.1 / _px, 1.2) * 2.5 / 16;    // (at least about 3 field pixels across, so the light current survives)
 			draw_sprite_ext(_s.blob, 0, _bx, _by, _hs * _st, _hs, _dir, c_lime, 0.45 / 4 * _hw * 2);
 		}
 	}
+	gpu_set_texfilter(_tf);
 	gpu_set_blendmode(bm_normal);
 	surface_reset_target();
 	// draw it as one body of hex

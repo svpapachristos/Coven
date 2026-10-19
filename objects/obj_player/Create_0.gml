@@ -146,6 +146,7 @@ function update_facing_sprite() {
 	var _moving = (_move_dir_4 != -1);
 	// Pick which direction value actually determines the sprite this frame
 	var _display_dir = _firing ? facing_dir_4 : (_moving ? _move_dir_4 : facing_dir_4);
+	if (hex_active && hex_mode != "") _display_dir = facing_dir_4;   // casting her hex: she faces where she's casting, even while walking the other way
 	image_xscale = 1;
 	// channeling the arcane beam: hold the wand-raised pose (frame 2 of the fire sprite)
 	var _channel = instance_exists(obj_arcane_beam);
@@ -227,7 +228,7 @@ function player_attack() {
 // ---- E: the living curse (rudimentary) ----
 hex_held = noone;  // the world object her curse is holding
 hex_reach = 4000;  // how far from her the curse can reach (4000 = the whole screen)
-hex_grab_r = 64;   // how close the cursor must be to grab something
+hex_grab_r = 80;   // how close the cursor must be to something for her hex to go for it (was 64)
 // a few rocks to play with (obj_env_rock: the first environment object)
 repeat (6) {
 	var _a = random(360);
@@ -306,7 +307,7 @@ hex_hand_amt = hex_budget;
 hex_out = 0;
 hex_at = 0;
 hex_need = 0;         // how much the current reach wants at its target (a lift's cost, or hex_reach_cap over open ground)
-hex_reach_cap = 14;   // how much gathers when she reaches into open ground
+hex_reach_cap = 6;    // how much gathers when she reaches into open ground (was 14: it read as a glob)
 hex_orb_amt = 0;
 hex_par = [];         // her hex out in the world, as parcels: { x, y, vx, vy, s (its own pace), ph (its own phase), st, wait, hot, amt }
 #macro HEX_PARCEL 0.25   // how much hex one parcel carries (4 parcels per unit)
