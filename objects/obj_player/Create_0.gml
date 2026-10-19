@@ -312,14 +312,14 @@ hex_par = [];         // her hex out in the world, as parcels: { x, y, vx, vy, s
 #macro HEX_PARCEL 0.25   // how much hex one parcel carries (4 parcels per unit)
 hex_pour_n = 2;       // parcels her hand lets out per frame while reaching (2 = half a unit a frame)
 hex_pour_acc = 0;
-hex_par_turn = 0.12;  // how quickly a parcel can change direction (lower = wider, lazier curves)
-hex_par_curl = 0.9;   // how much the drifting currents push parcels around (higher = a wilder, wider river)
-hex_par_fan = 0.5;    // how widely parcels leave her palm (radians)
-hex_home_spread = 45; // frames over which the gathered parcels decide, one by one, to head home (higher = a slower, longer drift back)
+hex_par_turn = 0.13;  // how quickly a parcel can change direction (lower = wider, lazier curves)
+hex_par_curl = 0.85;   // how much the drifting currents push parcels around (higher = a wilder, wider river)
+hex_par_fan = 0.425;    // how widely parcels leave her palm (radians)
+hex_home_spread = 35; // frames over which the gathered parcels decide, one by one, to head home (higher = a slower, longer drift back)
 
-hex_flow_speed = 6;   // how fast a parcel flows out to where it's going (pixels a frame, each parcel a little different)
+hex_flow_speed = 9;   // how fast a parcel flows out to where it's going (pixels a frame, each parcel a little different)
 // (was 10 for the old motes; the parcel river looked right at 6 in the prototype)
-hex_return_speed = 7; // ...and back home to her hand, speeding up as it nears her palm (was 11 for the old motes)
+hex_return_speed = 20; // ...and back home to her hand, speeding up as it nears her palm (was 11 for the old motes)
 hex_cost = 0;         // what the thing she's holding cost
 hex_cost_lift = 8;    // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
 hex_cost_enemy = 14;  // hex it takes to lift an enemy

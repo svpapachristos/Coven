@@ -158,7 +158,7 @@ function hex_orb_uniforms() {
 		spark: shader_get_uniform(sh_hex_orb, "u_spark"), hot: shader_get_uniform(sh_hex_orb, "u_hot"),
 		px: shader_get_uniform(sh_hex_orb, "u_px"), veil: shader_get_uniform(sh_hex_orb, "u_veil"), over: shader_get_uniform(sh_hex_orb, "u_over"),
 		strand: shader_get_uniform(sh_hex_orb, "u_strand"),
-		hollow: shader_get_uniform(sh_hex_orb, "u_hollow"), heart: shader_get_uniform(sh_hex_orb, "u_heart"), rv: shader_get_uniform(sh_hex_orb, "u_rv"), rv2: shader_get_uniform(sh_hex_orb, "u_rv2"), mode: shader_get_uniform(sh_hex_orb, "u_mode"), n: shader_get_uniform(sh_hex_orb, "u_n"), motes: shader_get_uniform(sh_hex_orb, "u_motes")
+		hollow: shader_get_uniform(sh_hex_orb, "u_hollow"), heart: shader_get_uniform(sh_hex_orb, "u_heart"), uvs: shader_get_uniform(sh_hex_orb, "u_uvs"), rv: shader_get_uniform(sh_hex_orb, "u_rv"), rv2: shader_get_uniform(sh_hex_orb, "u_rv2"), mode: shader_get_uniform(sh_hex_orb, "u_mode"), n: shader_get_uniform(sh_hex_orb, "u_n"), motes: shader_get_uniform(sh_hex_orb, "u_motes")
 	};
 	return _s.uo;
 }
@@ -176,7 +176,7 @@ function hex_orb_draw() {
 		shader_set_uniform_f(_u.spark, _pal.spark[0] / 255, _pal.spark[1] / 255, _pal.spark[2] / 255); shader_set_uniform_f(_u.hot, _pal.hot);
 		shader_set_uniform_f(_u.px, _s.opx);         // the magic is drawn in steps this many world pixels big (K cycles it)
 		for (var _i = 0; _i < _n; _i++) {
-			var _b = _s.att[_i], _R = max(3, _b.oR) * _s.oscale, _box = ceil(_R * ((_b.oM == 2) ? 5 : 16) / 2) * 2 + 16, _cx = floor(_b.x), _cy = floor(_b.y);   // (a flame needs far less room than an orb's halo)
+			var _b = _s.att[_i], _R = max(3, _b.oR) * _s.oscale, _box = ((_b.oM == 7) ? 100 : ceil(_R * ((_b.oM == 2) ? 5 : ((_b.oM == 5) ? 6 : 16)) / 2) * 2 + 16), _cx = floor(_b.x), _cy = floor(_b.y);   // (a flame needs far less room than an orb's halo)
 			shader_set_uniform_f(_u.mode, _b.oM);
 			// (the square reaches 8x the core radius each way: the widest the charged halo gets is about 7x)
 			shader_set_uniform_f(_u.center, _b.x, _b.y); shader_set_uniform_f(_u.box, _box, _box); shader_set_uniform_f(_u.R, _R);
@@ -247,7 +247,7 @@ function hex_field_draw(_par) {
 		if (_q.hot) {
 			var _hw = (_q.st == 1) ? 0.35 : 1;           // currents in a knot stay dim (the orb is the knot's bright part)
 			var _hs = max(1.1 / _px, 0.7) * 2.5 / 16;
-			draw_sprite_ext(_s.blob, 0, _bx, _by, _hs * _st, _hs, _dir, c_lime, 0.45 / 4 * _hw * 1.6);
+			draw_sprite_ext(_s.blob, 0, _bx, _by, _hs * _st, _hs, _dir, c_lime, 0.45 / 4 * _hw * 2);
 		}
 	}
 	gpu_set_blendmode(bm_normal);
@@ -264,6 +264,25 @@ function hex_field_draw(_par) {
 	shader_set_uniform_f(_u.spark, _pal.spark[0] / 255, _pal.spark[1] / 255, _pal.spark[2] / 255); shader_set_uniform_f(_u.hot, _pal.hot);
 	draw_surface_ext(_s.field, _ox, _oy, _px, _px, 0, c_white, 1);
 	shader_reset(); gpu_pop_state();
+}
+
+// LIT FROM BELOW: draw a held thing's sprite again, lit by the hex scooped under it (the hex shader's u_mode 6). Call it
+// right after the thing draws itself, with the same sprite, frame, position and scale. _amt 0..1: how present her hold is,
+// _eff 0..1: how hard she's straining
+function hex_underlight_draw(_spr, _img, _x, _y, _xs, _ys, _amt, _eff) {
+	if (_amt <= 0.02 || _spr < 0) return;
+	var _s = hex_wisp_state(), _pal = _s.pals[_s.pal], _u = hex_orb_uniforms();
+	var _tx = sprite_get_texture(_spr, _img), _uv = sprite_get_uvs(_spr, _img);
+	shader_set(sh_hex_orb);
+	shader_set_uniform_f(_u.mode, 6);
+	shader_set_uniform_f(_u.box, texture_get_texel_width(_tx), texture_get_texel_height(_tx));
+	shader_set_uniform_f(_u.uvs, _uv[0], _uv[1], _uv[2], _uv[3]);
+	shader_set_uniform_f(_u.over, _amt); shader_set_uniform_f(_u.energy, _eff);
+	shader_set_uniform_f(_u.time, current_time / 1000); shader_set_uniform_f(_u.seed, 6);
+	shader_set_uniform_f(_u.glow, _pal.glow[0] / 255, _pal.glow[1] / 255, _pal.glow[2] / 255);
+	shader_set_uniform_f(_u.spark, _pal.spark[0] / 255, _pal.spark[1] / 255, _pal.spark[2] / 255);
+	draw_sprite_ext(_spr, _img, _x, _y, _xs, _ys, 0, c_white, 1);
+	shader_reset();
 }
 
 // stamp soft light into the field. _x, _y in field pixels, _r the radius in field pixels, _col the amounts (r = smoke, g = core,

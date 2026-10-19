@@ -25,7 +25,9 @@ uniform float u_veil;     // how thick the veil is (1 = normal)
 uniform float u_over;     // 0..1: the overflow, for when the hex is holding something
 uniform float u_strand;   // how strong the strands are (1 = full; the charging orb uses less until it gets its own look)
 uniform float u_hollow;   // orb: 0 = solid; otherwise the radius of something held inside it (no core, and the hex wraps around it instead of covering it)
-uniform float u_mode;     // 0 = an orb (a ball of her magic); 1 = the old mote FLOW (unused); 2 = HEX FLAME (parked); 3 = the curve river (parked); 4 = THE HEX FIELD
+uniform float u_mode;     // 0 = an orb; 1 = old mote flow (unused); 2 = hex flame (parked); 3 = curve river (parked); 4 = THE HEX FIELD;
+                          // 5 = THE SCOOP (telekinesis); 6 = LIT FROM BELOW (a held sprite); 7 = THE CHARGE
+uniform vec4  u_uvs;      // lit from below: the sprite's uv bounds on its texture page (left, top, right, bottom)
 uniform vec4  u_rv;       // river: the far end (xy) and the bend point (zw), from u_center (her palm)
 uniform vec4  u_rv2;      // river: lo, hi (the stretch of the path that is there), half-width, dir (1 out, -1 home)
 uniform float u_heart;    // orb: how formed its white-hot heart is (0 = still coalescing, no heart yet .. 1 = full)
@@ -336,7 +338,7 @@ vec4 field(vec2 pc)
 	float t = u_time;
 	float gas = vn(p * 0.18 + vec2(t * 0.9, -t * 0.7)) * 0.6 + vn(p * 0.45 - t * 1.3) * 0.4;
 	float body = d.r * (0.6 + 0.6 * gas);
-	float I = d.g * (0.7 + 0.5 * gas) + max(body - 0.9, 0.0) * 0.5;
+	float I = d.g * (0.85 + 0.5 * gas) + body * 0.12 + max(body - 0.9, 0.0) * 0.5;   // (a touch of light in all of it, so it reads on dark ground too)
 	I = min(I, 1.05);
 	if (body > 0.5 && h2(pc + floor(t * 8.0) * 7.7) > 0.98) I = max(I, 1.05);   // sparkles
 	I = floor(I * 7.0 + 0.5) / 7.0;
@@ -349,13 +351,103 @@ vec4 field(vec2 pc)
 	if (I < 0.3 && e > 0.1 && e < 0.2 && vn(p * 0.25 + vec2(t, -t)) > 0.55) { col = u_smoke * 0.5; a = 0.5; }   // a broken dark edge
 	return vec4(col, a);
 }
+// THE SCOOP (u_mode 5): telekinesis. Her hex HOLDING something, reversibly (nothing soaks in): warbling hex pooled underneath
+// it, cupping up its sides, faintest over the top, around a clear middle. u_R = the held thing's radius, u_energy = effort
+// (a fuller cup, a thicker pool, licks flicking up the rim, sparkles rising), u_over = how present it is (0..1).
+vec4 scoop(vec2 p, vec2 pc)
+{
+	float R = u_R, E = clamp(u_energy, 0.0, 1.0), t = u_time, amt = clamp(u_over, 0.0, 1.0);
+	vec2 q = vec2(p.x / (R + 2.0), p.y / (R * 0.75 + 2.0));     // its outline as an ellipse (things are wider than tall)
+	float r = length(q);
+	vec2 nd = q / max(r, 0.001);
+	float below = clamp(nd.y, -1.0, 1.0);                         // 1 under it, -1 over it
+	float gas = vn(p * 0.2 + vec2(t * 1.1, -t * 0.8)) * 0.6 + vn(p * 0.5 - vec2(t * 1.9, t * 0.4)) * 0.4;
+	float wob = (vn(nd * 3.0 + vec2(t * 1.4, -t * (0.9 + E))) - 0.5) * (0.25 + 0.2 * E);   // the cup breathes and churns
+	float s = (r - 1.0 - wob) * (R * 0.8 + 2.0);                 // about how many world pixels outside its outline
+	float cup = mix(0.12, 1.0, smoothstep(-0.55, 0.65, below)) * (0.8 + 0.4 * E);
+	float thick = (3.0 + 2.5 * E) * mix(0.5, 1.4, smoothstep(-0.2, 0.9, below));
+	float I = 0.0;
+	if (s > -0.5) I = cup * exp(-(s * s) / (thick * thick)) * (0.45 + 0.75 * gas);
+	vec2 pp = vec2(p.x / (R * 1.3 + 3.0), (p.y - (R * 0.75 + 3.0)) / (3.0 + 2.0 * E));
+	I += (0.55 + 0.25 * E) * exp(-dot(pp, pp) * 1.6) * (0.4 + 0.8 * gas);   // the pool underneath, holding it up
+	float side = 1.0 - abs(below);
+	float ln = vn(vec2(nd.x * 4.0, s * 0.18 - t * (2.5 + 2.0 * E)) + 3.0);
+	if (s > 0.0 && side > 0.4 && ln > 0.62 - 0.12 * E) I = max(I, (0.5 + 0.4 * E) * exp(-s / (4.0 + 5.0 * E)));   // licks up the rim
+	if (s > 0.0 && s < 9.0 + 6.0 * E && below > -0.2 && h2(vec2(pc.x, floor(pc.y + t * 6.0))) > 0.975 - 0.015 * E) I = max(I, 1.0);   // sparkles rising
+	if (s < -0.5) I = 0.0;                                         // never over the thing itself
+	I = min(I * amt, 1.05);
+	I = floor(I * 7.0 + 0.5) / 7.0;
+	float a = clamp(I * 0.6, 0.0, 0.6);
+	vec4 o = vec4(ramp(I) * (a + 0.45 * I), a);
+	float e = I + (h2(pc + 3.0) - 0.5) * 0.06;
+	if (I < 0.3 && e > 0.1 && e < 0.2 && below > -0.3 && vn(p * 0.25 + vec2(t, -t)) > 0.5) o = vec4(u_smoke * 0.5 * amt, 0.45 * amt);   // smoke at its edge
+	return o;
+}
+// LIT FROM BELOW (u_mode 6): the held thing's own sprite drawn again, lit by the hex scooped under it (light, not infection):
+// its underside catches violet light, brightest on the bottom edge, fading up. u_uvs = the sprite's uv bounds on its texture
+// page, u_box = one texel's size, u_over = how present, u_energy = effort. Straight alpha (drawn with normal blending).
+float ulA(vec2 uv) {
+	if (uv.x < u_uvs.x || uv.y < u_uvs.y || uv.x > u_uvs.z || uv.y > u_uvs.w) return 0.0;
+	return texture2D(gm_BaseTexture, uv).a;
+}
+vec4 underlit()
+{
+	vec4 c = texture2D(gm_BaseTexture, v_tex);
+	if (c.a < 0.5) return vec4(0.0);
+	float E = clamp(u_energy, 0.0, 1.0), t = u_time, k = clamp(u_over, 0.0, 1.0);
+	float d = 6.0;
+	for (int i = 1; i <= 6; i++) if (d > 5.5 && ulA(v_tex + vec2(0.0, float(i) * u_box.y)) < 0.5) d = float(i);   // pixels up from its bottom edge
+	vec2 pc = floor(v_tex / u_box);
+	float warble = 0.75 + 0.25 * vn(vec2(pc.x * 0.4 + t * 3.0, t * 2.0));
+	float L = (d <= 1.0 ? 0.75 : exp(-(d - 1.0) / 1.6) * 0.5) * (0.7 + 0.5 * E) * warble * k;
+	vec3 lit = mix(c.rgb, c.rgb * vec3(0.7, 0.6, 1.1) + mix(u_glow, u_spark, 0.35) * 0.55, clamp(L, 0.0, 1.0));
+	return vec4(lit, c.a);
+}
+// THE CHARGE (u_mode 7): hex slowly manifesting where she charges (the Infinity War hand clip). u_energy = how charged (0..1):
+// spark (a flickering pinpoint, the spark of creation) -> crackle (a jagged shard of light that keeps re-forming) -> glow
+// (a soft hot glow, white only at its small heart, lighting her hand) -> bloom (it swells, pulses, a streak of flare).
+float h1(float x) { return fract(sin(x * 91.7 + u_seed * 13.0) * 43758.5453); }
+vec4 charge(vec2 p, vec2 pc)
+{
+	float r = length(p), k = clamp(u_energy, 0.0, 1.0), t = u_time;
+	float I = 0.0;
+	float flick = 0.7 + 0.3 * vn(vec2(t * 14.0, 1.0));
+	I += smoothstep(0.0, 0.12, k) * 1.25 * flick * exp(-(r * r) / (2.2 + 4.0 * k));   // the spark (it stays as the heart)
+	float kc = smoothstep(0.1, 0.3, k) * (1.0 - smoothstep(0.55, 0.8, k));
+	if (kc > 0.0) {
+		float fr = floor(t * 10.0);
+		for (int i = 0; i < 4; i++) {
+			float fi = float(i);
+			float ang = (h1(fr * 4.0 + fi) + fi * 0.25) * 6.2831;
+			vec2 dir = vec2(cos(ang), sin(ang));
+			float L = (4.0 + 9.0 * kc) * (0.5 + 0.6 * h1(fr * 7.0 + fi + 3.0));
+			float al = dot(p, dir), pe = p.x * dir.y - p.y * dir.x;
+			pe += (h1(floor(al / 2.5) + fi * 17.0 + fr) - 0.5) * 2.6;    // jagged
+			if (al > 0.0 && al < L && abs(pe) < 1.3) I = max(I, (1.05 - 0.4 * al / L) * kc);
+		}
+	}
+	float kg = smoothstep(0.35, 0.8, k);
+	float R = 2.5 + 7.0 * kg + 3.0 * smoothstep(0.85, 1.0, k);
+	float gas = vn(p * 0.22 + vec2(t * 1.6, -t * 1.2)) * 0.7 + vn(p * 0.5 - t * 2.3) * 0.3;   // churning, never a clean disc
+	I += kg * (0.55 + 0.6 * gas) * exp(-(r * r) / (R * R));
+	I += kg * 0.7 * flick * exp(-(r * r) / 6.0);                   // the white-hot heart stays small
+	I += kg * 0.3 * exp(-(r * r) / (R * R * 5.0));                 // light spilling over her hand
+	float kb = smoothstep(0.85, 1.0, k);
+	I += kb * (0.35 + 0.25 * sin(t * 9.0)) * exp(-(p.y * p.y) / 3.0 - (p.x * p.x) / (26.0 * 26.0));   // the bloom's flare
+	I = floor(I * 7.0 + 0.5) / 7.0;
+	float a = clamp(I * 0.6, 0.0, 0.6);
+	return vec4(ramp(I) * (a + 0.45 * min(I, 1.6)), a);
+}
 void main()
 {
 	vec2 rel = v_world - floor(u_center);
 	vec2 pc = floor(rel / u_px);                     // which magic pixel this is
 	vec2 p = (pc + 0.5) * u_px;                      // its middle, in world pixels from the center
 	vec4 o;
-	if (u_mode > 3.5) o = field(floor(v_world / u_px));
+	if (u_mode > 6.5) o = charge(p, pc);
+	else if (u_mode > 5.5) o = underlit();
+	else if (u_mode > 4.5) o = scoop(p, pc);
+	else if (u_mode > 3.5) o = field(floor(v_world / u_px));
 	else if (u_mode > 2.5) o = river(p, pc);
 	else if (u_mode > 1.5) o = flame(p, pc);
 	else if (u_mode > 0.5) o = flow(p, pc);

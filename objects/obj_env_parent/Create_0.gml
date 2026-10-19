@@ -16,6 +16,8 @@ z = 0;                // how high it is off the ground (0 = resting on it). It's
 vz = 0;               // how fast it's rising (+) or falling (-)
 grabbed = false;      // true while a witch's magic is holding it
 hex_gather = 0;       // 0..1: how much hex has gathered under it on its way to lifting it (it stirs and starts to rise)
+hex_lit = 0;          // 0..1: how much her scoop is lighting it from below (the witch sets this while she holds it)
+hex_lit_e = 0;        // how hard she's straining to hold it (brighter light)
 hit_cd = 0;           // frames before it can hit an enemy again
 
 // ---- tuning (shared by every child unless it changes them) ----

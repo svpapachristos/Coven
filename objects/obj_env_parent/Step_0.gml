@@ -23,6 +23,7 @@ if (grabbed) {
 }
 
 hex_gather *= 0.85;   // the witch tops this up every frame she's gathering; otherwise it settles back down
+hex_lit *= 0.8;       // (same for the light from her scoop)
 
 // sliding: it keeps most of its speed in the air and drags to a stop on the ground. While held, the witch steers it
 if (!grabbed) {

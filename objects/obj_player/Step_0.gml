@@ -139,13 +139,8 @@ if (keyboard_check(hex_key)) {
 			hex_hand_amt -= HEX_PARCEL; hex_out += HEX_PARCEL;
 			hex_par_emit(_hx, _hy, hex_gx, hex_gy);
 		}
-		// more gathered than the job needs (she moved from open ground onto a light rock): the extra heads home
-		if (hex_at > hex_need + 0.5) {
-			for (var _i = 0; _i < array_length(hex_par) && hex_at > hex_need; _i++) {
-				var _q = hex_par[_i];
-				if (_q.st == 1) { _q.st = 2; _q.wait = irandom(hex_home_spread div 2); hex_at -= _q.amt; }
-			}
-		}
+		// (more gathered than the job needs, say she moved from open ground onto a light rock: it stays, and feeds the hold.
+		// The extra makes her scoop stronger, in Draw, instead of drifting around on its own)
 	}
 	if (hex_mode == "charge") {
 		// the orb draws hex straight out of her palm, up to a full charge (or as much as she has)

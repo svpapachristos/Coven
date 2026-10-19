@@ -10,6 +10,7 @@ draw_set_color(c_white);
 var _jx = (hex_gather > 0.15) ? irandom_range(-1, 1) : 0;   // trembling as her hex gathers under it
 if (sprite_index != -1) {
 	draw_sprite_ext(sprite_index, image_index, x + _jx, y - z, image_xscale, image_yscale, image_angle, image_blend, image_alpha);
+	hex_underlight_draw(sprite_index, image_index, x + _jx, y - z, image_xscale, image_yscale, hex_lit, hex_lit_e);   // lit from below by her scoop
 } else {
 	// no art yet: a placeholder circle the size of its footprint
 	draw_set_color(make_color_rgb(150, 145, 160));
