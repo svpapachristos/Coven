@@ -305,10 +305,12 @@ hex = hex_body_create(id, {
 	reach_max: 4000,      // how far from her the hex can reach (4000 = the whole screen)
 	grab_r: 80,           // how close the river's head must be to something's edge to claim it (was 64)
 	claim_hold: 1.5,      // a claim lets go if the head pulls further than this x grab_r away before it lifts
-	hold_follow: 0.25,    // how quickly a held thing follows the cursor (0..1; was 0.85: it snapped)
-	hold_speed: 14,       // the fastest a held thing can move (pixels a frame): it has weight (heavier rocks: this / weight)
-	throw_mult: 1.6,      // a throw flings it at this x the speed it had in her hold
-	throw_max: 22,        // ...but never faster than this (pixels a frame)
+	hold_follow: 0.75,    // how quickly a held thing follows the cursor (0..1; was 0.85: it snapped)
+	hold_speed: 35,       // the fastest a held thing can move (pixels a frame): it has weight (heavier rocks: this / weight)
+	throw_mult: 50,      // a throw flings it at this x the speed it had in her hold
+	throw_max: 35,        // ...but never faster than this (pixels a frame)
+	throw_drag: 0.96,     // how much of its speed a thrown enemy keeps each frame (higher = it flies further; was 0.93)
+	throw_hit: 10,       // a thrown enemy hits what it plows into for 4 + this x its speed (was 1.5)
 	reach_cap: 6,         // (the knot's look: how much hex makes it read as fully gathered; the flow itself is no longer capped)
 	cost_lift: 8,         // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
 	cost_enemy: 14,       // hex it takes to lift an enemy

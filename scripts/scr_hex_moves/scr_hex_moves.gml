@@ -333,8 +333,8 @@ function hex_move_end_step(_b) {
 		if (!instance_exists(_th.inst)) { array_delete(_mv.thrown, _i, 1); continue; }
 		_th.inst.x += _th.vx;
 		_th.inst.y += _th.vy;
-		_th.vx *= 0.93;
-		_th.vy *= 0.93;
+		_th.vx *= _ht.throw_drag;
+		_th.vy *= _ht.throw_drag;
 		var _s = point_distance(0, 0, _th.vx, _th.vy);
 		var _l = ds_list_create();
 		collision_circle_list(_th.inst.x, _th.inst.y, 16, obj_enemy_parent, false, true, _l, false);
@@ -342,7 +342,7 @@ function hex_move_end_step(_b) {
 			var _o = _l[| _j];
 			if (_o == _th.inst || array_contains(_th.hit, _o)) continue;
 			array_push(_th.hit, _o);
-			scr_damage_enemy(_o, round(4 + _s * 1.5), make_color_rgb(150, 110, 255));
+			scr_damage_enemy(_o, round(4 + _s * _ht.throw_hit), make_color_rgb(150, 110, 255));
 			if (instance_exists(_o)) { _o.x += _th.vx * 0.6; _o.y += _th.vy * 0.6; }
 		}
 		ds_list_destroy(_l);
