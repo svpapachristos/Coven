@@ -18,6 +18,9 @@ into each other. Every new spell, combo or witch should be built *from* these pi
 4. **Nothing new goes in obj_player** except calls into the hex scripts.
 5. **New ideas mid-step go in the Parking lot** (bottom of this file), not into the code.
 6. **Her tuned numbers are sacred.** Never overwrite them: stage fresh, diff, merge.
+8. **Visuals are placeholders until step 11** (Oct 20). The current look is as much plumbing as the plumbing: it shows
+   where the hex is and what it's doing. Judge clips on BEHAVIOR (flow, claim, release), not looks, and don't spend
+   passes tuning visuals before the polish pass. It can and will look better then.
 7. Every diff comes with a short "what to check in the diff" and a GitHub Desktop commit message (Summary + Description).
 
 ---
@@ -139,9 +142,12 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
         as `<name>_cd` in her tuning). First user: the palm blast (tap Space, `blast_cd` 30). A quick tap of left click in
         the stance no longer fires a mini orb (orbs need `charge_min` 6 to fire); that tap is free for a future move.
         Bare numbers moved into tuning: `charge_min`, `tap_frames`.
-  - [ ] **5a flow + reserve:** secondary pours hex at a steady rate to a head that follows the cursor, until only her
+  - [x] **5a flow + reserve:** secondary pours hex at a steady rate to a head that follows the cursor, until only her
         reserve (`reserve: 4`, one emergency palm blast) is left; let go and it unravels home. No targets yet. *Clip:* pour, swirl the cursor, let go.
-  - [ ] **5b claim:** the head claims what it touches (or what's under the cursor at the start); hex sticks to it, lifts
+  - [ ] **5b claim:** (From the 5a clip: the hex holding a lifted zombie churns around it as an orbiting glob, and the
+        scoop shader draws a second, separate cup. The claimed hex should BE the levitation: each parcel settles into a
+        spot in a cup under and around the thing, held there with a little drift, moving with it. One thing, drawn once.)
+        the head claims what it touches (or what's under the cursor at the start); hex sticks to it, lifts
         it at its cost, no orbiting blob; extra flows on. *Clip:* reach onto a moving enemy in a crowd; lift a rock.
   - [ ] **5c overflow toggle:** E while in the stance (the existing `ability` action, read as a context action) toggles a devoted chunk of hex onto herself: she rises and
         moves faster (placeholder look: her palm flaring + a hover). *Clip:* toggle on, walk, cast, toggle off.
