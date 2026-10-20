@@ -191,6 +191,14 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
         attack and mana cast. Each evolved attack gets its own proposal before it's built (smallest first: the wand stands
         down in overflow, then one attack at a time). Second-hand glow and wandless sprites follow. Not yet scheduled
         ahead of step 6. Parked: evolved attacks that depend on the wand she carries.
+    - [ ] **5d1 the wand stands down in overflow:** `hex_move_wand_away` (stance OR overflow) gates her wand's left
+          click (idle / walk / attack) and right click (alt fire: chain lightning or beam). Built Oct 20, awaiting the clip.
+    - [ ] **5d2 evolved left click: hex needles** (Sophia's design, like Halo's Needler): her hex leaves as small homing
+          crystalline shards that seek any enemy they find, spike in and burst, and that hex drifts home. She sprays them
+          into the hordes while flying around. Plumbing: each shard carries real hex in its own anchor (like the palm blast);
+          her own hex limits the fire rate, with no mana. Propose knobs before building.
+    - [ ] **5d3 evolved right click:** undecided. Brainstorm after 5d2 (placeholder idea: the vortex, a damaging head
+          that pulls enemies in).
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
       nothing fires yet). (The dissolve-into-flow part is now just how the flow works.)
       **Built Oct 20, awaiting the clip.** `hex_move_focus` (each frame of a reach): the head moving under `focus_still`

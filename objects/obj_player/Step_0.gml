@@ -111,7 +111,7 @@ if (alt_regen_delay > 0 ) {
 
 //Channel alt fire while holding m2
 var _cost = scr_stat("alt_drain", alt_drain) * alt_pulse_max / game_get_speed(gamespeed_fps); 
-if (input_check("secondary") && mana >= _cost && !hex.mv.active) { // (in her curse stance, right click belongs to the curse)
+if (input_check("secondary") && mana >= _cost && !hex_move_wand_away(hex)) { // (in her hex stance or overflow, right click belongs to the hex)
 	if (alt_pulse > 0) {
 		alt_pulse--;
 	} else {

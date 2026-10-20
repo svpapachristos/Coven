@@ -176,13 +176,13 @@ function player_idle(){
 	if (input_moving()) {
 		state = "WALK";
 	}
-	if (input_check("primary") && can_shoot && !hex.mv.active) { // (in her curse stance, left click belongs to the curse)
+	if (input_check("primary") && can_shoot && !hex_move_wand_away(hex)) { // (in her hex stance or overflow, left click belongs to the hex)
 		state = "ATTACK";
 	}
 }
 function player_walk() {
 	movement();
-	if (input_check("primary") && can_shoot && !hex.mv.active) { // (in her curse stance, left click belongs to the curse)
+	if (input_check("primary") && can_shoot && !hex_move_wand_away(hex)) { // (in her hex stance or overflow, left click belongs to the hex)
 		state = "ATTACK";
 	}
 	if (!input_moving()) {
@@ -190,7 +190,7 @@ function player_walk() {
 	}
 }
 function player_attack() {
-	if (hex.mv.active) { state = "IDLE"; can_shoot = true; return; } // her wand stands down in her curse stance
+	if (hex_move_wand_away(hex)) { state = "IDLE"; can_shoot = true; return; } // her wand stands down in her hex stance and in overflow
 	movement();
 	if (can_shoot) {
 		can_shoot = false;

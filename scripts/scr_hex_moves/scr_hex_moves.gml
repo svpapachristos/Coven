@@ -212,6 +212,12 @@ function hex_move_overflow_toggle(_b, _x, _y) {
 	hex_anchor_attach(_b, _mv.over, _b.owner);
 }
 
+// is her wand put away? (in her hex stance, and the whole time she overflows: her hands belong to the hex). The caster
+// asks this before letting her wand fire
+function hex_move_wand_away(_b) {
+	return _b.mv.active || !is_undefined(_b.mv.over);
+}
+
 // overflow off: its hex goes straight back into her hand
 function hex_move_overflow_off(_b) {
 	var _mv = _b.mv;
