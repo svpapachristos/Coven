@@ -64,8 +64,9 @@ cam_offset_y = 0;
 function movement() {
 	//walk functions are for losers
 	var _in = input_move();   // which way the player is pushing (scr_input: keyboard now, a controller or touch later)
-	var _mx = _in[0] * move_speed;
-	var _my = _in[1] * move_speed;
+	var _sp = move_speed * lerp(1, hex.tune.over_speed, hex.mv.over_f);   // her overflow speeds her up
+	var _mx = _in[0] * _sp;
+	var _my = _in[1] * _sp;
 
 	if (_mx != 0 || _my != 0) {
 		// collide from the middle of the hitbox, sized to the sprite, not from the sprite's origin
@@ -271,11 +272,11 @@ hex_wkind = "";
 hex_hand_debug = false; // J toggles: a marker on the hand point, and the arrow keys nudge it for the current sprite
 
 // where her off hand is in the room right now, as [x, y]. Call it after her sprite and position are final
-// for the frame (the end of Step), or the ball trails a frame behind her turns.
+// for the frame (the end of Step), or the ball trails a frame behind her turns. (Floating lifts her hand with her)
 function hex_hand_pos() {
 	var _p = hex_hand[$ sprite_get_name(sprite_index)];
 	if (is_undefined(_p)) _p = hex_hand_default;
-	return [x + _p[0] * image_xscale, y + _p[1] * image_yscale];
+	return [x + _p[0] * image_xscale, y + _p[1] * image_yscale - hover_z];
 }
 // ---- HER HEX: a hex body (scr_hex_core; the whole structure is in notes/hex-core-design.md) ----
 // All of her hex lives in ONE struct, `hex`: her hand (home), her parcels (hex out in the world, each finding its own
@@ -325,10 +326,18 @@ hex = hex_body_create(id, {
 	blast_cost: 4,        // a tap of Space: a quick palm blast
 	blast_dmg: 10,
 	blast_cd: 30,         // frames before she can palm blast again (30 = half a second)
-	tap_frames: 10        // a press of Space this short (frames) is a tap: a palm blast, not a stance
+	tap_frames: 10,       // a press of Space this short (frames) is a tap: a palm blast, not a stance
+	// overflow (E in the stance: toggle). Hex devoted to her own body: she floats and moves faster, with less to cast with
+	over_cost: 8,         // hex devoted to it while it's on (32 - reserve 4 - 8 = 20 free: one enemy or one rock, not two enemies)
+	over_rate: 0.5,       // hex a frame her hand pours into it (0.5 = full in about a quarter second, so it swells in)
+	over_speed: 1.3,      // her walk speed x this at full overflow
+	over_hover: 8,        // how high she floats at full overflow (pixels)
+	over_bob: 1.5         // ...bobbing up and down this much (pixels)
 });
 hex_move_init(hex, x, y);   // her move state (scr_hex_moves): stance, what she's holding, the knot, the orb...
 // (her stance is the "stance" action in scr_input: Space. Hold for her hex stance, tap for a palm blast)
+hover_z = 0;          // how high she's floating (pixels; her overflow lifts her, set each Step). Drawn only: her feet,
+                      // collision and depth stay on the ground
 cam_hex_settle = 0;   // frames left that the camera stays settled on her for the hex
 cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
 hex_bonus = 0;        // extra max hex (debug: press H in a run for +8)

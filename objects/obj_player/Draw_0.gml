@@ -8,7 +8,15 @@ if (_stage > 0) {
 	draw_set_alpha(1);
 	draw_set_color(c_white);
 }
-draw_self();
+if (hover_z > 0) {
+	// floating: a soft shadow stays on the ground under her (placeholder until the visual pass)
+	draw_set_color(c_black);
+	draw_set_alpha(0.3 * min(1, hover_z / max(1, hex.tune.over_hover)));
+	draw_ellipse(x - 11, bbox_bottom - 4, x + 11, bbox_bottom + 3, false);
+	draw_set_alpha(1);
+	draw_set_color(c_white);
+}
+if (sprite_index != -1) draw_sprite_ext(sprite_index, image_index, x, y - hover_z, image_xscale, image_yscale, image_angle, image_blend, image_alpha);   // (draw_self, lifted by her overflow; no sprite yet at startup: nothing to draw)
 
 // The living curse. O cycles three looks (scr_hex_wisp): the hex orb (default: a small crackling cloud of hex energy per ball of her
 // magic), the smoke wisp (light carried along a swirling current), and the original soft circles, kept so they can be compared.
@@ -33,6 +41,7 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 		if (_mv.mode == "charge") { _tR = 9.5 + 6.5 * _kn; _tE = 0.45 + 0.55 * _kn; }
 		else { _tR = 9.5; _tE = 0.35; }                             // stance up (the orb tightens into her channeling pocket below)
 	}
+	if (_mv.mode != "charge") { _tR += 4 * _mv.over_f; _tE = min(1, _tE + 0.5 * _mv.over_f); }   // OVERFLOW: her palm flares (placeholder)
 	_ws.eE += (_tE - _ws.eE) * 0.12;                                // eased, so a change of stance swells instead of snapping
 	_ws.eR += (_tR - _ws.eR) * 0.2;
 	// THE SOURCE stays in her hand. The orb never flies to the cursor: what reaches out into the world is her hex itself,
@@ -45,6 +54,7 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	hex_hand_f += (_fT - hex_hand_f) * 0.1;
 	var _eff = 0.8;                                                  // how hard she's working: most when holding something heavy
 	if (_nh > 0) _eff = min(1, 0.85 + 0.05 * _nh);                   // (the more she holds up, the harder she strains)
+	_eff = min(1, _eff + 0.2 * _mv.over_f);                          // (overflowing, her palm burns wilder)
 	hex_hand_e += (_eff - hex_hand_e) * 0.08;
 	var _hf = hex_hand_f;
 	if (_mv.mode == "charge") hex_wisp_att(_mv.hx, _mv.hy, 15, 0.8, 0, 0, false, 12, max(0.02, _kn), 0, 1, 0, 7);   // THE CHARGE: spark -> crackle -> glow -> bloom as it fills (shader mode 7)

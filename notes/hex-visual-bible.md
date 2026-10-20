@@ -17,6 +17,7 @@ an evenly colored line reads as thread, not a strand of light. Lit the same way 
 | **Glow** | blue-violet | Where light overlaps and builds up (body + strands + veil + dust adding together): the contained eldritch energy |
 | **Smoke / Edge** | dark violet | The only part that isn't light: a broken dark rim and drifting dark patches. Gives the orb its shape |
 | **Strands, Veil** | the ramp | Soft filaments of light orbiting the core; thin see-through haze with holes |
+| **Pour** (new, Oct 20) | glow -> smoke, fading as it falls | Hex spilling DOWN out of a glowing veil around her hand (and later from under her body) to the ground, like soft smoke drifting down off a ledge: it pours with momentum but stays almost floaty, haze, never water, streams or lines. Overflow's signature (the Wanda reference below). Pairs with a charged knot held in her palm |
 
 ## What makes Wanda's chaos magic work (our north star, translated)
 1. **It's light.** It brightens what it's in front of; her hands glow from it.
@@ -41,8 +42,27 @@ an evenly colored line reads as thread, not a strand of light. Lit the same way 
 | **Stance** (Space) | The orb wakes: more strands, more movement; her hex swirls around her body | Built; needs to read more distinct from idle |
 | **Charging** (hold left click) | Same family as the idle orb, gathering power. Its real look is still open | Placeholder (softer strands) |
 | **Reaching / moving** (motes) | Puffs and wisps of light drifting through space, flowing like a river, never snapping (Skyrim illusion spells) | Built: drawn as one stream of hex light (`hex_flow_draw`, the orb shader in flow mode). **No white-hot core in motion** (that only exists where hex is concentrated: her orbs); blue and lilac with sparkles |
-| **Telekinesis** (lift, hold, throw) | Flame-like licks of overflow straining against the object; hex pooling underneath; a tether stream palm to object | Overflow + pool + tether built |
+| **Telekinesis** (lift, hold, throw) | Hex cupping the object from underneath (the cup: the levitation itself), edges lit from below. **No tether, ever** (decided Oct 20) | Cup built (5b); polish in step 11 |
+| **Overflow** (E in the stance) | A charged knot in her palm inside a glowing veil, and the **Pour** spilling down from that veil (and from under her body) into a glowing pool on the ground; eyes glowing. BOTH hands: overflow puts the wand away (decided Oct 20), so the second hand glows once 5d and the wandless sprites land | Placeholder: palm flare + hover + shadow (5c, plays well; the flare barely reads). Step 11. (`spr_shadow` already exists for the ground) |
 | **Blast / explosion** | Tendrils and strands of light lashing outward in the burst | Not built |
+
+## Reference: Wanda floating over the battlefield (Endgame), added Oct 20
+Sophia's reference clip for overflow, telekinesis and the hex as a whole. (Her colors are scarlet; ours stay the locked
+violet-blue. Read every "red" below as our ramp: anything scarlet or red in a reference ALWAYS translates to our hex
+blue-violet, by Sophia's decision. It is never a palette question.) What the frame teaches:
+1. **The hex is the scene's light source.** The ground under her and the scrap she holds are lit FROM the magic: a glowing
+   pool on the floor beneath her, underlit debris. The world around it is muted grey-blue, so the one magic hue owns the frame.
+2. **The hands are small and fierce.** Each palm is a tight white-hot point with a colored halo, arms low and spread. The
+   source is never a big ball; brightness, not size, says "power".
+3. **Overflow pours DOWN off her body.** A veil of colored haze falls from her (her dress, her legs) into the glowing pool on
+   the ground. That's how the float reads: not a gap and a shadow but light spilling from her to the floor.
+   (5c's placeholder dark shadow should become this glow pool in step 11.)
+4. **Held things glow along their edges and cracks.** Each chunk she lifts is rimmed and lit from inside its seams, hanging in
+   loose clusters on both sides of her. No tethers anywhere: nothing connects her hands to the scrap. The world reacts.
+5. **One hue, many intensities.** White-hot (palms) -> saturated color (halos, edges) -> deep, dark haze (the veil and air),
+   with scattered embers drifting. It's the same brightness-picks-the-color rule as ours.
+6. **Symmetry and stillness.** She is calm and centered while everything around her churns. Her body barely moves; the magic does.
+7. **Eyes glow in her hex color** (our blue-violet; not visible at this size, but part of the look she wants).
 
 ## To-do list (polish, not blockers)
 - Charged orb: its own look (not flame licks, not yarn).

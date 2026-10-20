@@ -122,6 +122,18 @@ chunk of her hex is committed to her own body (an anchor attached to HER, holdin
 hands and eyes, she rises off the ground and moves faster. Toggle off and it returns to her hand. A bargain: power now,
 less to cast with. (Starts as a toggle because that's the fun one to play with; could later become an Ascension unlock
 or a permanent run upgrade.) Input: E while in the stance (the existing `ability` action as a context action; the Hexweaver's own E is parked).
+- **Built in 5c (Oct 20):** it stays on in or out of the stance until she turns it off; it's a form she grows into, not
+  a movement burst.
+- **Decided Oct 20: overflow PUTS THE WAND AWAY.** Both hands become hex (and her sprites go wandless). This sets up the
+  two poles a build can lean toward. **Full hex:** by the end of a run she has devoted her whole kit to the hex.
+  **Full wand:** basic spells, but the wand itself becomes a weapon of mass destruction. (A hex-heavy build and a
+  wand-heavy build should both feel complete.)
+- **Decided Oct 20: in overflow, her plain left and right click become EVOLVED HEX ATTACKS.** Her stance kit stays
+  exactly as it is (Space held + left: charge an orb; Space held + right: reach and lift; tap Space: palm blast). Outside
+  the stance, her wand's basic attack (left) and mana cast (right) are replaced by special hex attacks, still to be
+  designed. The fantasy: deep in a run, a build fully devoted to the most powerful magic evolves her basic attacks.
+- **Parked idea:** if there are other wands, the evolved attacks could depend on the wand she's carrying (the wand
+  shapes what its attacks evolve into, even while it's put away).
 
 **The knot fits inside the flow:** the head IS the knot. When she holds the head still, it gathers and its `focus`
 builds (the future ground ability: a ground tear / rune); when she moves on, it simply flows on (it never slides along as

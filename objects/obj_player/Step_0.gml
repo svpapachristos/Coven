@@ -69,11 +69,13 @@ if (hex_hand_debug) {
 if (keyboard_check_pressed(ord("H"))) hex_bonus += 8;
 hex_wisp_debug_keys(); // O = next look (hex orb / smoke wisp / old circles), P = next palette (scr_hex_wisp)
 hex_core_set_max(hex, round(scr_stat("max_hex", hex.tune.max)) + hex_bonus);   // more max hex arrives straight in her hand
+if (!hex_on) hex_move_overflow_off(hex);   // (a witch whose hex it isn't never overflows: switching witches lets it go)
 // HER MOVES (scr_hex_moves): tell them what she wants this frame, and they do the rest
 hex_move_update(hex, {
 	stance: hex_on && input_check("stance"),   // (only a witch whose hex it is has a stance)
 	primary: input_check("primary"), primary_pressed: input_pressed("primary"),
 	secondary: input_check("secondary"), secondary_pressed: input_pressed("secondary"),
+	toggle: hex_on && input_pressed("ability"),   // E: in her stance, overflow on / off (the Hexweaver's own E is parked)
 	aim_x: _aim[0], aim_y: _aim[1],
 	x: x, y: y,
 	hand_x: _hx, hand_y: _hy,
@@ -147,6 +149,9 @@ switch (state)
         break;
 }
 
+// her overflow lifts her off the ground (drawn only), bobbing gently; eased, so she settles down instead of dropping
+hover_z = lerp(hover_z, hex.mv.over_f * (hex.tune.over_hover + hex.tune.over_bob * sin(current_time / 350)), 0.2);
+if (hover_z < 0.05) hover_z = 0;
 // her sprite and position are final for this frame now: put the ball exactly in her off hand, so it never trails a
 // frame behind a turn or a step
 var _hf = hex_hand_pos();

@@ -87,10 +87,11 @@ function hex_core_available(_b) {
 
 // ---- ANCHORS ----
 
-// a new anchor of _kind ("knot", "hold", "orb", "shot") at (_x, _y), asking for _want hex
+// a new anchor of _kind ("knot", "hold", "orb", "shot", "over") at (_x, _y), asking for _want hex. An anchor with
+// keep = true (overflow: hex devoted to her own body) survives hex_core_release_all; only letting it go by name ends it
 function hex_anchor_make(_b, _kind, _x, _y, _want) {
 	var _a = { kind: _kind, x: _x, y: _y, px: _x, py: _y, vx: 0, vy: 0, attach: noone, want: _want, at: 0, out: 0, pool: 0, focus: 0,
-		r: _b.tune.knot_r, arrive: _b.tune.knot_arrive, sink: 0, loose: false, shape: "churn" };
+		r: _b.tune.knot_r, arrive: _b.tune.knot_arrive, sink: 0, loose: false, shape: "churn", keep: false };
 	array_push(_b.anchors, _a);
 	return _a;
 }
@@ -194,11 +195,12 @@ function hex_anchor_release(_b, _a, _how = "burst", _vx = 0, _vy = 0) {
 	for (var _i = array_length(_b.anchors) - 1; _i >= 0; _i--) if (_b.anchors[_i] == _a) array_delete(_b.anchors, _i, 1);
 }
 
-// let every anchor go except shots in flight (they end on their own). What a caster does when she drops her hex
+// let every anchor go except shots in flight (they end on their own) and kept anchors (hex devoted to her body). What a
+// caster does when she drops her hex
 function hex_core_release_all(_b) {
 	for (var _i = array_length(_b.anchors) - 1; _i >= 0; _i--) {
 		var _a = _b.anchors[_i];
-		if (_a.kind != "shot") hex_anchor_release(_b, _a, "melt");
+		if (_a.kind != "shot" && !_a.keep) hex_anchor_release(_b, _a, "melt");
 	}
 }
 
@@ -222,9 +224,10 @@ function hex_core_pour(_b, _a, _fx, _fy, _ax = undefined, _ay = undefined) {
 	}
 }
 
-// her hand feeds anchor _a's pool directly (a charging orb): up to _rate a frame, never past what it wants
-function hex_core_feed(_b, _a, _rate) {
-	var _c = max(0, min(_rate, _b.hand, _a.want - _a.pool));
+// her hand feeds anchor _a's pool directly (a charging orb, overflow): up to _rate a frame, never past what it wants,
+// and never taking her hand below _floor (overflow passes her reserve; an orb may spend everything)
+function hex_core_feed(_b, _a, _rate, _floor = 0) {
+	var _c = max(0, min(_rate, _b.hand - _floor, _a.want - _a.pool));
 	_b.hand -= _c;
 	_a.pool += _c;
 }

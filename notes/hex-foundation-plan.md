@@ -173,8 +173,24 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
         Built: `mv.claims` list. The head claims everything in grab range her free hex covers (max - reserve - what she
           holds or claims); each frame's pour goes to the claim that needs the most, so they fill together at her usual
           rate. Rocks still one at a time and alone.
-  - [ ] **5c overflow toggle:** E while in the stance (the existing `ability` action, read as a context action) toggles a devoted chunk of hex onto herself: she rises and
+  - [x] **5c overflow toggle:** E while in the stance (the existing `ability` action, read as a context action) toggles a devoted chunk of hex onto herself: she rises and
         moves faster (placeholder look: her palm flaring + a hover). *Clip:* toggle on, walk, cast, toggle off.
+        **Built Oct 20; tested: it plays as intended (float, speed). The look is too quiet: step 11 adds the Pour
+        ingredient (hex-visual-bible.md). Fix in the same pass: draw_sprite_ext guarded for a sprite of -1 at startup.** Decided: it STAYS ON in or out of the stance until she turns it off
+        (Space + E); it's a form she grows into, not a movement burst (later: a run-long devotion that taxes hex
+        permanently). Toggles on only if `hex_move_free` covers `over_cost`, so it's allowed while holding one enemy but not two.
+        How: an `"over"` anchor attached to her with `keep = true` (so `hex_core_release_all` skips it), its pool fed from
+        her hand at `over_rate` down to her reserve (`hex_core_feed` has a floor now), off = melt. `mv.over_f` (pool /
+        cost) is read by obj_player for speed (`over_speed`), the drawn-only hover (`hover_z`: `over_hover` + `over_bob`,
+        also lifting her hand point) and the palm flare. Knobs: `over_cost` 8, `over_rate` 0.5, `over_speed` 1.3,
+        `over_hover` 8, `over_bob` 1.5. A toggle never counts as a tap (no palm blast on release).
+        Her visual reference for step 11: Wanda levitating, magic pouring from her hands and body as she floats,
+        white-hot cores in her hands, eyes glowing in our hex blue-violet (Wanda's scarlet, translated, as always).
+  - [ ] **5d overflow puts the wand away** (decided Oct 20; see hex-core-design.md, OVERFLOW). Her stance kit is
+        unchanged; outside the stance, left and right click become evolved hex attacks instead of her wand's basic
+        attack and mana cast. Each evolved attack gets its own proposal before it's built (smallest first: the wand stands
+        down in overflow, then one attack at a time). Second-hand glow and wandless sprites follow. Not yet scheduled
+        ahead of step 6. Parked: evolved attacks that depend on the wand she carries.
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
       nothing fires yet). (The dissolve-into-flow part is now just how the flow works.)
 - [ ] **7. Held means held.** A held/thrown enemy: no AI, no contact damage, lifted off the ground (z), stunned on landing;

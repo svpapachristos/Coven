@@ -1,5 +1,5 @@
 // scr_hex_moves: HEX MOVES. Layer 2 of the hex (notes/hex-core-design.md).
-// What a caster DOES with her hex: reach, lift, hold, throw, charge, fire, palm blast, let go. Moves are built only from
+// What a caster DOES with her hex: reach, lift, hold, throw, charge, fire, palm blast, overflow, let go. Moves are built only from
 // scr_hex_core calls; they never touch parcels, amounts or anchors directly, never read input, and never read the
 // caster's variables. Everything they need about the caster arrives each frame as an INTENT (see hex_move_update), so
 // the same moves can be driven by the player, an AI, a familiar or a replay.
@@ -24,6 +24,9 @@ function hex_move_init(_b, _x, _y) {
 		charge: 0,        // frames spent charging
 		orb_n: 0,         // whole units in the charging orb (for sizing it)
 		thrown: [],       // enemies flying through the air after a throw: { inst, vx, vy, hit }
+		over: undefined,  // OVERFLOW's anchor while it's on: a chunk of her hex devoted to her own body (a locked pool riding on her)
+		over_f: 0,        // how strong her overflow is right now, 0..1 (its pool / over_cost: it swells in as her hand fills it).
+		                  //   The caster reads this for her own body: faster, floating, her palm flaring
 		cd: { blast: 0 }  // COOLDOWNS: frames left before each move can be used again (hex_move_ready / hex_move_cool)
 	};
 }
@@ -48,6 +51,7 @@ function hex_move_tick(_b) {
 
 // THE STANCE, once a frame. _in is the caster's intent this frame:
 //   stance, primary, primary_pressed, secondary, secondary_pressed   (what the player is pressing, from scr_input)
+//   toggle            her context action was just pressed (in the stance: overflow on / off)
 //   aim_x, aim_y      where she's aiming          x, y        where the caster is
 //   hand_x, hand_y    her palm                    cx, cy      the middle of her body (where the stance gathers first)
 //   depth             the depth to create shots at
@@ -72,6 +76,7 @@ function hex_move_update(_b, _in) {
 			_ox = _in.cx; _oy = _in.cy;
 		}
 		_mv.tap++;
+		if (_in.toggle) { hex_move_overflow_toggle(_b, _in.x, _in.y); _mv.tap = _ht.tap_frames + 1; }   // (a toggle is never a tap: no palm blast on release)
 		if (_mv.mode == "" && _in.primary_pressed) { _mv.mode = "charge"; _mv.charge = 0; _mv.oa = hex_anchor_make(_b, "orb", _mv.hx, _mv.hy, _ht.charge_cap); }
 		if (_mv.mode == "" && _in.secondary_pressed) { _mv.mode = "grab"; _mv.ra = hex_anchor_make(_b, "knot", _mv.hx, _mv.hy, _ht.reach_cap); }
 
@@ -106,6 +111,7 @@ function hex_move_update(_b, _in) {
 		_mv.hx = _in.hand_x;
 		_mv.hy = _in.hand_y;
 	}
+	hex_move_overflow(_b);   // (overflow stays on in or out of the stance, until she turns it off)
 	_mv.hvx = _mv.hx - _ox;
 	_mv.hvy = _mv.hy - _oy;
 }
@@ -165,12 +171,47 @@ function hex_move_reach(_b, _in) {
 	else if (array_length(_mv.claims) == 0) hex_core_pour(_b, _ra, _in.hand_x, _in.hand_y, _mv.gx, _mv.gy);
 }
 
-// how much hex she can still commit to lifting: her max, minus her reserve, minus everything she holds or has claimed
+// how much hex she can still commit (to lifting, or to overflow): her max, minus her reserve, minus everything she
+// holds or has claimed, minus the chunk devoted to overflow
 function hex_move_free(_b) {
 	var _mv = _b.mv, _f = _b.max - _b.tune.reserve;
 	for (var _i = 0; _i < array_length(_mv.holds); _i++) _f -= _mv.holds[_i].cost;
 	for (var _i = 0; _i < array_length(_mv.claims); _i++) _f -= _mv.claims[_i].cost;
+	if (!is_undefined(_mv.over)) _f -= _mv.over.want;
 	return _f;
+}
+
+// ---- OVERFLOW: she devotes a chunk of her hex (over_cost) to her own body. It rides on her as a locked pool, and
+// while it's there she floats and moves faster (the caster reads mv.over_f). A bargain: power now, less to cast with.
+// It stays on, in or out of the stance, until she turns it off. (A toggle for now; later maybe a run-long devotion)
+
+// in the stance, her context action: overflow on (if her free hex covers the chunk) or off (the chunk melts home).
+// (_x, _y): where she is. Its anchor rides on the body's owner: her
+function hex_move_overflow_toggle(_b, _x, _y) {
+	var _mv = _b.mv, _ht = _b.tune;
+	if (!is_undefined(_mv.over)) { hex_move_overflow_off(_b); return; }
+	if (hex_move_free(_b) < _ht.over_cost - 0.001) return;   // not enough hex to spare (holding a lot already)
+	_mv.over = hex_anchor_make(_b, "over", _x, _y, _ht.over_cost);
+	_mv.over.keep = true;   // (letting go of the stance doesn't melt it)
+	hex_anchor_attach(_b, _mv.over, _b.owner);
+}
+
+// overflow off: its hex goes straight back into her hand
+function hex_move_overflow_off(_b) {
+	var _mv = _b.mv;
+	if (is_undefined(_mv.over)) return;
+	hex_anchor_release(_b, _mv.over, "melt");
+	_mv.over = undefined;
+	_mv.over_f = 0;
+}
+
+// each frame: her hand fills the overflow's pool at over_rate (never into her reserve; hex that's out in the world fills
+// it as it comes home), and its strength follows how full it is
+function hex_move_overflow(_b) {
+	var _mv = _b.mv, _ht = _b.tune;
+	if (is_undefined(_mv.over)) { _mv.over_f = 0; return; }
+	hex_core_feed(_b, _mv.over, _ht.over_rate, _ht.reserve);
+	_mv.over_f = clamp(_mv.over.pool / max(0.001, _mv.over.want), 0, 1);
 }
 
 // has her head already claimed _inst?
