@@ -24,7 +24,7 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	var _ht = hex.tune;
 	var _rat = is_undefined(_mv.ra) ? 0 : _mv.ra.at;               // how much has gathered on her reach's anchor
 	var _rwant = is_undefined(_mv.ra) ? 0 : _mv.ra.want;          // ...and how much it wants
-	var _cat = is_undefined(_mv.ca) ? 0 : _mv.ca.at;              // how much hex is cupping what she holds
+	var _nh = array_length(_mv.holds);                              // how many things she's holding up
 	var _kn = (_mv.mode == "charge" && !is_undefined(_mv.oa)) ? clamp(_mv.oa.pool / _ht.charge_cap, 0, 1) : 0;
 	var _af = hex.hand / max(1, hex.max);                         // how much of her hex is in her hand: less in hand is a smaller ball
 	// (sizes went up ~50% with the round 12 look: the magic is drawn in 2-pixel steps, and at the old size it read tiny)
@@ -44,29 +44,22 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	var _fT = (_mv.active && _mv.mode != "charge") ? 1 : 0;
 	hex_hand_f += (_fT - hex_hand_f) * 0.1;
 	var _eff = 0.8;                                                  // how hard she's working: most when holding something heavy
-	if (_mv.held != noone) _eff = (_mv.kind == "env") ? clamp(0.8 + 0.1 * _mv.held.weight, 0.8, 1) : 0.9;
+	if (_nh > 0) _eff = min(1, 0.85 + 0.05 * _nh);                   // (the more she holds up, the harder she strains)
 	hex_hand_e += (_eff - hex_hand_e) * 0.08;
 	var _hf = hex_hand_f;
 	if (_mv.mode == "charge") hex_wisp_att(_mv.hx, _mv.hy, 15, 0.8, 0, 0, false, 12, max(0.02, _kn), 0, 1, 0, 7);   // THE CHARGE: spark -> crackle -> glow -> bloom as it fills (shader mode 7)
 	else hex_wisp_att(_hp[0], _hp[1], 15, 0.75, 0, 0, false, lerp(_ws.eR, 4, _hf), lerp(_ws.eE, hex_hand_e, _hf), 0.9 * _hf, lerp(1, 0.3, _hf), 0, 0, 1, lerp(1, 0.5, _hf));   // (veil 0.5: just enough to read the core)
 	// the gathering knot where her hex arrives: as big as the hex that has actually gathered there (its anchor's at),
 	// eased so it grows in and dissolves instead of popping
-	var _gT = (_mv.active && _mv.mode == "grab" && _mv.held == noone) ? clamp(_rat / max(1, min(_rwant, _ht.reach_cap)), 0, 1) : 0;
+	var _gT = (_mv.active && _mv.mode == "grab" && _nh == 0) ? clamp(_rat / max(1, min(_rwant, _ht.reach_cap)), 0, 1) : 0;
 	hex_gR += (_gT - hex_gR) * 0.12;
 	// it coalesces: first a faint knot of mist, and only once most of it has gathered does its white-hot heart kindle
 	if (hex_gR > 0.04) hex_wisp_att(_mv.gx, _mv.gy, 15, 0.6, 0, 0, false, 2 + 9 * hex_gR, 0.25 + 0.35 * hex_gR, 0, 1, 0, 0, clamp((hex_gR - 0.45) / 0.55, 0, 1));
-	// THE SCOOP: her hex holding what she lifted, reversibly: pooled underneath, cupping up its sides, faintest over the top,
-	// and the thing itself lit from below (obj_env_parent draws that, reading hex_lit). Grows in as her hex gathers around it;
-	// after she lets go it rides along with the thrown thing and dissolves. Any hex beyond what the lift cost makes it stronger
-	if (_mv.active && _mv.held != noone) { hex_wobj = _mv.held; hex_wkind = _mv.kind; }
-	var _wT = (_mv.active && _mv.held != noone) ? clamp(_cat / max(1, _mv.cost), 0, 1) : 0;   // as much as has gathered around it
-	hex_wR += (_wT - hex_wR) * ((_wT > hex_wR) ? 0.1 : 0.05);
-	if (hex_wR > 0.04 && instance_exists(hex_wobj)) {
-		var _env = (hex_wkind == "env"), _or = _env ? hex_wobj.r : 14;
-		var _we = _env ? clamp(0.25 + 0.35 * hex_wobj.weight, 0.25, 1) : 0.6;              // heavier things: she strains harder
-		if (_mv.held != noone) _we = min(1, _we + 0.4 * clamp((_cat - _mv.cost) / max(1, _mv.cost), 0, 1));   // overcommitted: stronger
-		hex_wisp_att(hex_wobj.x, hex_wobj.y - (_env ? hex_wobj.z : 0), _or + 8, 0.6, 0, 0, false, _or, _we, hex_wR, 1, 0, 5);
-		if (_env) { hex_wobj.hex_lit = hex_wR; hex_wobj.hex_lit_e = _we; }
+	// WHAT SHE HOLDS: the hex cupping each thing IS the levitation (its parcels, drawn with the river), so there's no
+	// separate scoop here. Rocks she holds are lit from below by it (obj_env_parent draws that, reading hex_lit)
+	for (var _i = 0; _i < _nh; _i++) {
+		var _hd = _mv.holds[_i];
+		if (_hd.kind == "env" && instance_exists(_hd.inst)) { _hd.inst.hex_lit = 1; _hd.inst.hex_lit_e = clamp(0.25 + 0.35 * _hd.inst.weight, 0.25, 1); }
 	}
 	with (obj_hex_shot) {
 		hex_wisp_att(x, y, 11 * size, 0.95, vx, vy, true, max(6, 7 * size), 0.9);   // a shot in flight is wild
