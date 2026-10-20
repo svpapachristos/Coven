@@ -302,6 +302,12 @@ hex = hex_body_create(id, {
 	head_follow: 0.3,     // how quickly the river's head follows the cursor (0..1; was 0.15)
 	flow_spread: 3,       // the more hex at the head, the wider it eddies (radius grows by this x the square root of the hex there)
 	flow_loose: 6,        // the head moving faster than this (pixels a frame): its gathered hex streams after it as a river
+	// the knot's focus (the head held still over open ground gathers itself; a future ground ability fires from full focus)
+	focus_still: 1.5,     // the head moving slower than this (pixels a frame) counts as held still
+	focus_min: 4,         // ...and only once at least this much hex has gathered there
+	focus_time: 60,       // frames held still to reach full focus (60 = one second)
+	focus_decay: 0.05,    // focus lost each frame once it moves on or reaches something (0.05 = gone in a third of a second)
+	focus_tighten: 0.6,   // at full focus the knot draws in to this much less of its spread (0..1)
 	// her moves
 	reach_max: 4000,      // how far from her the hex can reach (4000 = the whole screen)
 	grab_r: 80,           // how close the river's head must be to something's edge to claim it (was 64)

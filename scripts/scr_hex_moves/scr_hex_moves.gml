@@ -1,5 +1,5 @@
 // scr_hex_moves: HEX MOVES. Layer 2 of the hex (notes/hex-core-design.md).
-// What a caster DOES with her hex: reach, lift, hold, throw, charge, fire, palm blast, overflow, let go. Moves are built only from
+// What a caster DOES with her hex: reach, focus, lift, hold, throw, charge, fire, palm blast, overflow, let go. Moves are built only from
 // scr_hex_core calls; they never touch parcels, amounts or anchors directly, never read input, and never read the
 // caster's variables. Everything they need about the caster arrives each frame as an INTENT (see hex_move_update), so
 // the same moves can be driven by the player, an AI, a familiar or a replay.
@@ -25,6 +25,7 @@ function hex_move_init(_b, _x, _y) {
 		orb_n: 0,         // whole units in the charging orb (for sizing it)
 		thrown: [],       // enemies flying through the air after a throw: { inst, vx, vy, hit }
 		over: undefined,  // OVERFLOW's anchor while it's on: a chunk of her hex devoted to her own body (a locked pool riding on her)
+		focus_ready: false, // her reach's head has been held still long enough: full focus (a future ground ability fires from here)
 		over_f: 0,        // how strong her overflow is right now, 0..1 (its pool / over_cost: it swells in as her hand fills it).
 		                  //   The caster reads this for her own body: faster, floating, her palm flaring
 		cd: { blast: 0 }  // COOLDOWNS: frames left before each move can be used again (hex_move_ready / hex_move_cool)
@@ -128,6 +129,7 @@ function hex_move_reach(_b, _in) {
 	// the head: where her hex is flowing to. It follows the cursor (a new reach starts right at the cursor)
 	if (_ra.at <= 0.01 && _ra.out <= 0.01) { _mv.gx = _mv.hx; _mv.gy = _mv.hy; }
 	else { _mv.gx = lerp(_mv.gx, _mv.hx, _ht.head_follow); _mv.gy = lerp(_mv.gy, _mv.hy, _ht.head_follow); }
+	var _hs = point_distance(_ra.x, _ra.y, _mv.gx, _mv.gy);   // how far the head moves this frame (for its focus)
 	hex_anchor_move(_ra, _mv.gx, _mv.gy);
 	// does the head reach new things? Claim every one her hex can still hold, nearest first
 	var _tgs = hex_move_find_targets(_b, _mv.gx, _mv.gy);
@@ -169,6 +171,20 @@ function hex_move_reach(_b, _in) {
 	if (array_length(_mv.claims) > 0) _ra.want = 0; else _ra.want = infinity;
 	if (!is_undefined(_need)) hex_core_pour(_b, _need, _in.hand_x, _in.hand_y);
 	else if (array_length(_mv.claims) == 0) hex_core_pour(_b, _ra, _in.hand_x, _in.hand_y, _mv.gx, _mv.gy);
+	hex_move_focus(_b, _hs);
+}
+
+// THE KNOT'S FOCUS (each frame while reaching): the head held still over open ground (nothing claimed or held, and at
+// least focus_min hex gathered there) builds focus, full in focus_time frames, and draws itself in tighter. Moving it on,
+// or reaching something, lets the focus fade (focus_decay a frame). Full focus = mv.focus_ready: the threshold a future
+// ground ability fires from (nothing fires yet). _hs: how far the head moved this frame
+function hex_move_focus(_b, _hs) {
+	var _mv = _b.mv, _ht = _b.tune, _ra = _mv.ra;
+	var _still = _hs < _ht.focus_still && _ra.at >= _ht.focus_min && array_length(_mv.claims) == 0 && array_length(_mv.holds) == 0;
+	hex_anchor_set_focus(_ra, _still ? _ra.focus + 1 / max(1, _ht.focus_time) : _ra.focus - _ht.focus_decay);
+	var _ready = (_ra.focus >= 1);
+	if (_ready && !_mv.focus_ready) show_debug_message("hex: focus ready");   // (for testing: the moment the threshold is reached)
+	_mv.focus_ready = _ready;
 }
 
 // how much hex she can still commit (to lifting, or to overflow): her max, minus her reserve, minus everything she
@@ -319,7 +335,7 @@ function hex_move_reach_end(_b) {
 	hex_move_throw(_b);
 	hex_move_unclaim_all(_b);   // (claims that never lifted)
 	if (!is_undefined(_mv.ra)) { hex_anchor_release(_b, _mv.ra, "melt"); _mv.ra = undefined; }   // the river unravels home
-	_mv.mode = "";
+	_mv.mode = ""; _mv.focus_ready = false;
 }
 
 // THROW everything her hex is holding: rocks fly with the speed they had, enemies with the motion they had in her hold
@@ -401,7 +417,7 @@ function hex_move_let_go(_b) {
 	var _mv = _b.mv;
 	hex_core_release_all(_b);
 	_mv.ra = undefined; _mv.oa = undefined;
-	_mv.holds = []; _mv.claims = []; _mv.active = false; _mv.charge = 0; _mv.orb_n = 0; _mv.mode = "";
+	_mv.holds = []; _mv.claims = []; _mv.active = false; _mv.charge = 0; _mv.orb_n = 0; _mv.mode = ""; _mv.focus_ready = false;
 }
 
 // at the end of the caster's Step, once her sprite and position are final: her hex rests exactly in her palm (_hx, _hy),

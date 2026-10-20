@@ -39,6 +39,7 @@ function hex_tune_defaults() {
 		reserve: 0,           // hex the flow never takes from her hand (an emergency reserve for a blast); 0 = none
 		flow_spread: 0,       // a free anchor's churn widens by this x the square root of the hex on it (0 = never: a tight knot)
 		flow_loose: 1000000,  // a free anchor moving faster than this (pixels a frame) loosens: its gathered hex streams after it
+		focus_tighten: 0,     // a free anchor at full focus draws its churn in by this much (0..1 of its spread; 0 = focus never tightens it)
 		// anchors
 		knot_r: 8,            // a free anchor (the knot): how wide its parcels churn
 		knot_arrive: 10,      // ...and how close a flowing parcel must get to count as arrived
@@ -96,6 +97,11 @@ function hex_anchor_make(_b, _kind, _x, _y, _want) {
 	return _a;
 }
 
+// set how focused an anchor is (0..1: the head held still gathers itself; a future ground ability fires from full focus)
+function hex_anchor_set_focus(_a, _f) {
+	_a.focus = clamp(_f, 0, 1);
+}
+
 // put a free anchor somewhere (an attached one follows what it rides on instead)
 function hex_anchor_move(_a, _x, _y) {
 	_a.x = _x;
@@ -127,7 +133,8 @@ function hex_anchor_fit(_b, _a) {
 		_a.sink = _t.hold_sink;
 	} else {
 		// a free anchor: the more hex is gathered on it, the wider and looser it eddies (so a lot of hex is a cloud, not a ball)
-		_a.r = _t.knot_r + _t.flow_spread * sqrt(max(0, _a.at));
+		// (as it focuses, it draws in tighter: a cloud gathering itself into a knot)
+		_a.r = _t.knot_r + _t.flow_spread * sqrt(max(0, _a.at)) * (1 - _t.focus_tighten * _a.focus);
 		_a.arrive = _a.r + (_t.knot_arrive - _t.knot_r);
 		_a.sink = 0;
 	}

@@ -193,6 +193,11 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
         ahead of step 6. Parked: evolved attacks that depend on the wand she carries.
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
       nothing fires yet). (The dissolve-into-flow part is now just how the flow works.)
+      **Built Oct 20, awaiting the clip.** `hex_move_focus` (each frame of a reach): the head moving under `focus_still`
+      over open ground (nothing claimed or held, at least `focus_min` hex gathered) fills `ra.focus` over `focus_time`
+      frames; otherwise it fades by `focus_decay`. Full focus = `mv.focus_ready` (prints "hex: focus ready" once). The
+      core writes focus only through `hex_anchor_set_focus`, and `focus_tighten` draws a focused knot in. Placeholder look:
+      the knot's heart kindles and burns wilder. Knobs: 1.5 / 4 / 60 / 0.05 / 0.6.
 - [ ] **7. Held means held.** A held/thrown enemy: no AI, no contact damage, lifted off the ground (z), stunned on landing;
       throw strength from the hold's motion. *Clip:* hold an enemy past her, throw it into the horde.
 - [ ] **8. Combos, one at a time:** multi-lift (several anchors) → overflow into a second target → slam (LMB while holding).

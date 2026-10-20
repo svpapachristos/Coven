@@ -64,7 +64,9 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	var _gT = (_mv.active && _mv.mode == "grab" && _nh == 0) ? clamp(_rat / max(1, min(_rwant, _ht.reach_cap)), 0, 1) : 0;
 	hex_gR += (_gT - hex_gR) * 0.12;
 	// it coalesces: first a faint knot of mist, and only once most of it has gathered does its white-hot heart kindle
-	if (hex_gR > 0.04) hex_wisp_att(_mv.gx, _mv.gy, 15, 0.6, 0, 0, false, 2 + 9 * hex_gR, 0.25 + 0.35 * hex_gR, 0, 1, 0, 0, clamp((hex_gR - 0.45) / 0.55, 0, 1));
+	// FOCUS (placeholder): held still, the knot's heart kindles fully and it burns wilder as its focus builds
+	var _foc = is_undefined(_mv.ra) ? 0 : _mv.ra.focus;
+	if (hex_gR > 0.04) hex_wisp_att(_mv.gx, _mv.gy, 15, 0.6, 0, 0, false, 2 + 9 * hex_gR, min(1, 0.25 + 0.35 * hex_gR + 0.4 * _foc), 0, 1, 0, 0, max(clamp((hex_gR - 0.45) / 0.55, 0, 1), _foc));
 	// WHAT SHE HOLDS: the hex cupping each thing IS the levitation (its parcels, drawn with the river), so there's no
 	// separate scoop here. Rocks she holds are lit from below by it (obj_env_parent draws that, reading hex_lit)
 	for (var _i = 0; _i < _nh; _i++) {
