@@ -290,8 +290,11 @@ function hex_core_step(_b, _hx, _hy, _mvx, _mvy) {
 				var _dr = (hex_vn(_q.x * 0.025 + _time * 0.6, _q.y * 0.025 + _q.ph) - 0.5) * _t.curl;
 				var _ang = arctan2(_a.y - _q.y, _a.x - _q.x) + _dr;
 				var _s = min(_q.s, _dg * 0.25 + 1);
-				_q.vx += (cos(_ang) * _s - _q.vx) * _t.turn;
-				_q.vy += (sin(_ang) * _s - _q.vy) * _t.turn;
+				// flowing to something that moves (a claim on a bat): add its motion, so the hex closes in on where it's going
+				// (its speed near the target is capped to stop overshooting, and that cap alone was slower than a bat)
+				var _avx = (_a.attach != noone) ? _a.vx : 0, _avy = (_a.attach != noone) ? _a.vy : 0;
+				_q.vx += (cos(_ang) * _s + _avx - _q.vx) * _t.turn;
+				_q.vy += (sin(_ang) * _s + _avy - _q.vy) * _t.turn;
 				if (_dg < _a.arrive) _q.st = HEX_ST_GATHER;
 			} else if (_a.shape == "cup") {
 				// THE CUP: each parcel holds its own spot under and around what the anchor holds (its spot comes from its
