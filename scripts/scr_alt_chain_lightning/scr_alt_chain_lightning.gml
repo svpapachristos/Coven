@@ -6,13 +6,14 @@ function scr_alt_chain_lightning(_caster) {
 	
 	var _n = instance_number(obj_enemy_parent);
 	
-	// First target: Enemy closest to cursor within reach of the Witch
+	// First target: Enemy closest to where she's aiming (scr_input), within reach of the Witch
+	var _ap = input_aim();
 	var _first = noone;
 	var _first_d = infinity;
 	for (var i = 0; i < _n; i++) {
 		var _e = instance_find(obj_enemy_parent, i);
 		if (point_distance(_caster.x, _caster.y, _e.x, _e.y) > _cast_range) continue;
-		var _d = point_distance(mouse_x, mouse_y, _e.x, _e.y);
+		var _d = point_distance(_ap[0], _ap[1], _e.x, _e.y);
 		if (_d < _first_d) {_first_d = _d; _first = _e; }
 	}
 	//Nothing in reach, no cast, caster spends no mana

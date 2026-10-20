@@ -20,8 +20,11 @@ var _orb = (_ws.mode == 0);   // the hex orb look (otherwise the smoke wisp)
 if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	// the balls of her magic: where her curse is (in her hand, the charging orb, what she holds), and any shot in flight.
 	// for the orb each one also carries a core radius (world pixels) and an energy (0 calm .. 1 wild); her stance sets the main ball's
-	var _kn = (hex_mode == "charge") ? clamp(hex_orb_amt / hex_charge_cap, 0, 1) : 0;
-	var _af = hex_hand_amt / max(1, hex_max);                      // how much of her hex is in her hand: less in hand is a smaller ball
+	var _ht = hex.tune;
+	var _rat = is_undefined(hex_ra) ? 0 : hex_ra.at;               // how much has gathered on her reach's anchor
+	var _rwant = is_undefined(hex_ra) ? 0 : hex_ra.want;          // ...and how much it wants
+	var _kn = (hex_mode == "charge" && !is_undefined(hex_oa)) ? clamp(hex_oa.pool / _ht.charge_cap, 0, 1) : 0;
+	var _af = hex.hand / max(1, hex.max);                         // how much of her hex is in her hand: less in hand is a smaller ball
 	// (sizes went up ~50% with the round 12 look: the magic is drawn in 2-pixel steps, and at the old size it read tiny)
 	var _tR = 9 * (0.65 + 0.35 * _af), _tE = 0.12;                  // at rest in her hand: small and calm
 	if (hex_active) {
@@ -44,9 +47,9 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	var _hf = hex_hand_f;
 	if (hex_mode == "charge") hex_wisp_att(hex_hx, hex_hy, 15, 0.8, 0, 0, false, 12, max(0.02, _kn), 0, 1, 0, 7);   // THE CHARGE: spark -> crackle -> glow -> bloom as it fills (shader mode 7)
 	else hex_wisp_att(_hp[0], _hp[1], 15, 0.75, 0, 0, false, lerp(_ws.eR, 4, _hf), lerp(_ws.eE, hex_hand_e, _hf), 0.9 * _hf, lerp(1, 0.3, _hf), 0, 0, 1, lerp(1, 0.5, _hf));   // (veil 0.5: just enough to read the core)
-	// the gathering knot where her hex arrives: as big as the hex that has actually gathered there (hex_at, counted in Step),
+	// the gathering knot where her hex arrives: as big as the hex that has actually gathered there (its anchor's at),
 	// eased so it grows in and dissolves instead of popping
-	var _gT = (hex_active && hex_mode == "grab" && hex_held == noone) ? clamp(hex_at / max(1, min(hex_need, hex_reach_cap)), 0, 1) : 0;
+	var _gT = (hex_active && hex_mode == "grab" && hex_held == noone) ? clamp(_rat / max(1, min(_rwant, _ht.reach_cap)), 0, 1) : 0;
 	hex_gR += (_gT - hex_gR) * 0.12;
 	// it coalesces: first a faint knot of mist, and only once most of it has gathered does its white-hot heart kindle
 	if (hex_gR > 0.04) hex_wisp_att(hex_gx, hex_gy, 15, 0.6, 0, 0, false, 2 + 9 * hex_gR, 0.25 + 0.35 * hex_gR, 0, 1, 0, 0, clamp((hex_gR - 0.45) / 0.55, 0, 1));
@@ -54,12 +57,12 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	// and the thing itself lit from below (obj_env_parent draws that, reading hex_lit). Grows in as her hex gathers around it;
 	// after she lets go it rides along with the thrown thing and dissolves. Any hex beyond what the lift cost makes it stronger
 	if (hex_active && hex_held != noone) { hex_wobj = hex_held; hex_wkind = hex_kind; }
-	var _wT = (hex_active && hex_held != noone) ? clamp(hex_at / max(1, hex_cost), 0, 1) : 0;   // as much as has gathered around it
+	var _wT = (hex_active && hex_held != noone) ? clamp(_rat / max(1, hex_cost), 0, 1) : 0;   // as much as has gathered around it
 	hex_wR += (_wT - hex_wR) * ((_wT > hex_wR) ? 0.1 : 0.05);
 	if (hex_wR > 0.04 && instance_exists(hex_wobj)) {
 		var _env = (hex_wkind == "env"), _or = _env ? hex_wobj.r : 14;
 		var _we = _env ? clamp(0.25 + 0.35 * hex_wobj.weight, 0.25, 1) : 0.6;              // heavier things: she strains harder
-		if (hex_held != noone) _we = min(1, _we + 0.4 * clamp((hex_at - hex_cost) / max(1, hex_cost), 0, 1));   // overcommitted: stronger
+		if (hex_held != noone) _we = min(1, _we + 0.4 * clamp((_rat - hex_cost) / max(1, hex_cost), 0, 1));   // overcommitted: stronger
 		hex_wisp_att(hex_wobj.x, hex_wobj.y - (_env ? hex_wobj.z : 0), _or + 8, 0.6, 0, 0, false, _or, _we, hex_wR, 1, 0, 5);
 		if (_env) { hex_wobj.hex_lit = hex_wR; hex_wobj.hex_lit_e = _we; }
 	}
@@ -68,14 +71,14 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	}
 	if (_orb) {
 		// HER HEX OUT IN THE WORLD (drawn under the orbs): every parcel, as one body of hex (scr_hex_wisp, hex_field_draw)
-		hex_field_draw(hex_par);
+		hex_field_draw(hex.parcels);
 		hex_orb_draw();
 	}
 	else hex_wisp_draw([], hex_active);   // (the old smoke-wisp look drew motes; with her hex as one amount it has nothing to draw)
 }
 gpu_set_blendmode(bm_add);
 if (hex_active && !_orb) {   // (the orb has its own glow and heart)
-	var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex_charge_cap, 0, 1) : 0; // how full the charging orb is
+	var _knot = (hex_mode == "charge") ? clamp(hex_orb_n / hex.tune.charge_cap, 0, 1) : 0; // how full the charging orb is
 	// her magic lights the ground under it
 	draw_set_color(_wisp ? hex_wisp_col(_wp.glow, 0.64) : make_color_rgb(70, 40, 140));
 	draw_set_alpha(0.22 + 0.05 * sin(current_time / 120) + 0.2 * _knot);

@@ -37,9 +37,12 @@ if (x < _vx0 - 32 || y < _vy0 - 32 || x > _vx0 + camera_get_view_width(_cam) + 3
 if (life <= 0) _end = true;
 
 if (_end) {
-	// the hex inside it flows home to her as a river from here
-	var _n = hex_amt, _ex = x, _ey = y;
-	if (_n > 0 && instance_exists(obj_player)) with (obj_player) hex_home_add(_ex, _ey, _n);
+	// the hex inside it bursts out from here and flows home to her, bit by bit
+	if (!is_undefined(hex_anchor)) {
+		hex_anchor_move(hex_anchor, x, y);
+		hex_anchor_release(hex_body, hex_anchor, "burst");
+		hex_anchor = undefined;
+	}
 	instance_destroy();
 	exit;
 }

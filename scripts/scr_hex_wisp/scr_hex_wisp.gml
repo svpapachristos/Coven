@@ -205,7 +205,7 @@ function hex_vn(_x, _y) {
 	return lerp(lerp(_a, _b, _ux), lerp(_c, _d, _ux), _uy);
 }
 
-// THE HEX FIELD: her hex out in the world, drawn as ONE body. Every parcel (obj_player's hex_par) splats a soft blob of
+// THE HEX FIELD: her hex out in the world, drawn as ONE body. Every parcel (a hex body's parcels, scr_hex_core) splats a soft blob of
 // density into a surface, one surface pixel per hex pixel (so it's on the magic's grid for free): red = the smoke body,
 // green = light currents (about a third of the parcels carry those). Where parcels overlap, it thickens and brightens. Then
 // the hex shader (u_mode 4) draws the surface as hex: a dark smoke body, light where currents bunch up, sparkles.

@@ -4,13 +4,14 @@ function scr_magic_missile(_caster) {
 	var _dmg = scr_stat("alt_damage", scr_stat("missile_damage", 30));
 	var _n = instance_number(obj_enemy_parent);
 
-	// enemies in reach, closest to the cursor first
+	// enemies in reach, closest to where she's aiming first (scr_input)
+	var _ap = input_aim();
 	var _cands = [];
 	for (var i = 0; i < _n; i++) {
 		var _e = instance_find(obj_enemy_parent, i);
 		if (_e.object_index == obj_curse_toad) continue;   // frogs are already beaten: don't waste darts on them
 		if (point_distance(_caster.x, _caster.y, _e.x, _e.y) <= _range)
-			array_push(_cands, { e: _e, d: point_distance(mouse_x, mouse_y, _e.x, _e.y) });
+			array_push(_cands, { e: _e, d: point_distance(_ap[0], _ap[1], _e.x, _e.y) });
 	}
 	if (array_length(_cands) == 0) return false;   // nothing in reach: no cast, no mana
 	array_sort(_cands, function(a, b) { return a.d - b.d; });

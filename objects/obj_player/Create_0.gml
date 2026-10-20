@@ -175,13 +175,13 @@ function player_idle(){
 	if (input_moving()) {
 		state = "WALK";
 	}
-	if (mouse_check_button(mb_left) && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
+	if (input_check("primary") && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
 		state = "ATTACK";
 	}
 }
 function player_walk() {
 	movement();
-	if (mouse_check_button(mb_left) && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
+	if (input_check("primary") && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
 		state = "ATTACK";
 	}
 	if (!input_moving()) {
@@ -197,7 +197,8 @@ function player_attack() {
 			: { count: 1, spread: 0, pierce: 0, delay: 1, dmg: 1, speed: 1, homing: 0 };
 		shoot_timer = game_get_speed(gamespeed_fps) * attack_speed * _p.delay / scr_stat("attack_speeed", 1);
 		
-		var _dir = point_direction(x, y, mouse_x, mouse_y);
+		var _aim = input_aim();
+		var _dir = point_direction(x, y, _aim[0], _aim[1]);
 		var _count = _p.count + floor(scr_stat("primary_count", 0));
 		var _volley = []; // shared by every bolt in this shot so they spread across targets
 		for (var i = 0; i < _count; i++) {
@@ -224,14 +225,12 @@ function player_attack() {
 		shoot_timer -= 1;
 	} else {
 		can_shoot = true;
-		if (!mouse_check_button(mb_left)) state = "IDLE";
+		if (!input_check("primary")) state = "IDLE";
 	}
 }
 
 // ---- E: the living curse (rudimentary) ----
 hex_held = noone;  // the world object her curse is holding
-hex_reach = 4000;  // how far from her the curse can reach (4000 = the whole screen)
-hex_grab_r = 80;   // how close the cursor must be to something for her hex to go for it (was 64)
 // her hex belongs to witches tagged "hexweaver" (set every Step from her witch, which is chosen after Create and can
 // change in the hideout). Every other witch keeps her own E and never sees the hex
 hex_on = false;
@@ -290,100 +289,66 @@ function hex_hand_pos() {
 	if (is_undefined(_p)) _p = hex_hand_default;
 	return [x + _p[0] * image_xscale, y + _p[1] * image_yscale];
 }
-// ---- HER HEX: one amount, always somewhere ----
-// Her hex is a single quantity (hex_max units) that moves between a few places. Every visual reads these numbers, so
-// what you see is always where her hex actually is: nothing pops in, nothing vanishes.
-//   hex_hand_amt  in her hand (what she can use right now; the HUD shows this)
-//   hex_par       out in the world: PARCELS, small bits of hex (HEX_PARCEL each) that each move on their own.
-//                 st 0 = flowing out, 1 = gathered at the target (churning in the knot, or around what she holds),
-//                 2 = going home. hex_out and hex_at are just the sums of the st 0 and st 1 parcels, counted each Step.
-//   hex_orb_amt   in the orb she's charging
-//   (and whatever rides inside obj_hex_shot instances, as their hex_amt)
-// Step moves it along: hand -> parcels out -> gathered when she reaches; gathered -> parcels home -> hand when she lets go.
-// Because every parcel finds its own way, the river braids and wanders on its own, and going home it disperses and drifts
-// back bit by bit, instead of one shape stretching out and retracting.
-hex_budget = 32;      // her max hex (raised by the "max_hex" stat; H adds 8 while testing)
-hex_max = hex_budget;
-hex_hand_amt = hex_budget;
-hex_out = 0;
-hex_at = 0;
-hex_need = 0;         // how much the current reach wants at its target (a lift's cost, or hex_reach_cap over open ground)
-hex_reach_cap = 6;    // how much gathers when she reaches into open ground (was 14: it read as a glob)
-hex_orb_amt = 0;
-hex_par = [];         // her hex out in the world, as parcels: { x, y, vx, vy, s (its own pace), ph (its own phase), st, wait, hot, amt }
-#macro HEX_PARCEL 0.25   // how much hex one parcel carries (4 parcels per unit)
-hex_pour_n = 2;       // parcels her hand lets out per frame while reaching (2 = half a unit a frame)
-hex_pour_acc = 0;
-hex_par_turn = 0.13;  // how quickly a parcel can change direction (lower = wider, lazier curves)
-hex_par_curl = 0.85;   // how much the drifting currents push parcels around (higher = a wilder, wider river)
-hex_par_fan = 0.425;    // how widely parcels leave her palm (radians)
-hex_home_spread = 35; // frames over which the gathered parcels decide, one by one, to head home (higher = a slower, longer drift back)
-
-hex_flow_speed = 9;   // how fast a parcel flows out to where it's going (pixels a frame, each parcel a little different)
-// (was 10 for the old motes; the parcel river looked right at 6 in the prototype)
-hex_return_speed = 20; // ...and back home to her hand, speeding up as it nears her palm (was 11 for the old motes)
+// ---- HER HEX: a hex body (scr_hex_core; the whole structure is in notes/hex-core-design.md) ----
+// All of her hex lives in ONE struct, `hex`: her hand (home), her parcels (hex out in the world, each finding its own
+// way, so the river braids) and her anchors (where hex gathers: the knot she reaches into, what she holds, the orb she
+// charges, a shot in flight). THE LEDGER: hand + parcels + anchor pools = max, always (with F1 on, the audit checks it
+// every frame). Only scr_hex_core changes those; everything here just asks it to.
+// HER TUNING: every number her hex uses, in one place (anything left out uses hex_tune_defaults in scr_hex_core).
+hex = hex_body_create(id, {
+	// the amount
+	max: 32,              // her max hex (raised by the "max_hex" stat; H adds 8 while testing)
+	parcel: 0.25,         // how much hex one parcel carries (4 parcels per unit)
+	// the river
+	pour_n: 2,            // parcels her hand lets out per frame while reaching (2 = half a unit a frame)
+	flow: 9,              // how fast a parcel flows out to where it's going (was 10 for the old motes; 6 in the prototype)
+	turn: 0.13,           // how quickly a parcel can change direction (lower = wider, lazier curves)
+	curl: 0.85,           // how much the drifting currents push parcels around (higher = a wilder, wider river)
+	fan: 0.425,           // how widely parcels leave her palm (radians)
+	return_speed: 20,     // ...and back home to her hand, speeding up as it nears her palm (was 11 for the old motes)
+	home_spread: 35,      // frames over which the gathered parcels decide, one by one, to head home (higher = a slower, longer drift back)
+	land_r: 14,           // a parcel this close to where her hand is headed is home (was 6: too narrow to land while she walks)
+	// her moves
+	reach_max: 4000,      // how far from her the hex can reach (4000 = the whole screen)
+	grab_r: 80,           // how close the cursor must be to something for her hex to go for it (was 64)
+	reach_cap: 6,         // how much gathers when she reaches into open ground (was 14: it read as a glob)
+	cost_lift: 8,         // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
+	cost_enemy: 14,       // hex it takes to lift an enemy
+	ball_dist: 30,        // how far in front of her hand the charging orb gathers
+	charge_cap: 24,       // the most hex one charged orb can hold
+	charge_rate: 0.5,     // hex added to a charging orb per frame (0.5 = full in about 0.8s)
+	boom_dmg: 10,         // damage per unit of hex in the charged orb (plus a base of 10)
+	boom_r: 5,            // blast radius per unit of hex (plus a base of 40)
+	blast_cost: 4,        // a tap of Space: a quick palm blast
+	blast_dmg: 10
+});
+hex_ra = undefined;   // the anchor her reach pours into while right click is held (the knot, then what she lifts)
+hex_oa = undefined;   // the anchor of the orb she's charging while left click is held
 hex_cost = 0;         // what the thing she's holding cost
-hex_cost_lift = 8;    // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
-hex_cost_enemy = 14;  // hex it takes to lift an enemy
 hex_mode = "";        // "grab" (right click: reach out and lift) or "charge" (left click: an orb in front of her hand)
-hex_ball_dist = 30;   // how far in front of her hand the charging ball gathers
-hex_boom_dmg = 10;     // damage per unit of hex in the charged orb (plus a base of 10)
-hex_boom_r = 5;       // blast radius per unit of hex (plus a base of 40)
-hex_blast_cost = 4;   // a tap of Space Bar: a quick hand blast
-hex_blast_dmg = 10;
-hex_key = vk_space;   // hold for her hex stance, tap for a palm blast (was E; space frees a finger for WASD)
+// (her stance is the "stance" action in scr_input: Space. Hold for her hex stance, tap for a palm blast)
 hex_tap = 0;          // frames the stance key has been held this press (short = a tap)
 cam_hex_settle = 0;   // frames left that the camera stays settled on her for the hex
 cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
-hex_charge_cap = 24;  // the most hex one charged orb can hold
-hex_charge_rate = 0.5; // hex added to a charging orb per frame (0.5 = full in about 0.8s)
 hex_orb_n = 0;        // (whole units in the charging orb, for sizing it)
 hex_bonus = 0;        // extra max hex (debug: press H in a run for +8)
 
-// how much hex she has in hand right now (whole units)
-hex_available = function() {
-	return floor(hex_hand_amt + 0.001);
-}
-// let out one parcel of hex from her palm (_x, _y), heading toward (_tx, _ty)
-hex_par_emit = function(_x, _y, _tx, _ty) {
-	var _a = arctan2(_ty - _y, _tx - _x) + random_range(-0.5, 0.5) * hex_par_fan * 2;
-	var _s = hex_flow_speed * random_range(0.75, 1.25);
-	array_push(hex_par, { x: _x + random_range(-1.5, 1.5), y: _y + random_range(-1.5, 1.5), vx: cos(_a) * _s, vy: sin(_a) * _s, s: _s, ph: random(6.28), st: 0, wait: 0, hot: (random(1) < 0.35), amt: HEX_PARCEL });
-}
-// send _a hex home from (_x, _y): it breaks into parcels that each head home on their own time (a shot that burst)
-hex_home_add = function(_x, _y, _a) {
-	while (_a > 0.001) {
-		var _k = min(HEX_PARCEL, _a);
-		var _ang = random(6.28);
-		array_push(hex_par, { x: _x + random_range(-6, 6), y: _y + random_range(-6, 6), vx: cos(_ang) * 2, vy: sin(_ang) * 2, s: hex_flow_speed * random_range(0.75, 1.25), ph: random(6.28), st: 2, wait: irandom(hex_home_spread), hot: (random(1) < 0.35), amt: _k });
-		_a -= _k;
-	}
-}
-// everything out in the world (flowing out, or gathered) heads home, each parcel deciding on its own when.
-// _vx, _vy: a push they all get first (what she threw was moving)
-hex_let_go = function(_vx = 0, _vy = 0) {
-	for (var _i = 0; _i < array_length(hex_par); _i++) {
-		var _q = hex_par[_i];
-		if (_q.st == 2) continue;
-		_q.st = 2;
-		_q.wait = irandom(hex_home_spread);
-		_q.vx += _vx + random_range(-0.4, 0.4);
-		_q.vy += _vy + random_range(-0.4, 0.4);
-	}
-}
-// throw whatever her hex is holding: the hex that held it lets go and drifts home from where it was
+// throw whatever her hex is holding: the hex that held it (her reach's anchor) lets go and drifts home from where it was,
+// carried along a little by the throw
 hex_throw = function() {
 	if (hex_held == noone || !instance_exists(hex_held)) { hex_held = noone; hex_kind = ""; return; }
+	var _pvx, _pvy;
 	if (hex_kind == "env") {
 		hex_held.grabbed = false;
 		hex_held.vx *= 1.6;
 		hex_held.vy *= 1.6;
 		hex_held.vz = min(7, 3 + 0.15 * point_distance(0, 0, hex_held.vx, hex_held.vy));   // pops upward (harder throws arc higher), so it lobs and lands instead of skating off
-		hex_let_go(hex_held.vx * 0.5, hex_held.vy * 0.5);
+		_pvx = hex_held.vx * 0.5; _pvy = hex_held.vy * 0.5;
 	} else {
 		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
-		hex_let_go(hex_hvx * 0.8, hex_hvy * 0.8);
+		_pvx = hex_hvx * 0.8; _pvy = hex_hvy * 0.8;
 	}
+	if (!is_undefined(hex_ra)) { hex_anchor_release(hex, hex_ra, "melt", _pvx, _pvy); hex_ra = undefined; }
 	hex_held = noone;
 	hex_kind = "";
 }

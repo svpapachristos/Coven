@@ -10,8 +10,9 @@ if (global.game_state == "PLAYING") {
 	if (hex_active && hex_tap > 10) cam_hex_settle = cam_hex_linger;
 	else cam_hex_settle = max(0, cam_hex_settle - 1);
 	if (cam_hex_settle <= 0) {
-		var _mx = (mouse_x - camera_get_view_x(cam)) - cam_w / 2;
-		var _my = (mouse_y - camera_get_view_y(cam)) - cam_h / 2;
+		var _aim = input_aim();   // the camera leans toward where she's aiming (scr_input)
+		var _mx = (_aim[0] - camera_get_view_x(cam)) - cam_w / 2;
+		var _my = (_aim[1] - camera_get_view_y(cam)) - cam_h / 2;
 		_tx = clamp(_mx * cam_look_strength, -cam_look_max, cam_look_max);
 		_ty = clamp(_my * cam_look_strength, -cam_look_max, cam_look_max);
 	}

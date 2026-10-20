@@ -118,9 +118,16 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
       first piece of an input layer: new script `scr_input` (`input_move()`, `input_moving()`); every WASD read in obj_player
       goes through it, so a controller or touch controls plug in one place.
       *Clip:* reach, let go, and keep walking: the bar fills back to full.
-- [ ] **3. Anchors (the foundation).** Move the plumbing into `scr_hex_core` and rebuild today's behavior on anchors.
-      **No visible change.** *Done when:* every move in the audit's section 3 plays exactly as before. *Clip:* reach, lift,
-      throw, charge, fire.
+- [x] **Input layer, part 2** (done Oct 19, rides in the step 3 commit): every gameplay read of the mouse or a button goes
+      through `scr_input`: actions (`input_check/pressed/released("stance" | "primary" | "secondary" | "ability" |
+      "ultimate" | "interact")`) defined in one bindings table, and `input_aim()` for where she's aiming. Step 3 is written
+      against these from the start: **the hex never reads the mouse or a key directly.**
+- [ ] **3. Anchors (the foundation)**, designed in `hex-core-design.md` (read it first). Three passes, each "plays exactly
+      the same", each its own commit:
+  - [ ] **3a core:** `scr_hex_core` (hex body, parcels, anchors, ledger audit); obj_player's move code calls core
+        functions. Input part 2 rides in this commit. *Clip:* reach, lift, throw, charge, fire, palm blast; F1 audit quiet.
+  - [ ] **3b moves:** move code into `scr_hex_moves`; obj_player shrinks to input → moves.
+  - [ ] **3c look:** hex drawing into `scr_hex_look` (may fold into step 4).
 - [ ] **4. A readable river.** Minimal layered field (glow pass + body + light). Not the full visual pass: just enough that a
       clip shows where the hex goes. *Clip:* reach into open ground and let go.
 - [ ] **5. The latch.** Brainstorm first (how sending magic at an enemy should feel), then build it on anchors: lock onto one
@@ -144,8 +151,8 @@ Then **hex control is done for the Act 1 slice** and we return to the slice list
 - Bugs and line numbers: `hex-system-audit.md`. Look rules: `hex-visual-bible.md`.
 
 ## Parking lot (ideas that came up mid-work; not now)
-- Input layer, part 2: aiming (every `mouse_x/mouse_y` read) and the buttons (Space stance, mouse casts, E, Q) through
-  `scr_input`, so controller/mobile need no gameplay changes. Do it before the hex code grows more input reads
+- Input layer, part 3: menu navigation (Escape, arrows, Enter, clicking menu items in scr_menu / obj_game_controller)
+  through `scr_input`. Debug keys stay on the keyboard on purpose
 - The charge's "crackling spark flowing into the orb" (m21 tried it; redo as a recipe in step 9 or 11)
 - The future ground ability the knot is a placeholder for (ground tear / rune placement)
 - Curse hook: the living hex applying the curse (toads, ripening)

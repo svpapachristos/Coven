@@ -146,6 +146,7 @@
     {"id":{"name":"scr_freeze_if_paused","path":"scripts/scr_freeze_if_paused/scr_freeze_if_paused.yy",},},
     {"id":{"name":"scr_fx","path":"scripts/scr_fx/scr_fx.yy",},},
     {"id":{"name":"scr_get_spawn_point","path":"scripts/scr_get_spawn_point/scr_get_spawn_point.yy",},},
+    {"id":{"name":"scr_hex_core","path":"scripts/scr_hex_core/scr_hex_core.yy",},},
     {"id":{"name":"scr_hex_wisp","path":"scripts/scr_hex_wisp/scr_hex_wisp.yy",},},
     {"id":{"name":"scr_input","path":"scripts/scr_input/scr_input.yy",},},
     {"id":{"name":"scr_item_reward","path":"scripts/scr_item_reward/scr_item_reward.yy",},},
