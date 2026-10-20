@@ -222,6 +222,11 @@ hex_hvy = hex_hy - _oy;
 //   st 1 gathered: churns around the knot, or around what she holds (pooling a little underneath it)
 //   st 2 going home: waits its own moment, loosens and drifts, then is drawn back to her palm, faster as it nears
 var _t = current_time / 1000;
+// how far she moved last frame. Hex going home aims where her hand is headed and adds her motion to its own, so it can
+// always catch up (its speed near her hand is capped to stop overshooting, and that cap alone was slower than her walk)
+var _mvx = x - hex_px, _mvy = y - hex_py;
+hex_px = x; hex_py = y;
+if (point_distance(0, 0, _mvx, _mvy) > 40) { _mvx = 0; _mvy = 0; }   // a jump (a new room), not a walk
 var _gtx = hex_gx, _gty = hex_gy, _grad = 8, _arr = 10;
 if (hex_held != noone && instance_exists(hex_held)) {
 	_gtx = hex_held.x; _gty = hex_held.y - ((hex_kind == "env") ? hex_held.z : 0);
@@ -235,13 +240,14 @@ for (var _i = array_length(hex_par) - 1; _i >= 0; _i--) {
 			_q.wait--;
 			_q.vx *= 0.93; _q.vy *= 0.93; _q.vy -= 0.02;   // loosening, drifting up a touch
 		} else {
-			var _dg = point_distance(_q.x, _q.y, _hx, _hy);
-			if (_dg < 6) { hex_hand_amt += _q.amt; array_delete(hex_par, _i, 1); continue; }   // home: back in her hand
+			var _hhx = _hx + _mvx, _hhy = _hy + _mvy;   // where her hand is headed
+			var _dg = point_distance(_q.x, _q.y, _hhx, _hhy);
+			if (_dg < 14) { hex_hand_amt += _q.amt; array_delete(hex_par, _i, 1); continue; }   // home: back in her hand (was 6: too narrow to land while she walks)
 			var _dr = (hex_vn(_q.x * 0.03 + _t * 0.7 + 9, _q.y * 0.03 + _q.ph) - 0.5) * hex_par_curl * min(1, _dg / 60);
-			var _a = arctan2(_hy - _q.y, _hx - _q.x) + _dr;
+			var _a = arctan2(_hhy - _q.y, _hhx - _q.x) + _dr;
 			var _s = min(hex_return_speed * (_q.s / hex_flow_speed) * (1 + 1.5 * max(0, 1 - _dg / 80)), _dg * 0.5 + 1);
-			_q.vx += (cos(_a) * _s - _q.vx) * hex_par_turn;
-			_q.vy += (sin(_a) * _s - _q.vy) * hex_par_turn;
+			_q.vx += (cos(_a) * _s + _mvx - _q.vx) * hex_par_turn;   // (+ her motion: closing in on her, not on where she was)
+			_q.vy += (sin(_a) * _s + _mvy - _q.vy) * hex_par_turn;
 		}
 	} else {
 		var _dg = point_distance(_q.x, _q.y, _gtx, _gty);

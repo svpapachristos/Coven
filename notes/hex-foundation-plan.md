@@ -8,6 +8,9 @@ A hex system so cleanly structured that it can become endlessly intricate: its *
 into each other. Every new spell, combo or witch should be built *from* these pieces, never as a one-off inside obj_player.
 
 ## The rules (read before every change)
+0. **Future-proofing comes first, every time we write code** (Sophia, Oct 19). Controller and mobile are long-term
+   goals: build systems that won't need rewriting when they arrive. Gameplay never reads a key, button or the mouse
+   directly; it asks `scr_input` what the player wants.
 1. **One change per pass, one clip, one commit.** If something feels off, fix only that before adding anything.
 2. **Foundation steps change nothing you can see.** Their test is "plays exactly like before". If it looks different, it's a bug.
 3. **Every feature must be expressible in the three layers below.** If it isn't, the layers need a new piece first, on its
@@ -105,12 +108,15 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
 - [x] **1. Keepers commit.** Re-apply from m21: grab range 80, reach amount 6, the sand fix (solid blob + texture filter,
       streak cap, brighter current dots), facing where she casts. **Not** the charge snap flash or light spill (they mishmashed).
       *Done when:* plays like m20 with those four differences. *Clip:* reach + lift a rock.
-- [ ] **2. The hex is the Hexweaver's.** Gate the Space stance and the test rocks to her; every other witch gets her E back.
+- [x] **2. The hex is the Hexweaver's.** Gate the Space stance and the test rocks to her; every other witch gets her E back.
       *Done when:* Necromancer's E raises the fallen again; Hexweaver unchanged. *Clip:* none needed (quick check).
 - [ ] **2b. Parcels catch up to her (bug, found in the step 1 clip).** Going home, a parcel's top speed near her hand is capped
       at about half its distance + 1 px/frame, but she walks 7.5 px/frame: within ~13px it can never close the gap, so
       stragglers trail behind until she stops (the HUD bar never refills). Fix: add her own movement to that cap, and land
       within ~14px instead of 6. Own commit, before step 3, so the anchor rebuild copies correct behavior.
+      Second layer (Sophia's call): diagonal walking normalized (it was ~41% faster: 10.6 vs 7.5 px/frame), done as the
+      first piece of an input layer: new script `scr_input` (`input_move()`, `input_moving()`); every WASD read in obj_player
+      goes through it, so a controller or touch controls plug in one place.
       *Clip:* reach, let go, and keep walking: the bar fills back to full.
 - [ ] **3. Anchors (the foundation).** Move the plumbing into `scr_hex_core` and rebuild today's behavior on anchors.
       **No visible change.** *Done when:* every move in the audit's section 3 plays exactly as before. *Clip:* reach, lift,
@@ -138,6 +144,8 @@ Then **hex control is done for the Act 1 slice** and we return to the slice list
 - Bugs and line numbers: `hex-system-audit.md`. Look rules: `hex-visual-bible.md`.
 
 ## Parking lot (ideas that came up mid-work; not now)
+- Input layer, part 2: aiming (every `mouse_x/mouse_y` read) and the buttons (Space stance, mouse casts, E, Q) through
+  `scr_input`, so controller/mobile need no gameplay changes. Do it before the hex code grows more input reads
 - The charge's "crackling spark flowing into the orb" (m21 tried it; redo as a recipe in step 9 or 11)
 - The future ground ability the knot is a placeholder for (ground tear / rune placement)
 - Curse hook: the living hex applying the curse (toads, ripening)

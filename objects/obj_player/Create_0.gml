@@ -63,8 +63,9 @@ cam_offset_y = 0;
 
 function movement() {
 	//walk functions are for losers
-	var _mx = (keyboard_check(ord("D")) - keyboard_check(ord("A"))) * move_speed;
-	var _my = (keyboard_check(ord("S")) - keyboard_check(ord("W"))) * move_speed;
+	var _in = input_move();   // which way the player is pushing (scr_input: keyboard now, a controller or touch later)
+	var _mx = _in[0] * move_speed;
+	var _my = _in[1] * move_speed;
 
 	if (_mx != 0 || _my != 0) {
 		// collide from the middle of the hitbox, sized to the sprite, not from the sprite's origin
@@ -139,10 +140,12 @@ function update_facing_sprite() {
 	var _walk_fire = [spr_player_witch1_walk_right_fire, spr_player_witch1_walk_up_fire, spr_player_witch1_walk_left_fire, spr_player_witch1_walk_down_fire];
 	var _firing = (state == "ATTACK");
 	var _move_dir_4 = -1; // -1 means idle
-	if (keyboard_check(ord("D"))) _move_dir_4 = 0; 	
-	else if (keyboard_check(ord("W"))) _move_dir_4 = 1;
-	else if (keyboard_check(ord("A"))) _move_dir_4 = 2;
-	else if (keyboard_check(ord("S"))) _move_dir_4 = 3;
+	if (input_moving()) {
+		// face along whichever way she's pushing harder (a dead-even diagonal faces sideways)
+		var _in = input_move();
+		if (abs(_in[0]) >= abs(_in[1])) _move_dir_4 = (_in[0] > 0) ? 0 : 2;
+		else _move_dir_4 = (_in[1] < 0) ? 1 : 3;
+	}
 	var _moving = (_move_dir_4 != -1);
 	// Pick which direction value actually determines the sprite this frame
 	var _display_dir = _firing ? facing_dir_4 : (_moving ? _move_dir_4 : facing_dir_4);
@@ -169,7 +172,7 @@ function update_facing_sprite() {
 	}
 }
 function player_idle(){
-	if (keyboard_check(ord("W"))) || (keyboard_check(ord("A"))) || (keyboard_check(ord("S"))) || (keyboard_check(ord("D"))) {
+	if (input_moving()) {
 		state = "WALK";
 	}
 	if (mouse_check_button(mb_left) && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
@@ -181,7 +184,7 @@ function player_walk() {
 	if (mouse_check_button(mb_left) && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
 		state = "ATTACK";
 	}
-	if (!keyboard_check(ord("W")) && !keyboard_check(ord("A")) && !keyboard_check(ord("S")) && !keyboard_check(ord("D"))) {
+	if (!input_moving()) {
     state = "IDLE";
 	}
 }
