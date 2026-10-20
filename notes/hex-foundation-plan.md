@@ -135,6 +135,10 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
 - [ ] **5. The reach model: flow, claim, overflow** (designed in `hex-core-design.md`, "THE REACH MODEL"). Fixes the
       step 4 clip problems: globs instead of controlled magic, hex pouring in lumps (stop, then more), extra hex orbiting
       a lifted target. **No tether** (decided). Passes, each its own commit and clip:
+  - [ ] **5·0 cooldowns:** a cooldown system for every hex move (`hex.mv.cd`, `hex_move_ready` / `hex_move_cool`, lengths
+        as `<name>_cd` in her tuning). First user: the palm blast (tap Space, `blast_cd` 30). A quick tap of left click in
+        the stance no longer fires a mini orb (orbs need `charge_min` 6 to fire); that tap is free for a future move.
+        Bare numbers moved into tuning: `charge_min`, `tap_frames`. Open: reserve size (4 = one blast?), overflow key.
   - [ ] **5a flow + reserve:** secondary pours hex at a steady rate to a head that follows the cursor, until only her
         reserve is left; let go and it unravels home. No targets yet. *Clip:* pour, swirl the cursor, let go.
   - [ ] **5b claim:** the head claims what it touches (or what's under the cursor at the start); hex sticks to it, lifts
@@ -159,6 +163,7 @@ Then **hex control is done for the Act 1 slice** and we return to the slice list
 - Bugs and line numbers: `hex-system-audit.md`. Look rules: `hex-visual-bible.md`.
 
 ## Parking lot (ideas that came up mid-work; not now)
+- A quick tap of left click in the stance is free for a new move (it used to fire a mini orb that looked like a palm blast)
 - Input layer, part 3: menu navigation (Escape, arrows, Enter, clicking menu items in scr_menu / obj_game_controller)
   through `scr_input`. Debug keys stay on the keyboard on purpose
 - The charge's "crackling spark flowing into the orb" (m21 tried it; redo as a recipe in step 9 or 11)

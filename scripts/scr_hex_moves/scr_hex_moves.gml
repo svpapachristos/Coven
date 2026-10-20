@@ -22,8 +22,27 @@ function hex_move_init(_b, _x, _y) {
 		cost: 0,          // what the held thing cost
 		charge: 0,        // frames spent charging
 		orb_n: 0,         // whole units in the charging orb (for sizing it)
-		thrown: []        // enemies flying through the air after a throw: { inst, vx, vy, hit }
+		thrown: [],       // enemies flying through the air after a throw: { inst, vx, vy, hit }
+		cd: { blast: 0 }  // COOLDOWNS: frames left before each move can be used again (hex_move_ready / hex_move_cool)
 	};
+}
+
+// ---- COOLDOWNS: every move's timer lives in body.mv.cd, by name; its length is body.tune.<name>_cd (frames) ----
+// can the move called _name be used right now?
+function hex_move_ready(_b, _name) {
+	var _v = _b.mv.cd[$ _name];
+	return is_undefined(_v) || _v <= 0;
+}
+// the move called _name was just used: start its cooldown
+function hex_move_cool(_b, _name) {
+	var _len = _b.tune[$ _name + "_cd"];
+	if (is_undefined(_len)) { show_debug_message("hex: no cooldown length \"" + _name + "_cd\" in her tuning"); _len = 0; }
+	_b.mv.cd[$ _name] = _len;
+}
+// every cooldown ticks down once a frame (hex_move_update calls this)
+function hex_move_tick(_b) {
+	var _cd = _b.mv.cd, _names = variable_struct_get_names(_cd);
+	for (var _i = 0; _i < array_length(_names); _i++) if (_cd[$ _names[_i]] > 0) _cd[$ _names[_i]] -= 1;
 }
 
 // THE STANCE, once a frame. _in is the caster's intent this frame:
@@ -33,6 +52,7 @@ function hex_move_init(_b, _x, _y) {
 //   depth             the depth to create shots at
 function hex_move_update(_b, _in) {
 	var _mv = _b.mv, _ht = _b.tune;
+	hex_move_tick(_b);
 	var _ha = point_direction(_in.x, _in.y, _in.aim_x, _in.aim_y);
 	if (_mv.held != noone && !instance_exists(_mv.held)) _mv.held = noone;
 	if (!is_undefined(_mv.ra) && _mv.ra.attach != noone && !instance_exists(_mv.ra.attach)) { hex_anchor_attach(_b, _mv.ra, noone); _mv.ra.kind = "knot"; }   // (what she held is gone: her reach is a free knot again)
@@ -78,7 +98,7 @@ function hex_move_update(_b, _in) {
 	} else if (_mv.active) {
 		// letting go of the stance: anything held is thrown, a quick tap is a palm blast, and the rest of her hex flows home
 		if (_mv.held != noone) hex_move_throw(_b);
-		else if (_mv.tap <= 10) hex_move_blast(_b, _in.hand_x, _in.hand_y, _ha, _in.depth);
+		else if (_mv.tap <= _ht.tap_frames) hex_move_blast(_b, _in.hand_x, _in.hand_y, _ha, _in.depth);
 		hex_move_let_go(_b);
 	}
 	if (!_mv.active) {
@@ -180,10 +200,11 @@ function hex_move_charge(_b) {
 	hex_core_feed(_b, _mv.oa, _b.tune.charge_rate);
 }
 
-// CHARGE ENDS (primary let go): fire the orb in direction _dir, or if it's too small, it melts back into her palm
+// CHARGE ENDS (primary let go): fire the orb in direction _dir, or if it's too small (under charge_min: a quick tap),
+// it melts back into her palm. (A quick tap of primary in the stance is free for a future move)
 function hex_move_charge_end(_b, _dir, _depth) {
 	var _mv = _b.mv, _ht = _b.tune, _oa = _mv.oa;
-	if (_oa.pool >= 2) {
+	if (_oa.pool >= _ht.charge_min) {
 		// fire the orb forward: it flies until it hits something or leaves the screen. All the hex in it adds to the
 		// boom, and it flows home to her afterward. The orb's anchor BECOMES the shot's (it rides on the shot now)
 		var _c = _oa.pool;
@@ -201,10 +222,12 @@ function hex_move_charge_end(_b, _dir, _depth) {
 	_mv.mode = ""; _mv.charge = 0; _mv.orb_n = 0;
 }
 
-// PALM BLAST (a tap of the stance): a small shot from her palm (_x, _y) in direction _dir, carrying blast_cost hex
+// PALM BLAST (a tap of the stance): a small shot from her palm (_x, _y) in direction _dir, carrying blast_cost hex.
+// Her any-moment burst of energy, on a cooldown (blast_cd)
 function hex_move_blast(_b, _x, _y, _dir, _depth) {
 	var _ht = _b.tune;
-	if (_b.hand < _ht.blast_cost) return;
+	if (_b.hand < _ht.blast_cost || !hex_move_ready(_b, "blast")) return;
+	hex_move_cool(_b, "blast");
 	var _s = instance_create_depth(_x, _y, _depth, obj_hex_shot);
 	_s.vx = lengthdir_x(16, _dir);
 	_s.vy = lengthdir_y(16, _dir);

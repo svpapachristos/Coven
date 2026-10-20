@@ -305,10 +305,13 @@ hex = hex_body_create(id, {
 	ball_dist: 30,        // how far in front of her hand the charging orb gathers
 	charge_cap: 24,       // the most hex one charged orb can hold
 	charge_rate: 0.5,     // hex added to a charging orb per frame (0.5 = full in about 0.8s)
+	charge_min: 6,        // an orb needs at least this much to fire (less melts back: a quick tap of left click is no shot)
 	boom_dmg: 10,         // damage per unit of hex in the charged orb (plus a base of 10)
 	boom_r: 5,            // blast radius per unit of hex (plus a base of 40)
 	blast_cost: 4,        // a tap of Space: a quick palm blast
-	blast_dmg: 10
+	blast_dmg: 10,
+	blast_cd: 30,         // frames before she can palm blast again (30 = half a second)
+	tap_frames: 10        // a press of Space this short (frames) is a tap: a palm blast, not a stance
 });
 hex_move_init(hex, x, y);   // her move state (scr_hex_moves): stance, what she's holding, the knot, the orb...
 // (her stance is the "stance" action in scr_input: Space. Hold for her hex stance, tap for a palm blast)
