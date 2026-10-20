@@ -71,6 +71,17 @@ function hex_wisp_state() {
 			vx: 0, vy: 0,        // where the camera was last frame
 			has_prev: false,
 			att: [],             // the balls registered this frame (hex_wisp_att)
+			// THE RIVER's layers (hex_field_draw + the shader's field mode). Bottom to top: GLOW (a wide, faint splat per parcel,
+			// so the river reads as one body with volume), BODY (the smoke), LIGHT (currents, and brighter where it runs thick),
+			// SPARKS. Tune here; the shader reads them as u_river
+			river: {
+				glow_r: 22,      // how far each parcel's glow reaches (world pixels)
+				glow_a: 0.08,    // how much glow each parcel adds (overlapping parcels build it up)
+				tint: 0.5,       // how strongly the glow tints what's under it violet (keeps the grass from turning it teal)
+				light: 0.12,     // how much light the glow adds on top
+				thick: 0.6,      // how much brighter the river burns where parcels crowd together
+				fill: 2.0        // how quickly the glow fills in as parcels overlap (higher = fuller sooner)
+			},
 			u: undefined,        // shader uniform handles, looked up once
 			// the knobs. everything about how the wisp moves and looks is here.
 			k: {
@@ -157,7 +168,7 @@ function hex_orb_uniforms() {
 		smoke: shader_get_uniform(sh_hex_orb, "u_smoke"), glow: shader_get_uniform(sh_hex_orb, "u_glow"), core: shader_get_uniform(sh_hex_orb, "u_core"),
 		spark: shader_get_uniform(sh_hex_orb, "u_spark"), hot: shader_get_uniform(sh_hex_orb, "u_hot"),
 		px: shader_get_uniform(sh_hex_orb, "u_px"), veil: shader_get_uniform(sh_hex_orb, "u_veil"), over: shader_get_uniform(sh_hex_orb, "u_over"),
-		strand: shader_get_uniform(sh_hex_orb, "u_strand"),
+		strand: shader_get_uniform(sh_hex_orb, "u_strand"), river: shader_get_uniform(sh_hex_orb, "u_river"),
 		hollow: shader_get_uniform(sh_hex_orb, "u_hollow"), heart: shader_get_uniform(sh_hex_orb, "u_heart"), uvs: shader_get_uniform(sh_hex_orb, "u_uvs"), rv: shader_get_uniform(sh_hex_orb, "u_rv"), rv2: shader_get_uniform(sh_hex_orb, "u_rv2"), mode: shader_get_uniform(sh_hex_orb, "u_mode"), n: shader_get_uniform(sh_hex_orb, "u_n"), motes: shader_get_uniform(sh_hex_orb, "u_motes")
 	};
 	return _s.uo;
@@ -205,10 +216,11 @@ function hex_vn(_x, _y) {
 	return lerp(lerp(_a, _b, _ux), lerp(_c, _d, _ux), _uy);
 }
 
-// THE HEX FIELD: her hex out in the world, drawn as ONE body. Every parcel (a hex body's parcels, scr_hex_core) splats a soft blob of
+// THE HEX FIELD: her hex out in the world, drawn as ONE body. Every parcel (a hex body's parcels, scr_hex_core) splats soft blobs of
 // density into a surface, one surface pixel per hex pixel (so it's on the magic's grid for free): red = the smoke body,
-// green = light currents (about a third of the parcels carry those). Where parcels overlap, it thickens and brightens. Then
-// the hex shader (u_mode 4) draws the surface as hex: a dark smoke body, light where currents bunch up, sparkles.
+// green = light currents (about a third of the parcels carry those), blue = the glow (a wide, faint splat from every parcel:
+// the river's volume, so it reads as one body instead of specks). Where parcels overlap, it thickens and brightens. Then
+// the hex shader (u_mode 4) draws the surface as hex in layers: glow, smoke body, light (brighter where it runs thick), sparks.
 // A hundred parcels cost about the same as one draw. Call it BEFORE hex_orb_draw.
 function hex_field_draw(_par) {
 	var _n = array_length(_par);
@@ -243,6 +255,7 @@ function hex_field_draw(_par) {
 	var _tf = gpu_get_texfilter();
 	gpu_set_texfilter(true);                          // the blob is shrunk to a few pixels: smooth it, or it aliases into sandy specks and the light vanishes
 	var _body = 3.6, _tail = 1.6;                     // the smoke body's softness and how long a moving parcel streaks (world pixels)
+	var _rv = _s.river, _gs = (_rv.glow_r / _px) / 16;  // (the glow blob's scale)
 	for (var _i = 0; _i < _n; _i++) {
 		var _q = _par[_i];
 		var _sx = (_q.x - _ox) / _px, _sy = (_q.y - _oy) / _px;
@@ -251,6 +264,7 @@ function hex_field_draw(_par) {
 		var _sc = (_body * 2.5 / _px) / 16, _st = 1 + min(_sp, 8) * _tail / _body;   // (streak length capped: fast parcels were long bright lines)
 		var _bx = _sx - lengthdir_x((_st - 1) * _body / _px * 0.5, _dir), _by = _sy - lengthdir_y((_st - 1) * _body / _px * 0.5, _dir);
 		draw_sprite_ext(_s.blob, 0, _bx, _by, _sc * _st, _sc, _dir, c_red, 0.45 / 4);   // the field stores density / 4, so it doesn't clip
+		draw_sprite_ext(_s.blob, 0, _bx, _by, _gs * (1 + (_st - 1) * 0.5), _gs, _dir, c_blue, _rv.glow_a);   // its glow: wide and faint (stretches half as much)
 		if (_q.hot) {
 			var _hw = (_q.st == 1) ? 0.35 : 1;           // currents in a knot stay dim (the orb is the knot's bright part)
 			var _hs = max(1.1 / _px, 1.2) * 2.5 / 16;    // (at least about 3 field pixels across, so the light current survives)
@@ -266,6 +280,7 @@ function hex_field_draw(_par) {
 	var _tx = surface_get_texture(_s.field);
 	shader_set_uniform_f(_u.box, 1 / texture_get_texel_width(_tx), 1 / texture_get_texel_height(_tx));
 	shader_set_uniform_f(_u.time, current_time / 1000); shader_set_uniform_f(_u.seed, 3); shader_set_uniform_f(_u.px, _px);
+	shader_set_uniform_f(_u.river, _rv.tint, _rv.light, _rv.thick, _rv.fill);
 	shader_set_uniform_f(_u.smoke, _pal.smoke[0] / 255, _pal.smoke[1] / 255, _pal.smoke[2] / 255);
 	shader_set_uniform_f(_u.glow, _pal.glow[0] / 255, _pal.glow[1] / 255, _pal.glow[2] / 255);
 	shader_set_uniform_f(_u.core, _pal.core[0] / 255, _pal.core[1] / 255, _pal.core[2] / 255);

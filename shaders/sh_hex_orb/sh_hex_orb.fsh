@@ -27,6 +27,7 @@ uniform float u_strand;   // how strong the strands are (1 = full; the charging 
 uniform float u_hollow;   // orb: 0 = solid; otherwise the radius of something held inside it (no core, and the hex wraps around it instead of covering it)
 uniform float u_mode;     // 0 = an orb; 1 = old mote flow (unused); 2 = hex flame (parked); 3 = curve river (parked); 4 = THE HEX FIELD;
                           // 5 = THE SCOOP (telekinesis); 6 = LIT FROM BELOW (a held sprite); 7 = THE CHARGE
+uniform vec4  u_river;    // the river (u_mode 4): x = glow tint, y = glow light, z = light where it runs thick, w = how fast the glow fills in
 uniform vec4  u_uvs;      // lit from below: the sprite's uv bounds on its texture page (left, top, right, bottom)
 uniform vec4  u_rv;       // river: the far end (xy) and the bend point (zw), from u_center (her palm)
 uniform vec4  u_rv2;      // river: lo, hi (the stretch of the path that is there), half-width, dir (1 out, -1 home)
@@ -327,9 +328,13 @@ vec4 river(vec2 p, vec2 pc)
 	return vec4(col, a);
 }
 // THE HEX FIELD (u_mode 4): her hex out in the world as one body. The surface being drawn holds density splatted by every
-// parcel (hex_field_draw): r = the smoke body, g = light currents, stored / 4. One surface pixel = one hex pixel; u_box is
-// the surface texture's size in texels. A dark smoke body where it's thick (it gives the hex weight on bright ground), light
-// where the currents bunch up, a few sparkles. In motion it tops out at lilac.
+// parcel (hex_field_draw): r = the smoke body, g = light currents, b = the glow (a wide faint splat per parcel), stored / 4.
+// One surface pixel = one hex pixel; u_box is the surface texture's size in texels. Drawn in layers, bottom to top:
+//   GLOW    the river's volume: a soft violet tint plus added light wherever parcels are near, joining them into one body
+//   BODY    a dark smoke body where it's thick (it gives the hex weight on bright ground)
+//   LIGHT   the light currents, plus brighter wherever the river runs thick (parcels crowding together)
+//   SPARKS  sparkles in the body, and glints riding the currents
+// In motion it tops out at lilac. u_river holds the layer strengths (scr_hex_wisp's river knobs).
 vec4 field(vec2 pc)
 {
 	vec2 uv = (floor(v_tex * u_box) + 0.5) / u_box;
@@ -337,18 +342,32 @@ vec4 field(vec2 pc)
 	vec2 p = (pc + 0.5) * u_px;
 	float t = u_time;
 	float gas = vn(p * 0.18 + vec2(t * 0.9, -t * 0.7)) * 0.6 + vn(p * 0.45 - t * 1.3) * 0.4;
+	// GLOW: fills in as parcels overlap, in three flat steps (no dither)
+	float vol = (1.0 - exp(-d.b * u_river.w)) * (0.75 + 0.5 * gas);
+	float vq = floor(clamp(vol, 0.0, 1.0) * 3.0 + 0.5) / 3.0;
+	float ag = u_river.x * vq;
+	vec3 gcol = mix(u_glow, u_core, 0.35 * vq) * (ag + u_river.y * vq);
+	// BODY
 	float body = d.r * (0.6 + 0.6 * gas);
-	float I = d.g * (0.85 + 0.5 * gas) + body * 0.12 + max(body - 0.9, 0.0) * 0.5;   // (a touch of light in all of it, so it reads on dark ground too)
-	I = min(I, 1.05);
-	if (body > 0.5 && h2(pc + floor(t * 8.0) * 7.7) > 0.98) I = max(I, 1.05);   // sparkles
-	I = floor(I * 7.0 + 0.5) / 7.0;
 	float bq = floor(clamp(body, 0.0, 1.0) * 4.0 + 0.5) / 4.0;
-	float ab = 0.55 * bq;
+	float ab = 0.5 * bq;
+	vec3 bcol = mix(u_smoke, u_glow, 0.45 * bq) * ab;
+	// LIGHT
+	float thick = clamp((body - 0.55) / 1.25, 0.0, 1.0);
+	float I = d.g * (0.85 + 0.5 * gas) + body * 0.2 + thick * u_river.z + vol * 0.15;
+	I = min(I, 1.05);
+	// SPARKS
+	if (body > 0.35 && h2(pc + floor(t * 8.0) * 7.7) > 0.97) I = max(I, 1.05);   // sparkles in the body
+	if (d.g > 0.45 && h2(pc + floor(t * 12.0) * 3.1) > 0.88) I = max(I, 1.05);    // and glints riding the currents
+	I = floor(I * 7.0 + 0.5) / 7.0;
 	float al = clamp(I * 0.6, 0.0, 0.6);
-	vec3 col = mix(u_smoke, u_glow, 0.3 * bq) * ab * (1.0 - al) + ramp(I) * (al + 0.45 * I);
-	float a = ab + al * (1.0 - ab);
+	vec3 lcol = ramp(I) * (al + 0.45 * I);
+	// stack them (premultiplied "over"): glow under the body, the body under the light
+	vec3 col = gcol; float a = ag;
+	col = bcol + col * (1.0 - ab); a = ab + a * (1.0 - ab);
+	col = lcol + col * (1.0 - al); a = al + a * (1.0 - al);
 	float e = body + (h2(pc + 3.0) - 0.5) * 0.06;
-	if (I < 0.3 && e > 0.1 && e < 0.2 && vn(p * 0.25 + vec2(t, -t)) > 0.55) { col = u_smoke * 0.5; a = 0.5; }   // a broken dark edge
+	if (I < 0.3 && e > 0.1 && e < 0.2 && vn(p * 0.25 + vec2(t, -t)) > 0.55) { col = u_smoke * 0.5 + col * 0.5; a = max(a, 0.5); }   // a broken dark edge
 	return vec4(col, a);
 }
 // THE SCOOP (u_mode 5): telekinesis. Her hex HOLDING something, reversibly (nothing soaks in): warbling hex pooled underneath

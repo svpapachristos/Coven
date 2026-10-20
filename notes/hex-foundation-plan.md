@@ -129,9 +129,19 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
   - [ ] **3b moves:** move code into `scr_hex_moves`; obj_player shrinks to input → moves. (Written Oct 19: move state is
         `hex.mv`; obj_player builds an intent from scr_input and calls `hex_move_update`; End Step calls `hex_move_end_step`.)
   - [ ] **3c look:** hex drawing into `scr_hex_look` (may fold into step 4).
-- [ ] **4. A readable river.** Minimal layered field (glow pass + body + light). Not the full visual pass: just enough that a
+- [x] **4. A readable river.** (First pass Oct 19: glow layer + light where it runs thick, `river` knobs in scr_hex_wisp.
+      Sophia: "a slightly less fuzzy mess of specks"; real polish waits for the behavior fixes and step 11.) Minimal layered field (glow pass + body + light). Not the full visual pass: just enough that a
       clip shows where the hex goes. *Clip:* reach into open ground and let go.
-- [ ] **5. The latch.** Brainstorm first (how sending magic at an enemy should feel), then build it on anchors: lock onto one
+- [ ] **5. The latch.** Sophia's notes from the step 4 clip (Oct 19), the problems this step owns:
+      - it reads as "globs of color coming from us, not magic dynamically moving according to her control"
+      - hex pours out, stops, then more pours out (the pour stops at the knot's 6, restarts when a target's cost
+        appears, and stutters as the target flickers)
+      - extra hex keeps following / orbiting a levitated target (it gathered at the knot, then chases; plus the churn)
+      Already decided (Sophia): NO constant tether look between her palm and what she holds (a sustained stream / "the
+      hold is the stream" was considered before and ruled out). Discuss the alternatives in the brainstorm.
+      Open questions for the brainstorm: how the hex should travel when she reaches (a set amount vs. flowing while held);
+      how a lift should read (wrapping the target vs. something else); whether a hold costs hex over time or a fixed amount.
+      Original scope: Brainstorm first (how sending magic at an enemy should feel), then build it on anchors: lock onto one
       target, parcels flow to *it*, only hex on it counts, rocks and enemies chosen fairly by cursor distance.
       *Clip:* reach onto a moving enemy in a crowd.
 - [ ] **6. The knot as a ground spot** (spec above): fixed anchor, focus counter, dissolves back into parcels when she moves on.
