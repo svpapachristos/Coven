@@ -7,7 +7,7 @@ if (global.game_state == "PLAYING") {
 	var _tx = 0, _ty = 0;
 	// during a real hold of her curse (not a tap) the camera settles, so the world under the cursor holds still while
 	// she steers. it lingers a moment after she lets go, so tapping E never makes the camera flick back and forth
-	if (hex_active && hex_tap > 10) cam_hex_settle = cam_hex_linger;
+	if (hex.mv.active && hex.mv.tap > 10) cam_hex_settle = cam_hex_linger;
 	else cam_hex_settle = max(0, cam_hex_settle - 1);
 	if (cam_hex_settle <= 0) {
 		var _aim = input_aim();   // the camera leans toward where she's aiming (scr_input)
@@ -40,34 +40,5 @@ camera_set_view_pos(cam, _cx + _sx * _sh, _cy + _sy * _sh);
 global.shake = max(0, global.shake * 0.93 - 0.15);                      // eases out instead of dropping in a straight line
 	
 
-// ---- the living curse: pin a held enemy to the curse, after it has tried to move ----
-if (hex_held != noone && instance_exists(hex_held) && hex_kind == "enemy") {
-	hex_held.x = lerp(hex_held.x, hex_hx, 0.85);
-	hex_held.y = lerp(hex_held.y, hex_hy, 0.85);
-}
-// thrown enemies fly, slam into the horde, then land hard
-if (global.game_state == "PLAYING") {
-	for (var _i = array_length(hex_thrown) - 1; _i >= 0; _i--) {
-		var _th = hex_thrown[_i];
-		if (!instance_exists(_th.inst)) { array_delete(hex_thrown, _i, 1); continue; }
-		_th.inst.x += _th.vx;
-		_th.inst.y += _th.vy;
-		_th.vx *= 0.93;
-		_th.vy *= 0.93;
-		var _s = point_distance(0, 0, _th.vx, _th.vy);
-		var _l = ds_list_create();
-		collision_circle_list(_th.inst.x, _th.inst.y, 16, obj_enemy_parent, false, true, _l, false);
-		for (var _j = 0; _j < ds_list_size(_l); _j++) {
-			var _o = _l[| _j];
-			if (_o == _th.inst || array_contains(_th.hit, _o)) continue;
-			array_push(_th.hit, _o);
-			scr_damage_enemy(_o, round(4 + _s * 1.5), make_color_rgb(150, 110, 255));
-			if (instance_exists(_o)) { _o.x += _th.vx * 0.6; _o.y += _th.vy * 0.6; }
-		}
-		ds_list_destroy(_l);
-		if (_s < 1.5) {
-			if (instance_exists(_th.inst)) scr_damage_enemy(_th.inst, 8, make_color_rgb(150, 110, 255));
-			array_delete(hex_thrown, _i, 1);
-		}
-	}
-}
+// ---- her hex (scr_hex_moves): pin a held enemy after it has tried to move, and fly thrown enemies into the horde ----
+hex_move_end_step(hex);

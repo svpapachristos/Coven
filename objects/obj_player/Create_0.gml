@@ -149,7 +149,7 @@ function update_facing_sprite() {
 	var _moving = (_move_dir_4 != -1);
 	// Pick which direction value actually determines the sprite this frame
 	var _display_dir = _firing ? facing_dir_4 : (_moving ? _move_dir_4 : facing_dir_4);
-	if (hex_active && hex_mode != "") _display_dir = facing_dir_4;   // casting her hex: she faces where she's casting, even while walking the other way
+	if (hex.mv.active && hex.mv.mode != "") _display_dir = facing_dir_4;   // casting her hex: she faces where she's casting, even while walking the other way
 	image_xscale = 1;
 	// channeling the arcane beam: hold the wand-raised pose (frame 2 of the fire sprite)
 	var _channel = instance_exists(obj_arcane_beam);
@@ -175,13 +175,13 @@ function player_idle(){
 	if (input_moving()) {
 		state = "WALK";
 	}
-	if (input_check("primary") && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
+	if (input_check("primary") && can_shoot && !hex.mv.active) { // (in her curse stance, left click belongs to the curse)
 		state = "ATTACK";
 	}
 }
 function player_walk() {
 	movement();
-	if (input_check("primary") && can_shoot && !hex_active) { // (in her curse stance, left click belongs to the curse)
+	if (input_check("primary") && can_shoot && !hex.mv.active) { // (in her curse stance, left click belongs to the curse)
 		state = "ATTACK";
 	}
 	if (!input_moving()) {
@@ -189,7 +189,7 @@ function player_walk() {
 	}
 }
 function player_attack() {
-	if (hex_active) { state = "IDLE"; can_shoot = true; return; } // her wand stands down in her curse stance
+	if (hex.mv.active) { state = "IDLE"; can_shoot = true; return; } // her wand stands down in her curse stance
 	movement();
 	if (can_shoot) {
 		can_shoot = false;
@@ -229,23 +229,12 @@ function player_attack() {
 	}
 }
 
-// ---- E: the living curse (rudimentary) ----
-hex_held = noone;  // the world object her curse is holding
+// ---- HER HEX (Space) ----
 // her hex belongs to witches tagged "hexweaver" (set every Step from her witch, which is chosen after Create and can
 // change in the hideout). Every other witch keeps her own E and never sees the hex
 hex_on = false;
 hex_rocks_done = false; // a few rocks to play with (obj_env_rock), spawned the first time the hex is hers
 
-// The living curse itself: a thing with a position that leaves her hand, travels, grabs and throws.
-hex_active = false;  // true while E is held and the curse is out in the world
-hex_hx = x;          // where the curse is
-hex_hy = y;
-hex_hvx = 0;         // how it's moving (a throw inherits this)
-hex_hvy = 0;
-hex_speed = 9;       // how fast it travels to the cursor
-hex_kind = "";       // "env" (an environment object: a rock...) or "enemy": what it's holding
-hex_charge = 0;      // frames spent balled up with nothing to hold
-hex_thrown = [];     // enemies currently flying through the air
 hex_px = x;          // her position last frame, so the ball and aura move with her
 hex_py = y;
 beam_pose = false;   // true while she holds the beam-channeling pose
@@ -274,7 +263,6 @@ hex_hand[$ "spr_player_witch1_walk_up_fire"]    = [-22, 25];
 hex_hand_default = [-20, 20];
 // the two orbs that grow in and dissolve out instead of popping (eased in obj_player Draw)
 hex_gR = 0;           // the knot gathering where her reaching hex arrives (0..1)
-hex_gx = x; hex_gy = y;
 hex_wR = 0;           // the wrap around what she holds (0..1); it rides along with it and dissolves after she lets go
 hex_hand_f = 0;       // her palm: 0 = the orb (resting) .. 1 = channeling (an erratic pocket of hex), eased between
 hex_hand_e = 0.8;     // how hard she's channeling (how erratic her palm is), eased
@@ -322,33 +310,9 @@ hex = hex_body_create(id, {
 	blast_cost: 4,        // a tap of Space: a quick palm blast
 	blast_dmg: 10
 });
-hex_ra = undefined;   // the anchor her reach pours into while right click is held (the knot, then what she lifts)
-hex_oa = undefined;   // the anchor of the orb she's charging while left click is held
-hex_cost = 0;         // what the thing she's holding cost
-hex_mode = "";        // "grab" (right click: reach out and lift) or "charge" (left click: an orb in front of her hand)
+hex_move_init(hex, x, y);   // her move state (scr_hex_moves): stance, what she's holding, the knot, the orb...
 // (her stance is the "stance" action in scr_input: Space. Hold for her hex stance, tap for a palm blast)
-hex_tap = 0;          // frames the stance key has been held this press (short = a tap)
 cam_hex_settle = 0;   // frames left that the camera stays settled on her for the hex
 cam_hex_linger = 30;  // how long the camera stays settled after a hold of E ends
-hex_orb_n = 0;        // (whole units in the charging orb, for sizing it)
 hex_bonus = 0;        // extra max hex (debug: press H in a run for +8)
 
-// throw whatever her hex is holding: the hex that held it (her reach's anchor) lets go and drifts home from where it was,
-// carried along a little by the throw
-hex_throw = function() {
-	if (hex_held == noone || !instance_exists(hex_held)) { hex_held = noone; hex_kind = ""; return; }
-	var _pvx, _pvy;
-	if (hex_kind == "env") {
-		hex_held.grabbed = false;
-		hex_held.vx *= 1.6;
-		hex_held.vy *= 1.6;
-		hex_held.vz = min(7, 3 + 0.15 * point_distance(0, 0, hex_held.vx, hex_held.vy));   // pops upward (harder throws arc higher), so it lobs and lands instead of skating off
-		_pvx = hex_held.vx * 0.5; _pvy = hex_held.vy * 0.5;
-	} else {
-		array_push(hex_thrown, { inst: hex_held, vx: hex_hvx * 1.6, vy: hex_hvy * 1.6, hit: [] });
-		_pvx = hex_hvx * 0.8; _pvy = hex_hvy * 0.8;
-	}
-	if (!is_undefined(hex_ra)) { hex_anchor_release(hex, hex_ra, "melt", _pvx, _pvy); hex_ra = undefined; }
-	hex_held = noone;
-	hex_kind = "";
-}

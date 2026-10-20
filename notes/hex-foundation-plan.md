@@ -124,9 +124,10 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
       against these from the start: **the hex never reads the mouse or a key directly.**
 - [ ] **3. Anchors (the foundation)**, designed in `hex-core-design.md` (read it first). Three passes, each "plays exactly
       the same", each its own commit:
-  - [ ] **3a core:** `scr_hex_core` (hex body, parcels, anchors, ledger audit); obj_player's move code calls core
+  - [x] **3a core:** `scr_hex_core` (hex body, parcels, anchors, ledger audit); obj_player's move code calls core
         functions. Input part 2 rides in this commit. *Clip:* reach, lift, throw, charge, fire, palm blast; F1 audit quiet.
-  - [ ] **3b moves:** move code into `scr_hex_moves`; obj_player shrinks to input → moves.
+  - [ ] **3b moves:** move code into `scr_hex_moves`; obj_player shrinks to input → moves. (Written Oct 19: move state is
+        `hex.mv`; obj_player builds an intent from scr_input and calls `hex_move_update`; End Step calls `hex_move_end_step`.)
   - [ ] **3c look:** hex drawing into `scr_hex_look` (may fold into step 4).
 - [ ] **4. A readable river.** Minimal layered field (glow pass + body + light). Not the full visual pass: just enough that a
       clip shows where the hex goes. *Clip:* reach into open ground and let go.
