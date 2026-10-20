@@ -1,5 +1,24 @@
 if (scr_freeze_if_paused()) exit;
 
+// a homing shot (a needle) finds the nearest enemy in reach and curves into it, keeping its speed
+if (homing > 0) {
+	if (!instance_exists(target) || target.curse < 0) {
+		target = noone;
+		var _best = seek_r, _me = id;
+		with (obj_enemy_parent) {
+			if (curse < 0) continue;   // (toads are already beaten)
+			var _d = point_distance(_me.x, _me.y, x, y);
+			if (_d < _best) { _best = _d; _me.target = id; }
+		}
+	}
+	if (target != noone) {
+		var _sp = point_distance(0, 0, vx, vy), _a = point_direction(x, y, target.x, target.y);
+		vx = lerp(vx, lengthdir_x(_sp, _a), homing);
+		vy = lerp(vy, lengthdir_y(_sp, _a), homing);
+		var _s2 = point_distance(0, 0, vx, vy);
+		if (_s2 > 0.01) { vx *= _sp / _s2; vy *= _sp / _s2; }
+	}
+}
 x += vx;
 y += vy;
 life--;
@@ -26,7 +45,7 @@ if (_e != noone) {
 		var _a = random(360), _d = random(boom_r);
 		part_particles_create(global.ps_sparks, x + lengthdir_x(_d, _a), y + lengthdir_y(_d, _a), global.pt_arcane, 1);
 	}
-	global.shake = max(global.shake, 1 + boom_r / 50);
+	global.shake = max(global.shake, (1 + boom_r / 50) * shake_k);
 	_end = true;
 }
 

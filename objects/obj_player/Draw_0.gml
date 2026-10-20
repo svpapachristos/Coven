@@ -74,6 +74,7 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 		if (_hd.kind == "env" && instance_exists(_hd.inst)) { _hd.inst.hex_lit = 1; _hd.inst.hex_lit_e = clamp(0.25 + 0.35 * _hd.inst.weight, 0.25, 1); }
 	}
 	with (obj_hex_shot) {
+		if (needle) continue;   // (needles draw themselves as shards: the orb shader only has room for a few balls)
 		hex_wisp_att(x, y, 11 * size, 0.95, vx, vy, true, max(6, 7 * size), 0.9);   // a shot in flight is wild
 	}
 	if (_orb) {

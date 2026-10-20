@@ -25,6 +25,7 @@ function hex_move_init(_b, _x, _y) {
 		orb_n: 0,         // whole units in the charging orb (for sizing it)
 		thrown: [],       // enemies flying through the air after a throw: { inst, vx, vy, hit }
 		over: undefined,  // OVERFLOW's anchor while it's on: a chunk of her hex devoted to her own body (a locked pool riding on her)
+		needle_acc: [random(1), random(1)],   // each hand's readiness for its next needle (the uneven flow)
 		focus_ready: false, // her reach's head has been held still long enough: full focus (a future ground ability fires from here)
 		over_f: 0,        // how strong her overflow is right now, 0..1 (its pool / over_cost: it swells in as her hand fills it).
 		                  //   The caster reads this for her own body: faster, floating, her palm flaring
@@ -53,6 +54,8 @@ function hex_move_tick(_b) {
 // THE STANCE, once a frame. _in is the caster's intent this frame:
 //   stance, primary, primary_pressed, secondary, secondary_pressed   (what the player is pressing, from scr_input)
 //   toggle            her context action was just pressed (in the stance: overflow on / off)
+//   evo_primary       her plain left click is held (outside the stance, while overflowing: hex needles)
+//   hand2_x, hand2_y  her other hand (her wand hand: free while overflowing)
 //   aim_x, aim_y      where she's aiming          x, y        where the caster is
 //   hand_x, hand_y    her palm                    cx, cy      the middle of her body (where the stance gathers first)
 //   depth             the depth to create shots at
@@ -113,6 +116,8 @@ function hex_move_update(_b, _in) {
 		_mv.hy = _in.hand_y;
 	}
 	hex_move_overflow(_b);   // (overflow stays on in or out of the stance, until she turns it off)
+	// EVOLVED ATTACKS (overflowing, outside the stance: her wand is away and her plain clicks are hex)
+	if (!_mv.active && !is_undefined(_mv.over) && _in.evo_primary) hex_move_needles(_b, _in);
 	_mv.hvx = _mv.hx - _ox;
 	_mv.hvy = _mv.hy - _oy;
 }
@@ -416,6 +421,46 @@ function hex_move_blast(_b, _x, _y, _dir, _depth) {
 	hex_core_feed(_b, _sa, _ht.blast_cost);
 	hex_anchor_attach(_b, _sa, _s);
 	_s.hex_body = _b; _s.hex_anchor = _sa;
+}
+
+// HEX NEEDLES (her evolved left click, held while overflowing): an uneven flow of small crystalline shards out of BOTH
+// hands. Each frame each hand builds toward its next needle at needle_rate, nudged up or down at random (needle_jitter),
+// so the shards stream out naturally instead of on a beat. Each needle carries needle_cost hex in its own anchor, homes in
+// on the nearest enemy it finds, spikes in and bursts, and its hex drifts home. No mana: her own hex is the limit (never
+// her reserve), and it comes back
+function hex_move_needles(_b, _in) {
+	var _mv = _b.mv, _ht = _b.tune;
+	var _hx = [_in.hand_x, _in.hand2_x], _hy = [_in.hand_y, _in.hand2_y];
+	for (var _h = 0; _h < 2; _h++) {
+		_mv.needle_acc[_h] += _ht.needle_rate * random_range(1 - _ht.needle_jitter, 1 + _ht.needle_jitter);
+		while (_mv.needle_acc[_h] >= 1) {
+			if (_b.hand - _ht.reserve < _ht.needle_cost - 0.001) { _mv.needle_acc[_h] = 1; break; }   // (dry: ready the moment hex comes home)
+			_mv.needle_acc[_h] -= 1;
+			hex_move_needle(_b, _hx[_h], _hy[_h], point_direction(_hx[_h], _hy[_h], _in.aim_x, _in.aim_y), _in.depth);
+		}
+	}
+}
+
+// one needle from (_x, _y) toward direction _dir (spread a little, its speed varied a little)
+function hex_move_needle(_b, _x, _y, _dir, _depth) {
+	var _ht = _b.tune;
+	var _d = _dir + random_range(-_ht.needle_spread, _ht.needle_spread);
+	var _v = _ht.needle_speed * random_range(1 - _ht.needle_speed_jitter, 1 + _ht.needle_speed_jitter);
+	var _s = instance_create_depth(_x, _y, _depth, obj_hex_shot);
+	_s.vx = lengthdir_x(_v, _d);
+	_s.vy = lengthdir_y(_v, _d);
+	_s.dmg = _ht.needle_dmg;
+	_s.boom_r = _ht.needle_boom;
+	_s.size = 0.3;
+	_s.needle = true;
+	_s.homing = _ht.needle_turn;
+	_s.seek_r = _ht.needle_seek;
+	_s.life = _ht.needle_life;
+	_s.shake_k = 0;
+	var _na = hex_anchor_make(_b, "shot", _x, _y, _ht.needle_cost);   // the needle carries its hex in its own anchor
+	hex_core_feed(_b, _na, _ht.needle_cost, _ht.reserve);
+	hex_anchor_attach(_b, _na, _s);
+	_s.hex_body = _b; _s.hex_anchor = _na;
 }
 
 // LET GO (the stance ends): the rest of her hex flows home (an orb she never fired melts back into her palm)

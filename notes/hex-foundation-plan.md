@@ -191,12 +191,18 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
         attack and mana cast. Each evolved attack gets its own proposal before it's built (smallest first: the wand stands
         down in overflow, then one attack at a time). Second-hand glow and wandless sprites follow. Not yet scheduled
         ahead of step 6. Parked: evolved attacks that depend on the wand she carries.
-    - [ ] **5d1 the wand stands down in overflow:** `hex_move_wand_away` (stance OR overflow) gates her wand's left
-          click (idle / walk / attack) and right click (alt fire: chain lightning or beam). Built Oct 20, awaiting the clip.
-    - [ ] **5d2 evolved left click: hex needles** (Sophia's design, like Halo's Needler): her hex leaves as small homing
+    - [x] **5d1 the wand stands down in overflow:** `hex_move_wand_away` (stance OR overflow) gates her wand's left
+          click (idle / walk / attack) and right click (alt fire: chain lightning or beam). Done Oct 20.
+    - [x] **5d2 evolved left click: hex needles** (Sophia's design, like Halo's Needler): her hex leaves as small homing
           crystalline shards that seek any enemy they find, spike in and burst, and that hex drifts home. She sprays them
           into the hordes while flying around. Plumbing: each shard carries real hex in its own anchor (like the palm blast);
-          her own hex limits the fire rate, with no mana. Propose knobs before building.
+          her own hex limits the fire rate, with no mana. **Built Oct 20, awaiting the clip:** `hex_move_needle`
+          (intent `evo_primary`) spawns obj_hex_shot with `needle`, `homing`, `seek_r`, `shake_k` 0 (fields added to the
+          shot; no new object), drawn as shard streaks in its own Draw (the orb shader caps at 8 balls). Knobs:
+          needle_cost 1, rate 0.13 per hand (jitter 0.9), speed 11 (jitter 0.15), spread 8 deg, turn 0.18, seek 160, dmg 30,
+          boom 16, life 90. Both hands, an uneven flow (Sophia: not bursts, a natural stream of shards); drawn as layered hex
+          light in a needle shape. **Done Oct 20** (works; committed for now). Polish later: the needles and the hex
+          flowing home to her are hard to tell apart (step 11).
     - [ ] **5d3 evolved right click:** undecided. Brainstorm after 5d2 (placeholder idea: the vortex, a damaging head
           that pulls enemies in).
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,

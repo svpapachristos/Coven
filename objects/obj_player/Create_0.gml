@@ -150,7 +150,7 @@ function update_facing_sprite() {
 	var _moving = (_move_dir_4 != -1);
 	// Pick which direction value actually determines the sprite this frame
 	var _display_dir = _firing ? facing_dir_4 : (_moving ? _move_dir_4 : facing_dir_4);
-	if (hex.mv.active && hex.mv.mode != "") _display_dir = facing_dir_4;   // casting her hex: she faces where she's casting, even while walking the other way
+	if ((hex.mv.active && hex.mv.mode != "") || (!is_undefined(hex.mv.over) && input_check("primary"))) _display_dir = facing_dir_4;   // casting her hex (or spraying needles): she faces where she's casting, even while walking the other way
 	image_xscale = 1;
 	// channeling the arcane beam: hold the wand-raised pose (frame 2 of the fire sprite)
 	var _channel = instance_exists(obj_arcane_beam);
@@ -278,6 +278,13 @@ function hex_hand_pos() {
 	if (is_undefined(_p)) _p = hex_hand_default;
 	return [x + _p[0] * image_xscale, y + _p[1] * image_yscale - hover_z];
 }
+// her other hand (the wand hand, on the right of the image), as [x, y]. Mirrored from her off hand for now: wandless
+// overflow sprites will get their own measured points (an art ask)
+function hex_hand2_pos() {
+	var _p = hex_hand[$ sprite_get_name(sprite_index)];
+	if (is_undefined(_p)) _p = hex_hand_default;
+	return [x - _p[0] * image_xscale, y + _p[1] * image_yscale - hover_z];
+}
 // ---- HER HEX: a hex body (scr_hex_core; the whole structure is in notes/hex-core-design.md) ----
 // All of her hex lives in ONE struct, `hex`: her hand (home), her parcels (hex out in the world, each finding its own
 // way, so the river braids) and her anchors (where hex gathers: the knot she reaches into, what she holds, the orb she
@@ -338,7 +345,19 @@ hex = hex_body_create(id, {
 	over_rate: 0.5,       // hex a frame her hand pours into it (0.5 = full in about a quarter second, so it swells in)
 	over_speed: 1.3,      // her walk speed x this at full overflow
 	over_hover: 8,        // how high she floats at full overflow (pixels)
-	over_bob: 1.5         // ...bobbing up and down this much (pixels)
+	over_bob: 1.5,        // ...bobbing up and down this much (pixels)
+	// hex needles (overflowing, plain left click held: her evolved basic attack)
+	needle_cost: 1,       // hex each needle carries (it bursts and drifts home); her hex is the limit, never her reserve
+	needle_rate: 0.13,    // needles each hand lets out per frame, on average (0.13 x 2 hands = about 16 a second)
+	needle_jitter: 0.9,   // how uneven that flow is (0 = a steady beat; 0.9 = each frame's push varies 0.1x..1.9x)
+	needle_speed: 11,     // how fast a needle flies (pixels a frame)
+	needle_speed_jitter: 0.15, // ...each one a little faster or slower (0.15 = 0.85x..1.15x)
+	needle_spread: 8,     // how far each needle strays from her aim (degrees, either way)
+	needle_turn: 0.18,    // how hard a needle homes in on its target (0..1 a frame)
+	needle_seek: 160,     // how far a needle looks for an enemy to home in on (pixels)
+	needle_dmg: 30,       // damage where a needle spikes in (high: needles are a late-run horde clearer)
+	needle_boom: 16,      // its little burst's radius (pixels; less damage toward the edge)
+	needle_life: 90       // frames before a needle that found nothing bursts where it is
 });
 hex_move_init(hex, x, y);   // her move state (scr_hex_moves): stance, what she's holding, the knot, the orb...
 // (her stance is the "stance" action in scr_input: Space. Hold for her hex stance, tap for a palm blast)

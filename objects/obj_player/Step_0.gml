@@ -51,6 +51,7 @@ var _aim = input_aim();   // where she's aiming (scr_input: the mouse now, a sti
 // end of Step), so this is last frame's hand: fine for the hex logic. The ball itself snaps to the final hand at the end.
 var _hp = hex_hand_pos();
 var _hx = _hp[0], _hy = _hp[1];
+var _hp2 = hex_hand2_pos();
 // J: show the hand point and nudge it with the arrow keys (sprite pixels). Each nudge prints the line to paste into Create.
 if (keyboard_check_pressed(ord("J"))) hex_hand_debug = !hex_hand_debug;
 if (hex_hand_debug) {
@@ -76,9 +77,11 @@ hex_move_update(hex, {
 	primary: input_check("primary"), primary_pressed: input_pressed("primary"),
 	secondary: input_check("secondary"), secondary_pressed: input_pressed("secondary"),
 	toggle: hex_on && input_pressed("ability"),   // E: in her stance, overflow on / off (the Hexweaver's own E is parked)
+	evo_primary: hex_on && input_check("primary"),   // her plain left click (the moves decide: in overflow, hex needles)
 	aim_x: _aim[0], aim_y: _aim[1],
 	x: x, y: y,
 	hand_x: _hx, hand_y: _hy,
+	hand2_x: _hp2[0], hand2_y: _hp2[1],   // her other hand (free while overflowing)
 	cx: (bbox_left + bbox_right) / 2, cy: (bbox_top + bbox_bottom) / 2,
 	depth: depth
 });
