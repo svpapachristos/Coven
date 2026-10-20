@@ -296,10 +296,15 @@ hex = hex_body_create(id, {
 	return_speed: 20,     // ...and back home to her hand, speeding up as it nears her palm (was 11 for the old motes)
 	home_spread: 35,      // frames over which the gathered parcels decide, one by one, to head home (higher = a slower, longer drift back)
 	land_r: 14,           // a parcel this close to where her hand is headed is home (was 6: too narrow to land while she walks)
+	// the flow (holding right click: she pours)
+	reserve: 4,           // hex the flow never takes: her emergency reserve (one palm blast); her palm always keeps a core
+	head_follow: 0.3,     // how quickly the river's head follows the cursor (0..1; was 0.15)
+	flow_spread: 3,       // the more hex at the head, the wider it eddies (radius grows by this x the square root of the hex there)
+	flow_loose: 6,        // the head moving faster than this (pixels a frame): its gathered hex streams after it as a river
 	// her moves
 	reach_max: 4000,      // how far from her the hex can reach (4000 = the whole screen)
 	grab_r: 80,           // how close the cursor must be to something for her hex to go for it (was 64)
-	reach_cap: 6,         // how much gathers when she reaches into open ground (was 14: it read as a glob)
+	reach_cap: 6,         // (the knot's look: how much hex makes it read as fully gathered; the flow itself is no longer capped)
 	cost_lift: 8,         // hex it takes to lift an environment object, per unit of its weight (a rock is 1)
 	cost_enemy: 14,       // hex it takes to lift an enemy
 	ball_dist: 30,        // how far in front of her hand the charging orb gathers

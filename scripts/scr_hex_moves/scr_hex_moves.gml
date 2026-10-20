@@ -109,14 +109,15 @@ function hex_move_update(_b, _in) {
 	_mv.hvy = _mv.hy - _oy;
 }
 
-// REACH (each frame while secondary is held): the knot follows the cursor, finds something to lift, her hand pours hex
-// into it, and when enough has gathered it lifts
+// REACH (each frame while secondary is held): SHE POURS. Her hand lets hex out at a steady rate, down to her reserve, to
+// the river's head, which follows the cursor; the hex eddies around it, and when she moves it fast the hex streams after
+// it. If enough gathers near something liftable, it lifts (and any extra beyond its cost unravels home)
 function hex_move_reach(_b, _in) {
 	var _mv = _b.mv, _ht = _b.tune, _ra = _mv.ra;
-	// the knot: where her hex gathers. It follows the cursor gently (a new reach starts right at the cursor)
+	// the head: where her hex is flowing to. It follows the cursor (a new reach starts right at the cursor)
 	if (_ra.at <= 0.01 && _ra.out <= 0.01) { _mv.gx = _mv.hx; _mv.gy = _mv.hy; }
-	else { _mv.gx = lerp(_mv.gx, _mv.hx, 0.15); _mv.gy = lerp(_mv.gy, _mv.hy, 0.15); }
-	if (_ra.attach == noone) hex_anchor_move(_ra, _mv.gx, _mv.gy);   // (until it lifts something, her reach's anchor IS the knot)
+	else { _mv.gx = lerp(_mv.gx, _mv.hx, _ht.head_follow); _mv.gy = lerp(_mv.gy, _mv.hy, _ht.head_follow); }
+	if (_ra.attach == noone) hex_anchor_move(_ra, _mv.gx, _mv.gy);   // (until it lifts something, her reach's anchor IS the head)
 	if (_mv.held == noone) {
 		// is there something here to lift? the nearest environment object (measured to its edge), or an enemy
 		var _target = noone, _kind = "", _cost = 0;
@@ -134,7 +135,7 @@ function hex_move_reach(_b, _in) {
 				_target = _e; _kind = "enemy"; _cost = _ht.cost_enemy;
 			}
 		}
-		_ra.want = (_target != noone) ? _cost : _ht.reach_cap;
+		_ra.want = infinity;   // she pours for as long as she reaches (her reserve is the only limit)
 		// as her hex gathers under it, the thing starts to stir and rise (obj_env_parent reads hex_gather)
 		if (_target != noone && _kind == "env") _target.hex_gather = max(_target.hex_gather, clamp(_ra.at / max(1, _cost), 0, 1));
 		if (_target != noone && _ra.at >= _cost - 0.001) {
@@ -143,13 +144,11 @@ function hex_move_reach(_b, _in) {
 			if (_kind == "env") _target.grabbed = true;
 			hex_anchor_attach(_b, _ra, _target);
 			_ra.kind = "hold";
+			hex_anchor_trim(_b, _ra, _cost);   // it holds exactly its cost; the rest unravels home (nothing extra orbits it)
 		}
 	} else _ra.want = _mv.cost;
-	// her hand lets hex out as a steady trickle of parcels until there's enough out for the job (never more: the rest
-	// of her hex stays with her). (They leave her palm aimed at the knot; the m20 latch, fixed in step 5)
+	// her hand pours a steady stream of parcels at the head (holding something: only until its cost is there)
 	hex_core_pour(_b, _ra, _in.hand_x, _in.hand_y, _mv.gx, _mv.gy);
-	// (more gathered than the job needs, say she moved from open ground onto a light rock: it stays, and feeds the hold.
-	// The extra makes her scoop stronger, in Draw, instead of drifting around on its own)
 }
 
 // steer what she holds toward the cursor; heavier things follow more sluggishly (a held enemy is pinned in

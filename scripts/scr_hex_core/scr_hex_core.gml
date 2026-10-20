@@ -6,7 +6,7 @@
 // gathers). THE LEDGER: hand + parcels + anchor pools = max, always. hex_core_audit checks it.
 //
 // PARCELS: { x, y, vx, vy, s (its own pace), ph (its own phase), st, wait, hot, amt, a (its anchor, or undefined) }
-// ANCHORS: { kind, x, y, attach, want, at, out, pool, r, arrive, sink, focus }
+// ANCHORS: { kind, x, y, px, py, attach, want, at, out, pool, r, arrive, sink, focus, loose }
 
 #macro HEX_ST_FLOW   0   // a parcel flowing out to its anchor (the river)
 #macro HEX_ST_GATHER 1   // a parcel that has arrived, churning around its anchor
@@ -33,6 +33,10 @@ function hex_tune_defaults() {
 		release_jitter: 0.4,  // a little random push each parcel gets as it's released
 		burst_speed: 2,       // how fast burst parcels fly out (a shot ending)
 		burst_spread: 6,      // how far around the burst point they start
+		// the flow (pouring by rate)
+		reserve: 0,           // hex the flow never takes from her hand (an emergency reserve for a blast); 0 = none
+		flow_spread: 0,       // a free anchor's churn widens by this x the square root of the hex on it (0 = never: a tight knot)
+		flow_loose: 1000000,  // a free anchor moving faster than this (pixels a frame) loosens: its gathered hex streams after it
 		// anchors
 		knot_r: 8,            // a free anchor (the knot): how wide its parcels churn
 		knot_arrive: 10,      // ...and how close a flowing parcel must get to count as arrived
@@ -76,8 +80,8 @@ function hex_core_available(_b) {
 
 // a new anchor of _kind ("knot", "hold", "orb", "shot") at (_x, _y), asking for _want hex
 function hex_anchor_make(_b, _kind, _x, _y, _want) {
-	var _a = { kind: _kind, x: _x, y: _y, attach: noone, want: _want, at: 0, out: 0, pool: 0, focus: 0,
-		r: _b.tune.knot_r, arrive: _b.tune.knot_arrive, sink: 0 };
+	var _a = { kind: _kind, x: _x, y: _y, px: _x, py: _y, attach: noone, want: _want, at: 0, out: 0, pool: 0, focus: 0,
+		r: _b.tune.knot_r, arrive: _b.tune.knot_arrive, sink: 0, loose: false };
 	array_push(_b.anchors, _a);
 	return _a;
 }
@@ -112,9 +116,29 @@ function hex_anchor_fit(_b, _a) {
 		_a.arrive = _a.r + _t.hold_arrive_pad;
 		_a.sink = _t.hold_sink;
 	} else {
-		_a.r = _t.knot_r;
-		_a.arrive = _t.knot_arrive;
+		// a free anchor: the more hex is gathered on it, the wider and looser it eddies (so a lot of hex is a cloud, not a ball)
+		_a.r = _t.knot_r + _t.flow_spread * sqrt(max(0, _a.at));
+		_a.arrive = _a.r + (_t.knot_arrive - _t.knot_r);
 		_a.sink = 0;
+	}
+}
+
+// keep only _keep hex on anchor _a (gathered hex first, then hex still on its way); the rest of its parcels let go and
+// drift home. (A lift that had more hex on it than it costs: the extra unravels home instead of orbiting the thing)
+function hex_anchor_trim(_b, _a, _keep) {
+	var _t = _b.tune, _kept = 0;
+	for (var _pass = 0; _pass < 2; _pass++) {
+		var _st = (_pass == 0) ? HEX_ST_GATHER : HEX_ST_FLOW;
+		for (var _i = 0; _i < array_length(_b.parcels); _i++) {
+			var _q = _b.parcels[_i];
+			if (_q.a != _a || _q.st != _st) continue;
+			if (_kept + _q.amt <= _keep + 0.001) { _kept += _q.amt; continue; }
+			_q.st = HEX_ST_HOME;
+			_q.a = undefined;
+			_q.wait = irandom(_t.home_spread);
+			_q.vx += random_range(-_t.release_jitter, _t.release_jitter);
+			_q.vy += random_range(-_t.release_jitter, _t.release_jitter);
+		}
 	}
 }
 
@@ -151,13 +175,14 @@ function hex_core_release_all(_b) {
 
 // ---- MOVING HEX ----
 
-// her hand lets hex out as parcels flowing to anchor _a, from her palm (_fx, _fy), until what's on its way plus what's
-// there reaches what it wants (never more: the rest stays with her). Parcels leave aimed at (_ax, _ay) (default: the anchor)
+// her hand lets hex out as parcels flowing to anchor _a, from her palm (_fx, _fy), at pour_n parcels a frame, until what's
+// on its way plus what's there reaches what it wants (infinity = for as long as she pours), and never into her reserve.
+// Parcels leave aimed at (_ax, _ay) (default: the anchor)
 function hex_core_pour(_b, _a, _fx, _fy, _ax = undefined, _ay = undefined) {
 	var _t = _b.tune;
 	if (is_undefined(_ax)) { _ax = _a.x; _ay = _a.y; }
 	_b.pour_acc = min(_b.pour_acc + _t.pour_n, _t.pour_n);
-	while (_b.pour_acc >= 1 && _a.out + _a.at < _a.want - 0.001 && _b.hand >= _t.parcel - 0.001) {
+	while (_b.pour_acc >= 1 && _a.out + _a.at < _a.want - 0.001 && _b.hand - _t.parcel >= _t.reserve - 0.001) {
 		_b.pour_acc -= 1;
 		_b.hand -= _t.parcel;
 		_a.out += _t.parcel;
@@ -195,7 +220,7 @@ function hex_core_burst(_b, _x, _y, _amt) {
 function hex_core_step(_b, _hx, _hy, _mvx, _mvy) {
 	var _t = _b.tune, _time = current_time / 1000;
 	// anchors follow what they ride on (an attached thing that's gone: the anchor stays where it was, free; a pool it
-	// carried, like a shot's, bursts there)
+	// carried, like a shot's, bursts there). A free anchor moving fast is LOOSE this frame: its gathered hex streams after it
 	for (var _i = 0; _i < array_length(_b.anchors); _i++) {
 		var _a = _b.anchors[_i];
 		if (_a.attach != noone && !instance_exists(_a.attach)) {
@@ -203,6 +228,8 @@ function hex_core_step(_b, _hx, _hy, _mvx, _mvy) {
 			if (_a.pool > 0) { hex_core_burst(_b, _a.x, _a.y, _a.pool); _a.pool = 0; }
 		}
 		hex_anchor_fit(_b, _a);
+		_a.loose = (_a.attach == noone && point_distance(_a.px, _a.py, _a.x, _a.y) > _t.flow_loose);
+		_a.px = _a.x; _a.py = _a.y;
 	}
 	// every parcel moves on its own
 	//   flow: steers toward its anchor at its own pace, pushed around by drifting currents (so the river braids)
@@ -227,6 +254,7 @@ function hex_core_step(_b, _hx, _hy, _mvx, _mvy) {
 			}
 		} else {
 			var _a = _q.a;
+			if (_q.st == HEX_ST_GATHER && _a.loose) _q.st = HEX_ST_FLOW;   // her hex moved on fast: this bit streams after it
 			var _dg = point_distance(_q.x, _q.y, _a.x, _a.y);
 			if (_q.st == HEX_ST_FLOW) {
 				var _dr = (hex_vn(_q.x * 0.025 + _time * 0.6, _q.y * 0.025 + _q.ph) - 0.5) * _t.curl;
