@@ -138,12 +138,12 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
   - [ ] **5·0 cooldowns:** a cooldown system for every hex move (`hex.mv.cd`, `hex_move_ready` / `hex_move_cool`, lengths
         as `<name>_cd` in her tuning). First user: the palm blast (tap Space, `blast_cd` 30). A quick tap of left click in
         the stance no longer fires a mini orb (orbs need `charge_min` 6 to fire); that tap is free for a future move.
-        Bare numbers moved into tuning: `charge_min`, `tap_frames`. Open: reserve size (4 = one blast?), overflow key.
+        Bare numbers moved into tuning: `charge_min`, `tap_frames`.
   - [ ] **5a flow + reserve:** secondary pours hex at a steady rate to a head that follows the cursor, until only her
-        reserve is left; let go and it unravels home. No targets yet. *Clip:* pour, swirl the cursor, let go.
+        reserve (`reserve: 4`, one emergency palm blast) is left; let go and it unravels home. No targets yet. *Clip:* pour, swirl the cursor, let go.
   - [ ] **5b claim:** the head claims what it touches (or what's under the cursor at the start); hex sticks to it, lifts
         it at its cost, no orbiting blob; extra flows on. *Clip:* reach onto a moving enemy in a crowd; lift a rock.
-  - [ ] **5c overflow toggle:** a new "overflow" action toggles a devoted chunk of hex onto herself: she rises and
+  - [ ] **5c overflow toggle:** E while in the stance (the existing `ability` action, read as a context action) toggles a devoted chunk of hex onto herself: she rises and
         moves faster (placeholder look: her palm flaring + a hover). *Clip:* toggle on, walk, cast, toggle off.
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
       nothing fires yet). (The dissolve-into-flow part is now just how the flow works.)

@@ -103,8 +103,8 @@ steady RATE (not a set lump) and goes wherever she steers: the river's HEAD (an 
 eddies and drifts around it with no target needed. This is the "play with magic in the environment" fantasy, and a rate
 removes the stop-start lumps. The longer she pours, the more of her hex is out. Let go: anything unclaimed unravels home.
 
-**2. THE RESERVE: she can pour everything except an emergency reserve.** Flow never takes her last `reserve` hex (a
-forward-thinking witch keeps a backup). So her palm never reads as empty: a small core of hex always burns there, like
+**2. THE RESERVE: she can pour everything except an emergency reserve.** Flow never takes her last `reserve` hex (4: one emergency
+palm blast; a forward-thinking witch keeps a backup). So her palm never reads as empty: a small core of hex always burns there, like
 Wanda's hands mid-cast. The reserve CAN be spent on a palm blast (and a charge), never on the flow.
 
 **3. CLAIM: things are lifted by the hex that reaches them.** Liftable things the HEAD touches (or the one nearest the
@@ -121,7 +121,7 @@ object (an aura cupping it), so no tether and no orbiting blob; anything beyond 
 chunk of her hex is committed to her own body (an anchor attached to HER, holding a locked pool). Hex pours off her
 hands and eyes, she rises off the ground and moves faster. Toggle off and it returns to her hand. A bargain: power now,
 less to cast with. (Starts as a toggle because that's the fun one to play with; could later become an Ascension unlock
-or a permanent run upgrade.) Needs a new scr_input action ("overflow"), key to be chosen.
+or a permanent run upgrade.) Input: E while in the stance (the existing `ability` action as a context action; the Hexweaver's own E is parked).
 
 **The knot fits inside the flow:** the head IS the knot. When she holds the head still, it gathers and its `focus`
 builds (the future ground ability: a ground tear / rune); when she moves on, it simply flows on (it never slides along as
