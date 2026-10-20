@@ -16,12 +16,11 @@ function hex_move_init(_b, _x, _y) {
 		hvx: 0, hvy: 0,   // how fast that point moved this frame
 		gx: _x, gy: _y,   // the knot: where her reaching hex gathers (follows the cursor gently)
 		ra: undefined,    // her reach's anchor while reaching: the river's HEAD (follows the cursor)
-		ca: undefined,    // the CLAIM: the anchor on the thing her head reached (its hex cups it; when paid, it lifts)
+		claims: [],       // CLAIMS: everything her head has reached that hasn't lifted yet, all filling at once:
+		                  //   { inst, kind ("env"/"enemy"), cost, a (its anchor: its hex cups it; when paid, it lifts) }
 		oa: undefined,    // the orb's anchor while charging
 		holds: [],        // HOLDS: everything her hex is lifting: { inst, kind ("env"/"enemy"), cost, a (its cup anchor),
 		                  //   ox, oy (its place in the group around the cursor), vx, vy (how it moved this frame) }
-		kind: "",         // the CLAIM's thing: "env" (an environment object: a rock...) or "enemy"
-		cost: 0,          // ...and what it costs to lift
 		charge: 0,        // frames spent charging
 		orb_n: 0,         // whole units in the charging orb (for sizing it)
 		thrown: [],       // enemies flying through the air after a throw: { inst, vx, vy, hit }
@@ -57,7 +56,7 @@ function hex_move_update(_b, _in) {
 	hex_move_tick(_b);
 	var _ha = point_direction(_in.x, _in.y, _in.aim_x, _in.aim_y);
 	hex_move_drop_gone(_b);   // (anything she holds that's gone, killed or destroyed: its hex rejoins the river)
-	if (!is_undefined(_mv.ca) && !instance_exists(_mv.ca.attach)) hex_move_unclaim(_b);   // (what she claimed is gone: its hex rejoins the river)
+	for (var _i = array_length(_mv.claims) - 1; _i >= 0; _i--) if (!instance_exists(_mv.claims[_i].inst)) hex_move_unclaim(_b, _i);   // (what she claimed is gone: its hex rejoins the river)
 	var _ox = _mv.hx, _oy = _mv.hy;
 
 	if (_in.stance) {
@@ -113,48 +112,72 @@ function hex_move_update(_b, _in) {
 
 // REACH (each frame while secondary is held): SHE POURS. Her hand lets hex out at a steady rate, down to her reserve, to
 // the river's HEAD, which follows the cursor; the hex eddies around it, and when she moves it fast the hex streams after
-// it. CLAIM: when the head reaches something liftable, it claims it: the head's nearest hex flows onto it, her palm pours
-// the rest of its cost straight into it, and that hex cups it (the levitation). When its own hex reaches its cost, it
-// lifts and joins her HOLDS, and the head flows on looking for the next thing: given enough hex, she lifts a crowd.
-// Pull the head away before a claim lifts and it lets go (its hex rejoins the river).
+// it. CLAIM: when the head reaches liftable things, it claims AS MANY AS HER HEX CAN HOLD at once (nearest first, up to
+// her max minus her reserve, counting everything she already holds or claims). Each claim takes the head's nearest hex,
+// her palm pours the rest of the costs into them all together, and that hex cups each one (the levitation). When a
+// claim's own hex reaches its cost, it lifts and joins her HOLDS; the head keeps flowing and claims more as it reaches
+// them. Pull the head away from a claim before it lifts and that claim lets go (its hex rejoins the river).
 function hex_move_reach(_b, _in) {
 	var _mv = _b.mv, _ht = _b.tune, _ra = _mv.ra;
 	// the head: where her hex is flowing to. It follows the cursor (a new reach starts right at the cursor)
 	if (_ra.at <= 0.01 && _ra.out <= 0.01) { _mv.gx = _mv.hx; _mv.gy = _mv.hy; }
 	else { _mv.gx = lerp(_mv.gx, _mv.hx, _ht.head_follow); _mv.gy = lerp(_mv.gy, _mv.hy, _ht.head_follow); }
 	hex_anchor_move(_ra, _mv.gx, _mv.gy);
-	// nothing being claimed: does the head reach something new?
-	if (is_undefined(_mv.ca)) {
-		var _tg = hex_move_find_target(_b, _mv.gx, _mv.gy);
-		if (_tg.inst != noone) {
-			_mv.ca = hex_anchor_make(_b, "claim", _tg.inst.x, _tg.inst.y, _tg.cost);
-			hex_anchor_attach(_b, _mv.ca, _tg.inst);
-			_mv.ca.shape = "cup";
-			_mv.kind = _tg.kind; _mv.cost = _tg.cost;
-			hex_anchor_give(_b, _ra, _mv.ca, _tg.cost);   // the head's nearest hex flows onto it
+	// does the head reach new things? Claim every one her hex can still hold, nearest first
+	var _tgs = hex_move_find_targets(_b, _mv.gx, _mv.gy);
+	for (var _i = 0; _i < array_length(_tgs); _i++) {
+		var _tg = _tgs[_i];
+		if (_tg.cost > hex_move_free(_b) + 0.001) continue;          // not enough hex left to hold it (a cheaper one may still fit)
+		if (_tg.kind == "env" && !_ht.multi_env && (array_length(_mv.holds) > 0 || array_length(_mv.claims) > 0)) continue;   // rocks: one at a time, alone
+		if (!_ht.multi_env && hex_move_holds_env(_b)) break;          // (holding or claiming a rock: nothing more)
+		var _a = hex_anchor_make(_b, "claim", _tg.inst.x, _tg.inst.y, _tg.cost);
+		hex_anchor_attach(_b, _a, _tg.inst);
+		_a.shape = "cup";
+		array_push(_mv.claims, { inst: _tg.inst, kind: _tg.kind, cost: _tg.cost, a: _a });
+		hex_anchor_give(_b, _ra, _a, _tg.cost);   // the head's nearest hex flows onto it
+	}
+	// each claim: let go if the head pulled away first, stir as hex gathers on it, lift when its cost is there
+	for (var _i = array_length(_mv.claims) - 1; _i >= 0; _i--) {
+		var _cl = _mv.claims[_i], _c = _cl.inst;
+		if (hex_move_edge_dist(_b, _c, _mv.gx, _mv.gy) > _ht.grab_r * _ht.claim_hold) { hex_move_unclaim(_b, _i); continue; }
+		// as her hex gathers on it, the thing starts to stir and rise (obj_env_parent reads hex_gather)
+		if (_cl.kind == "env") _c.hex_gather = max(_c.hex_gather, clamp(_cl.a.at / max(1, _cl.cost), 0, 1));
+		if (_cl.a.at >= _cl.cost - 0.001) {
+			// its own hex has reached its cost: it lifts and joins her holds, keeping its place in the group around the
+			// cursor (pulled in close, so the group stays together)
+			var _ox = _c.x - _mv.hx, _oy = _c.y - _mv.hy, _ol = point_distance(0, 0, _ox, _oy);
+			if (_ol > _ht.hold_group) { _ox *= _ht.hold_group / _ol; _oy *= _ht.hold_group / _ol; }
+			if (_cl.kind == "env") _c.grabbed = true;
+			_cl.a.kind = "hold";
+			array_push(_mv.holds, { inst: _c, kind: _cl.kind, cost: _cl.cost, a: _cl.a, ox: _ox, oy: _oy, vx: 0, vy: 0 });
+			array_delete(_mv.claims, _i, 1);
 		}
 	}
-	if (!is_undefined(_mv.ca)) {
-		var _c = _mv.ca.attach;
-		if (hex_move_edge_dist(_b, _c, _mv.gx, _mv.gy) > _ht.grab_r * _ht.claim_hold) hex_move_unclaim(_b);   // the head pulled away first: it lets go
-		else {
-			// as her hex gathers on it, the thing starts to stir and rise (obj_env_parent reads hex_gather)
-			if (_mv.kind == "env") _c.hex_gather = max(_c.hex_gather, clamp(_mv.ca.at / max(1, _mv.cost), 0, 1));
-			if (_mv.ca.at >= _mv.cost - 0.001) {
-				// its own hex has reached its cost: it lifts and joins her holds, keeping its place in the group around the
-				// cursor (pulled in close, so the group stays together). The head flows on
-				var _ox = _c.x - _mv.hx, _oy = _c.y - _mv.hy, _ol = point_distance(0, 0, _ox, _oy);
-				if (_ol > _ht.hold_group) { _ox *= _ht.hold_group / _ol; _oy *= _ht.hold_group / _ol; }
-				if (_mv.kind == "env") _c.grabbed = true;
-				_mv.ca.kind = "hold";
-				array_push(_mv.holds, { inst: _c, kind: _mv.kind, cost: _mv.cost, a: _mv.ca, ox: _ox, oy: _oy, vx: 0, vy: 0 });
-				_mv.ca = undefined; _mv.kind = ""; _mv.cost = 0;
-			}
-		}
+	// her hand pours: into the claims while any still need hex (this frame's pour goes to the one that needs it most, so
+	// they all fill together at her usual rate), otherwise into the head
+	var _need = undefined, _nd = 0.001;
+	for (var _i = 0; _i < array_length(_mv.claims); _i++) {
+		var _a = _mv.claims[_i].a, _d = _a.want - _a.at - _a.out;
+		if (_d > _nd) { _nd = _d; _need = _a; }
 	}
-	// her hand pours: into the claim until its cost is there, otherwise into the head
-	if (!is_undefined(_mv.ca)) { _ra.want = 0; hex_core_pour(_b, _mv.ca, _in.hand_x, _in.hand_y); }
-	else { _ra.want = infinity; hex_core_pour(_b, _ra, _in.hand_x, _in.hand_y, _mv.gx, _mv.gy); }
+	if (array_length(_mv.claims) > 0) _ra.want = 0; else _ra.want = infinity;
+	if (!is_undefined(_need)) hex_core_pour(_b, _need, _in.hand_x, _in.hand_y);
+	else if (array_length(_mv.claims) == 0) hex_core_pour(_b, _ra, _in.hand_x, _in.hand_y, _mv.gx, _mv.gy);
+}
+
+// how much hex she can still commit to lifting: her max, minus her reserve, minus everything she holds or has claimed
+function hex_move_free(_b) {
+	var _mv = _b.mv, _f = _b.max - _b.tune.reserve;
+	for (var _i = 0; _i < array_length(_mv.holds); _i++) _f -= _mv.holds[_i].cost;
+	for (var _i = 0; _i < array_length(_mv.claims); _i++) _f -= _mv.claims[_i].cost;
+	return _f;
+}
+
+// has her head already claimed _inst?
+function hex_move_is_claimed(_b, _inst) {
+	var _c = _b.mv.claims;
+	for (var _i = 0; _i < array_length(_c); _i++) if (_c[_i].inst == _inst) return true;
+	return false;
 }
 
 // is _inst one of the things she's holding?
@@ -164,10 +187,11 @@ function hex_move_is_held(_b, _inst) {
 	return false;
 }
 
-// is she holding an environment object (a rock...)?
+// is she holding (or has she claimed) an environment object (a rock...)?
 function hex_move_holds_env(_b) {
-	var _h = _b.mv.holds;
+	var _h = _b.mv.holds, _c = _b.mv.claims;
 	for (var _i = 0; _i < array_length(_h); _i++) if (_h[_i].kind == "env") return true;
+	for (var _i = 0; _i < array_length(_c); _i++) if (_c[_i].kind == "env") return true;
 	return false;
 }
 
@@ -183,31 +207,28 @@ function hex_move_drop_gone(_b) {
 	}
 }
 
-// the liftable thing nearest (_x, _y) within grab_r, measured to its edge: a rock (liftable, movable, not held) or an
-// enemy (not a boss, not a toad, not already held). Every candidate counts, so one that can't be lifted never hides one
-// that can. With multi_env off, rocks are one at a time: none while she's holding anything, nothing more once she holds
-// one. Returns { inst, kind, cost } (inst = noone: nothing)
-function hex_move_find_target(_b, _x, _y) {
-	var _ht = _b.tune, _best = noone, _bd = _ht.grab_r, _kind = "";
-	var _envs_ok = _ht.multi_env || array_length(_b.mv.holds) == 0;
-	if (!_ht.multi_env && hex_move_holds_env(_b)) return { inst: noone, kind: "", cost: 0 };
-	if (_envs_ok) with (obj_env_parent) {
-		if (!liftable || !movable || grabbed) continue;
+// every liftable thing within grab_r of (_x, _y), measured to its edge, nearest first: rocks (liftable, movable, not
+// held) and enemies (not a boss, not a toad), skipping anything she already holds or has claimed. Every candidate
+// counts, so one that can't be lifted never hides one that can. (Whether her hex can hold each one is the reach's call.)
+// Returns an array of { inst, kind, cost, d }
+function hex_move_find_targets(_b, _x, _y) {
+	var _ht = _b.tune, _out = [];
+	with (obj_env_parent) {
+		if (!liftable || !movable || grabbed || hex_move_is_claimed(_b, id)) continue;
 		var _d = point_distance(_x, _y, x, y) - r;
-		if (_d <= _bd) { _bd = _d; _best = id; _kind = "env"; }
+		if (_d <= _ht.grab_r) array_push(_out, { inst: id, kind: "env", cost: round(_ht.cost_lift * weight), d: _d });
 	}
 	var _l = ds_list_create();
 	var _n = collision_circle_list(_x, _y, _ht.grab_r + _ht.enemy_r, obj_enemy_parent, false, true, _l, false);
 	for (var _i = 0; _i < _n; _i++) {
 		var _e = _l[| _i];
-		if (_e.is_boss || _e.curse < 0 || hex_move_is_held(_b, _e)) continue;
+		if (_e.is_boss || _e.curse < 0 || hex_move_is_held(_b, _e) || hex_move_is_claimed(_b, _e)) continue;
 		var _d = point_distance(_x, _y, _e.x, _e.y) - _ht.enemy_r;
-		if (_d <= _bd) { _bd = _d; _best = _e; _kind = "enemy"; }
+		if (_d <= _ht.grab_r) array_push(_out, { inst: _e, kind: "enemy", cost: _ht.cost_enemy, d: _d });
 	}
 	ds_list_destroy(_l);
-	var _cost = 0;
-	if (_best != noone) _cost = (_kind == "env") ? round(_ht.cost_lift * _best.weight) : _ht.cost_enemy;
-	return { inst: _best, kind: _kind, cost: _cost };
+	array_sort(_out, function(_p, _r) { return _p.d - _r.d; });
+	return _out;
 }
 
 // how far (_x, _y) is from the edge of _inst
@@ -215,15 +236,18 @@ function hex_move_edge_dist(_b, _inst, _x, _y) {
 	return point_distance(_x, _y, _inst.x, _inst.y) - hex_core_inst_r(_b, _inst);
 }
 
-// let go of a claim that hasn't lifted (or whose thing is gone): its hex rejoins the river's head (or goes home if
+// let go of claim _i that hasn't lifted (or whose thing is gone): its hex rejoins the river's head (or goes home if
 // she isn't reaching any more)
-function hex_move_unclaim(_b) {
-	var _mv = _b.mv;
-	if (is_undefined(_mv.ca)) return;
-	if (!is_undefined(_mv.ra)) hex_anchor_give(_b, _mv.ca, _mv.ra, infinity);
-	hex_anchor_release(_b, _mv.ca, "melt");
-	_mv.ca = undefined;
-	_mv.kind = ""; _mv.cost = 0;
+function hex_move_unclaim(_b, _i) {
+	var _mv = _b.mv, _cl = _mv.claims[_i];
+	if (!is_undefined(_mv.ra)) hex_anchor_give(_b, _cl.a, _mv.ra, infinity);
+	hex_anchor_release(_b, _cl.a, "melt");
+	array_delete(_mv.claims, _i, 1);
+}
+
+// let go of every claim that hasn't lifted
+function hex_move_unclaim_all(_b) {
+	for (var _i = array_length(_b.mv.claims) - 1; _i >= 0; _i--) hex_move_unclaim(_b, _i);
 }
 
 // (_vx, _vy) no longer than _max, as [vx, vy]
@@ -252,7 +276,7 @@ function hex_move_steer(_b) {
 function hex_move_reach_end(_b) {
 	var _mv = _b.mv;
 	hex_move_throw(_b);
-	hex_move_unclaim(_b);   // (a claim that never lifted)
+	hex_move_unclaim_all(_b);   // (claims that never lifted)
 	if (!is_undefined(_mv.ra)) { hex_anchor_release(_b, _mv.ra, "melt"); _mv.ra = undefined; }   // the river unravels home
 	_mv.mode = "";
 }
@@ -335,8 +359,8 @@ function hex_move_blast(_b, _x, _y, _dir, _depth) {
 function hex_move_let_go(_b) {
 	var _mv = _b.mv;
 	hex_core_release_all(_b);
-	_mv.ra = undefined; _mv.oa = undefined; _mv.ca = undefined;
-	_mv.holds = []; _mv.kind = ""; _mv.cost = 0; _mv.active = false; _mv.charge = 0; _mv.orb_n = 0; _mv.mode = "";
+	_mv.ra = undefined; _mv.oa = undefined;
+	_mv.holds = []; _mv.claims = []; _mv.active = false; _mv.charge = 0; _mv.orb_n = 0; _mv.mode = "";
 }
 
 // at the end of the caster's Step, once her sprite and position are final: her hex rests exactly in her palm (_hx, _hy),

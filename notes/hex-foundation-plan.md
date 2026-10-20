@@ -165,9 +165,14 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
         - UNTESTED: a held enemy dying (nothing else can kill while she's in the stance). Test: hold two, Insert (fills the
           ultimate), Q (Polymorph): they should drop out and their hex rejoin the river.
         - FIXED (knob): bats couldn't be lifted (too fast: the claim let go). `claim_hold` 1.5 -> 3.
-  - [ ] **5b3 concurrent claims:** when she reaches into a crowd, her hex latches onto AS MANY as she can hold at once:
+        - FIXED (core): bats still outran the hex (its speed near a target was capped below a bat's). Hex flowing to
+          something attached now adds that thing's motion.
+  - [x] **5b3 concurrent claims:** when she reaches into a crowd, her hex latches onto AS MANY as she can hold at once:
         every liftable enemy near the head, nearest first, up to what her hex allows above her reserve; they all fill in
         parallel. (Replaces the one-at-a-time claim.) *Clip:* reach into a crowd of 3+.
+        Built: `mv.claims` list. The head claims everything in grab range her free hex covers (max - reserve - what she
+          holds or claims); each frame's pour goes to the claim that needs the most, so they fill together at her usual
+          rate. Rocks still one at a time and alone.
   - [ ] **5c overflow toggle:** E while in the stance (the existing `ability` action, read as a context action) toggles a devoted chunk of hex onto herself: she rises and
         moves faster (placeholder look: her palm flaring + a hover). *Clip:* toggle on, walk, cast, toggle off.
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
