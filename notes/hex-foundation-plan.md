@@ -138,17 +138,36 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
 - [ ] **5. The reach model: flow, claim, overflow** (designed in `hex-core-design.md`, "THE REACH MODEL"). Fixes the
       step 4 clip problems: globs instead of controlled magic, hex pouring in lumps (stop, then more), extra hex orbiting
       a lifted target. **No tether** (decided). Passes, each its own commit and clip:
-  - [ ] **5·0 cooldowns:** a cooldown system for every hex move (`hex.mv.cd`, `hex_move_ready` / `hex_move_cool`, lengths
+  - [x] **5·0 cooldowns:** a cooldown system for every hex move (`hex.mv.cd`, `hex_move_ready` / `hex_move_cool`, lengths
         as `<name>_cd` in her tuning). First user: the palm blast (tap Space, `blast_cd` 30). A quick tap of left click in
         the stance no longer fires a mini orb (orbs need `charge_min` 6 to fire); that tap is free for a future move.
         Bare numbers moved into tuning: `charge_min`, `tap_frames`.
   - [x] **5a flow + reserve:** secondary pours hex at a steady rate to a head that follows the cursor, until only her
         reserve (`reserve: 4`, one emergency palm blast) is left; let go and it unravels home. No targets yet. *Clip:* pour, swirl the cursor, let go.
-  - [ ] **5b claim:** (From the 5a clip: the hex holding a lifted zombie churns around it as an orbiting glob, and the
+  - [x] **5b claim:** (From the 5a clip: the hex holding a lifted zombie churns around it as an orbiting glob, and the
         scoop shader draws a second, separate cup. The claimed hex should BE the levitation: each parcel settles into a
         spot in a cup under and around the thing, held there with a little drift, moving with it. One thing, drawn once.)
         the head claims what it touches (or what's under the cursor at the start); hex sticks to it, lifts
         it at its cost, no orbiting blob; extra flows on. *Clip:* reach onto a moving enemy in a crowd; lift a rock.
+  - [x] **5b2 multi-lift:** after a claim lifts it joins a list of holds and the head flows on to claim the next thing;
+        total hex sets how many she holds; held things keep their place in a group (`hold_group`); release throws them all.
+        **Test results (Oct 20):**
+        - WORKS: lifting slimes / zombies; throwing several at once (they fly the way the hold was moving); charge, blast,
+          let go unchanged.
+        - NOT RIGHT: claims are SEQUENTIAL (hex flows out, lifts one, flows out again for the next). It should read as her
+          choosing to lift as many as she can concentrate on: see 5b3.
+        - NOT RIGHT: the held group is STATIC. It should feel like controlling a crowd: bobbing at different heights,
+          swaying and lagging behind each other, maybe slowly circling; Wanda's wave / layered magic on the scrap is the
+          reference (polish, step 11).
+        - LATER: throws should get as dynamic as the levitation once it's polished (in proportion).
+        - DECIDED: `multi_env` off for now: throwing several small rocks feels wrong (like skipping two stones at once).
+          Big boulders / trees stacking might be the exception later.
+        - UNTESTED: a held enemy dying (nothing else can kill while she's in the stance). Test: hold two, Insert (fills the
+          ultimate), Q (Polymorph): they should drop out and their hex rejoin the river.
+        - FIXED (knob): bats couldn't be lifted (too fast: the claim let go). `claim_hold` 1.5 -> 3.
+  - [ ] **5b3 concurrent claims:** when she reaches into a crowd, her hex latches onto AS MANY as she can hold at once:
+        every liftable enemy near the head, nearest first, up to what her hex allows above her reserve; they all fill in
+        parallel. (Replaces the one-at-a-time claim.) *Clip:* reach into a crowd of 3+.
   - [ ] **5c overflow toggle:** E while in the stance (the existing `ability` action, read as a context action) toggles a devoted chunk of hex onto herself: she rises and
         moves faster (placeholder look: her palm flaring + a hover). *Clip:* toggle on, walk, cast, toggle off.
 - [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
@@ -169,6 +188,8 @@ Then **hex control is done for the Act 1 slice** and we return to the slice list
 - Bugs and line numbers: `hex-system-audit.md`. Look rules: `hex-visual-bible.md`.
 
 ## Parking lot (ideas that came up mid-work; not now)
+- The held crowd's dynamics (bob, sway, lag, circle; Wanda's layered wave of magic on the scrap) and throws in proportion
+- The cup trailing / blurring behind a fast-moving held enemy (visual pass)
 - A quick tap of left click in the stance is free for a new move (it used to fire a mini orb that looked like a palm blast)
 - Input layer, part 3: menu navigation (Escape, arrows, Enter, clicking menu items in scr_menu / obj_game_controller)
   through `scr_input`. Debug keys stay on the keyboard on purpose

@@ -304,8 +304,8 @@ hex = hex_body_create(id, {
 	// her moves
 	reach_max: 4000,      // how far from her the hex can reach (4000 = the whole screen)
 	grab_r: 80,           // how close the river's head must be to something's edge to claim it (was 64)
-	claim_hold: 1.5,      // a claim lets go if the head pulls further than this x grab_r away before it lifts
-	multi_env: true,      // lift several rocks / trees at once (false: environment objects one at a time; enemies always stack)
+	claim_hold: 3,        // a claim lets go if the head pulls further than this x grab_r away before it lifts (was 1.5: fast bats got away)
+	multi_env: false,     // lift several rocks / trees at once (false: environment objects one at a time; enemies always stack)
 	hold_group: 40,       // things she holds keep their place around the cursor, pulled in to within this many pixels
 	hold_follow: 0.75,    // how quickly a held thing follows the cursor (0..1; was 0.85: it snapped)
 	hold_speed: 35,       // the fastest a held thing can move (pixels a frame): it has weight (heavier rocks: this / weight)
