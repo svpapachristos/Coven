@@ -6,7 +6,9 @@
 // gathers). THE LEDGER: hand + parcels + anchor pools = max, always. hex_core_audit checks it.
 //
 // PARCELS: { x, y, vx, vy, s (its own pace), ph (its own phase), st, wait, hot, amt, a (its anchor, or undefined) }
-// ANCHORS: { kind, x, y, px, py, attach, want, at, out, pool, r, arrive, sink, focus, loose }
+// ANCHORS: { kind, x, y, px, py, vx, vy, attach, want, at, out, pool, r, arrive, sink, focus, loose, shape }
+// An anchor's SHAPE is how its gathered hex sits: "churn" (circling it: the head, the knot) or "cup" (each parcel settled
+// in its own spot in a cup under and around what it holds: the levitation itself)
 
 #macro HEX_ST_FLOW   0   // a parcel flowing out to its anchor (the river)
 #macro HEX_ST_GATHER 1   // a parcel that has arrived, churning around its anchor
@@ -43,7 +45,14 @@ function hex_tune_defaults() {
 		enemy_r: 14,          // how big an enemy counts as, for an anchor riding on it (rocks use their own r)
 		hold_pad: 4,          // an anchor on a thing: its parcels churn this far outside the thing's edge
 		hold_arrive_pad: 4,   // ...and arrive this much further out still
-		hold_sink: 0.25       // under something held, parcels pool lower by this much of the churn radius
+		hold_sink: 0.25,      // under something held, parcels pool lower by this much of the churn radius
+		// the cup (an anchor whose shape is "cup": hex holding something up)
+		cup_from: 0.1,        // the cup's arc, as fractions of the half circle under the thing (0 = its right side .. 1 = its left)
+		cup_to: 0.9,
+		cup_flat: 0.55,       // how flattened the cup is (1 = a half circle; lower = a shallower bowl)
+		cup_drop: 0.2,        // how far below the thing's middle the cup sits (x its radius)
+		cup_drift: 1.5,       // how much each parcel drifts around its spot (pixels)
+		cup_pull: 0.25        // how firmly parcels settle into their spots (higher = tighter, snappier)
 	};
 }
 
@@ -80,8 +89,8 @@ function hex_core_available(_b) {
 
 // a new anchor of _kind ("knot", "hold", "orb", "shot") at (_x, _y), asking for _want hex
 function hex_anchor_make(_b, _kind, _x, _y, _want) {
-	var _a = { kind: _kind, x: _x, y: _y, px: _x, py: _y, attach: noone, want: _want, at: 0, out: 0, pool: 0, focus: 0,
-		r: _b.tune.knot_r, arrive: _b.tune.knot_arrive, sink: 0, loose: false };
+	var _a = { kind: _kind, x: _x, y: _y, px: _x, py: _y, vx: 0, vy: 0, attach: noone, want: _want, at: 0, out: 0, pool: 0, focus: 0,
+		r: _b.tune.knot_r, arrive: _b.tune.knot_arrive, sink: 0, loose: false, shape: "churn" };
 	array_push(_b.anchors, _a);
 	return _a;
 }
@@ -121,6 +130,26 @@ function hex_anchor_fit(_b, _a) {
 		_a.arrive = _a.r + (_t.knot_arrive - _t.knot_r);
 		_a.sink = 0;
 	}
+}
+
+// hand up to _amt of anchor _from's hex (its parcels nearest _to first) over to anchor _to: they flow to it from where
+// they are. (The head reaching something: its nearest hex flows onto it. A claim letting go: its hex rejoins the head)
+function hex_anchor_give(_b, _from, _to, _amt) {
+	var _list = [];
+	for (var _i = 0; _i < array_length(_b.parcels); _i++) {
+		var _q = _b.parcels[_i];
+		if (_q.a == _from) array_push(_list, { q: _q, d: point_distance(_q.x, _q.y, _to.x, _to.y) });
+	}
+	array_sort(_list, function(_p, _r) { return _p.d - _r.d; });
+	var _given = 0;
+	for (var _i = 0; _i < array_length(_list); _i++) {
+		var _q = _list[_i].q;
+		if (_given + _q.amt > _amt + 0.001) break;
+		_q.a = _to;
+		_q.st = HEX_ST_FLOW;
+		_given += _q.amt;
+	}
+	return _given;
 }
 
 // keep only _keep hex on anchor _a (gathered hex first, then hex still on its way); the rest of its parcels let go and
@@ -228,7 +257,8 @@ function hex_core_step(_b, _hx, _hy, _mvx, _mvy) {
 			if (_a.pool > 0) { hex_core_burst(_b, _a.x, _a.y, _a.pool); _a.pool = 0; }
 		}
 		hex_anchor_fit(_b, _a);
-		_a.loose = (_a.attach == noone && point_distance(_a.px, _a.py, _a.x, _a.y) > _t.flow_loose);
+		_a.vx = _a.x - _a.px; _a.vy = _a.y - _a.py;   // how it moved this frame (the cup moves with what it holds)
+		_a.loose = (_a.attach == noone && point_distance(0, 0, _a.vx, _a.vy) > _t.flow_loose);
 		_a.px = _a.x; _a.py = _a.y;
 	}
 	// every parcel moves on its own
@@ -263,6 +293,14 @@ function hex_core_step(_b, _hx, _hy, _mvx, _mvy) {
 				_q.vx += (cos(_ang) * _s - _q.vx) * _t.turn;
 				_q.vy += (sin(_ang) * _s - _q.vy) * _t.turn;
 				if (_dg < _a.arrive) _q.st = HEX_ST_GATHER;
+			} else if (_a.shape == "cup") {
+				// THE CUP: each parcel holds its own spot under and around what the anchor holds (its spot comes from its
+				// phase), drifting a little. Together they're the levitation: no circling, no orbiting blob
+				var _ang = pi * lerp(_t.cup_from, _t.cup_to, frac(_q.ph / 6.28));
+				var _sx = _a.x + cos(_ang) * _a.r + _t.cup_drift * sin(_time * 1.7 + _q.ph * 3);
+				var _sy = _a.y + sin(_ang) * _a.r * _t.cup_flat + _a.r * _t.cup_drop + _t.cup_drift * cos(_time * 1.3 + _q.ph * 2);
+				_q.vx += ((_sx - _q.x) * _t.cup_pull + _a.vx - _q.vx) * 0.4;   // (+ the thing's own motion: the cup moves WITH it,
+				_q.vy += ((_sy - _q.y) * _t.cup_pull + _a.vy - _q.vy) * 0.4;   //  instead of trailing behind)
 			} else {
 				var _r0 = _a.r + 4 * sin(_q.ph + _time * 2);
 				var _gy2 = _a.y + _a.r * _a.sink;   // under something held, it pools a little lower

@@ -24,6 +24,7 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	var _ht = hex.tune;
 	var _rat = is_undefined(_mv.ra) ? 0 : _mv.ra.at;               // how much has gathered on her reach's anchor
 	var _rwant = is_undefined(_mv.ra) ? 0 : _mv.ra.want;          // ...and how much it wants
+	var _cat = is_undefined(_mv.ca) ? 0 : _mv.ca.at;              // how much hex is cupping what she holds
 	var _kn = (_mv.mode == "charge" && !is_undefined(_mv.oa)) ? clamp(_mv.oa.pool / _ht.charge_cap, 0, 1) : 0;
 	var _af = hex.hand / max(1, hex.max);                         // how much of her hex is in her hand: less in hand is a smaller ball
 	// (sizes went up ~50% with the round 12 look: the magic is drawn in 2-pixel steps, and at the old size it read tiny)
@@ -58,12 +59,12 @@ if (_wisp && hex_on) {   // (only a witch whose hex it is draws it)
 	// and the thing itself lit from below (obj_env_parent draws that, reading hex_lit). Grows in as her hex gathers around it;
 	// after she lets go it rides along with the thrown thing and dissolves. Any hex beyond what the lift cost makes it stronger
 	if (_mv.active && _mv.held != noone) { hex_wobj = _mv.held; hex_wkind = _mv.kind; }
-	var _wT = (_mv.active && _mv.held != noone) ? clamp(_rat / max(1, _mv.cost), 0, 1) : 0;   // as much as has gathered around it
+	var _wT = (_mv.active && _mv.held != noone) ? clamp(_cat / max(1, _mv.cost), 0, 1) : 0;   // as much as has gathered around it
 	hex_wR += (_wT - hex_wR) * ((_wT > hex_wR) ? 0.1 : 0.05);
 	if (hex_wR > 0.04 && instance_exists(hex_wobj)) {
 		var _env = (hex_wkind == "env"), _or = _env ? hex_wobj.r : 14;
 		var _we = _env ? clamp(0.25 + 0.35 * hex_wobj.weight, 0.25, 1) : 0.6;              // heavier things: she strains harder
-		if (_mv.held != noone) _we = min(1, _we + 0.4 * clamp((_rat - _mv.cost) / max(1, _mv.cost), 0, 1));   // overcommitted: stronger
+		if (_mv.held != noone) _we = min(1, _we + 0.4 * clamp((_cat - _mv.cost) / max(1, _mv.cost), 0, 1));   // overcommitted: stronger
 		hex_wisp_att(hex_wobj.x, hex_wobj.y - (_env ? hex_wobj.z : 0), _or + 8, 0.6, 0, 0, false, _or, _we, hex_wR, 1, 0, 5);
 		if (_env) { hex_wobj.hex_lit = hex_wR; hex_wobj.hex_lit_e = _we; }
 	}
