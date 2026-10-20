@@ -93,12 +93,43 @@ Read `scr_input` → call moves → `hex_core_step(hex, ...)` → Draw asks the 
 6. The ledger must balance. If the audit fires, it's a bug, fixed before anything else.
 7. Future-proofing first: never read a key or the mouse outside `scr_input`.
 
-## How the next steps fit (the design check)
-- **Step 5, latch:** the reach anchor attaches to the target instance instead of the aim point. Parcels already go to
-  their own anchor and `at` already counts only its parcels: mostly a choice of what to attach to.
-- **Step 6, knot:** a fixed-spot anchor with `focus`. Moving away = release it home + a new knot where she reaches.
-- **Step 8, combos:** multi-lift = several hold anchors; the slam = a move that releases holds as "burst".
-- **Orb dissolve (Sophia's idea):** release an anchor with its pool turned into flowing parcels.
+## THE REACH MODEL: flow, claim, overflow (decided Oct 20, before step 5)
+Inspiration: Wanda rising over the battlefield in Endgame. Everything pours out of HER (hands, body, eyes); the scrap
+lifts because it's caught in her overflow, not because anything connects her to it. The source is her; the world reacts.
+**No tether**: nothing ever draws a line from her palm to what she holds (decided before, confirmed here).
+
+**1. FLOW: hex pours from her for as long as she reaches.** Holding secondary = she is pouring. Hex leaves her palm at a
+steady RATE (not a set lump) and goes wherever she steers: the river's HEAD (an anchor) follows the cursor, and the hex
+eddies and drifts around it with no target needed. This is the "play with magic in the environment" fantasy, and a rate
+removes the stop-start lumps. The longer she pours, the more of her hex is out. Let go: anything unclaimed unravels home.
+
+**2. THE RESERVE: she can pour everything except an emergency reserve.** Flow never takes her last `reserve` hex (a
+forward-thinking witch keeps a backup). So her palm never reads as empty: a small core of hex always burns there, like
+Wanda's hands mid-cast. The reserve CAN be spent on a palm blast (and a charge), never on the flow.
+
+**3. CLAIM: things are lifted by the hex that reaches them.** Liftable things the HEAD touches (or the one nearest the
+cursor when she starts pouring) are claimed: hex arriving there STICKS to that thing (its own anchor, attached to it)
+instead of flowing on. When its cost has stuck (rock 8 x weight, enemy 14), it lifts. The hex holding it sits ON the
+object (an aura cupping it), so no tether and no orbiting blob; anything beyond the cost flows on with the head.
+- **Claims happen only at the head, never along the river's body.** (m21's failure: enemies between her and the
+  target stole her hex. This rule is what prevents it.)
+- **Her total hex is her carrying capacity:** sweep the head across a crowd and each enemy claims its 14 as the flow
+  passes; 32 hex holds two enemies, not three. Clean single targeting = start pouring with the cursor on the thing.
+- Throw / slam then act on everything she's holding at once (step 8).
+
+**4. OVERFLOW: she can devote hex to herself, on a toggle.** When she has enough, she can TOGGLE overflow on: a fixed
+chunk of her hex is committed to her own body (an anchor attached to HER, holding a locked pool). Hex pours off her
+hands and eyes, she rises off the ground and moves faster. Toggle off and it returns to her hand. A bargain: power now,
+less to cast with. (Starts as a toggle because that's the fun one to play with; could later become an Ascension unlock
+or a permanent run upgrade.) Needs a new scr_input action ("overflow"), key to be chosen.
+
+**The knot fits inside the flow:** the head IS the knot. When she holds the head still, it gathers and its `focus`
+builds (the future ground ability: a ground tear / rune); when she moves on, it simply flows on (it never slides along as
+a ball).
+
+**Why it fits the structure:** it's all anchors. The head = an anchor following the cursor; a claim = an anchor attached
+to a thing; overflow = an anchor attached to her. The ledger still reads: hand + flowing + claimed + devoted = max. No new
+plumbing, only new moves (plus a pour-by-rate in the core).
 
 ## Step 3 in three passes (each one plays exactly the same)
 - **3a core:** `scr_hex_core` (body, parcels, anchors, audit); obj_player's existing move code calls core functions.

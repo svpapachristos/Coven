@@ -132,20 +132,17 @@ Today's finish line: **steps 1-3** (a clean base and the anchor foundation). Ste
 - [x] **4. A readable river.** (First pass Oct 19: glow layer + light where it runs thick, `river` knobs in scr_hex_wisp.
       Sophia: "a slightly less fuzzy mess of specks"; real polish waits for the behavior fixes and step 11.) Minimal layered field (glow pass + body + light). Not the full visual pass: just enough that a
       clip shows where the hex goes. *Clip:* reach into open ground and let go.
-- [ ] **5. The latch.** Sophia's notes from the step 4 clip (Oct 19), the problems this step owns:
-      - it reads as "globs of color coming from us, not magic dynamically moving according to her control"
-      - hex pours out, stops, then more pours out (the pour stops at the knot's 6, restarts when a target's cost
-        appears, and stutters as the target flickers)
-      - extra hex keeps following / orbiting a levitated target (it gathered at the knot, then chases; plus the churn)
-      Already decided (Sophia): NO constant tether look between her palm and what she holds (a sustained stream / "the
-      hold is the stream" was considered before and ruled out). Discuss the alternatives in the brainstorm.
-      Open questions for the brainstorm: how the hex should travel when she reaches (a set amount vs. flowing while held);
-      how a lift should read (wrapping the target vs. something else); whether a hold costs hex over time or a fixed amount.
-      Original scope: Brainstorm first (how sending magic at an enemy should feel), then build it on anchors: lock onto one
-      target, parcels flow to *it*, only hex on it counts, rocks and enemies chosen fairly by cursor distance.
-      *Clip:* reach onto a moving enemy in a crowd.
-- [ ] **6. The knot as a ground spot** (spec above): fixed anchor, focus counter, dissolves back into parcels when she moves on.
-      *Clip:* gather, then swirl the cursor.
+- [ ] **5. The reach model: flow, claim, overflow** (designed in `hex-core-design.md`, "THE REACH MODEL"). Fixes the
+      step 4 clip problems: globs instead of controlled magic, hex pouring in lumps (stop, then more), extra hex orbiting
+      a lifted target. **No tether** (decided). Passes, each its own commit and clip:
+  - [ ] **5a flow + reserve:** secondary pours hex at a steady rate to a head that follows the cursor, until only her
+        reserve is left; let go and it unravels home. No targets yet. *Clip:* pour, swirl the cursor, let go.
+  - [ ] **5b claim:** the head claims what it touches (or what's under the cursor at the start); hex sticks to it, lifts
+        it at its cost, no orbiting blob; extra flows on. *Clip:* reach onto a moving enemy in a crowd; lift a rock.
+  - [ ] **5c overflow toggle:** a new "overflow" action toggles a devoted chunk of hex onto herself: she rises and
+        moves faster (placeholder look: her palm flaring + a hover). *Clip:* toggle on, walk, cast, toggle off.
+- [ ] **6. The knot's focus:** the head held still builds `focus` (the threshold for the future ground ability exists,
+      nothing fires yet). (The dissolve-into-flow part is now just how the flow works.)
 - [ ] **7. Held means held.** A held/thrown enemy: no AI, no contact damage, lifted off the ground (z), stunned on landing;
       throw strength from the hold's motion. *Clip:* hold an enemy past her, throw it into the horde.
 - [ ] **8. Combos, one at a time:** multi-lift (several anchors) → overflow into a second target → slam (LMB while holding).
